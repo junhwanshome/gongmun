@@ -1,6 +1,6 @@
 /**
  * js/editor.js
- * 공문서 에디터 - 셀 크기 최소화 + 커서 정중앙
+ * 공문서 에디터 - 표 커서 위치 수정 + 셀 너비 자동 분배
  */
 (function () {
   'use strict';
@@ -127,37 +127,36 @@
 
   /* ══════════════════════════════════════════════
      ★ 셀 스타일 상수
-        - padding: 글씨 크기에 맞게 최소한만
-        - min-height / line-height 고정값 제거
-        - height: auto (내용에 따라 자동)
-        - vertical-align: middle (커서 정중앙)
+        - table-layout: auto (브라우저 자동 너비)
+        - 셀 width 고정 제거
+        - <br> 초기값으로 커서 중앙 배치
+        - padding 최소화
+        - vertical-align: middle
   ══════════════════════════════════════════════ */
   var CELL_STYLE_TH = [
     'border:1.5px solid #2c3e50',
-    'padding:6px 10px',        /* ★ 글씨 한 줄에 딱 맞는 최소 패딩 */
-    'min-width:60px',
-    'height:auto',             /* ★ 고정 높이 제거 → 내용에 맞게 자동 */
+    'padding:6px 10px',
+    'min-width:50px',
     'background:#eaf2fb',
     'font-weight:700',
-    'font-size:0.88rem',       /* ★ 본문 글씨 크기와 동일 */
+    'font-size:0.88rem',
     'text-align:center',
-    'vertical-align:middle',   /* ★ 커서 정중앙 */
+    'vertical-align:middle',
     'word-break:keep-all',
     'color:#1a252f',
-    'line-height:1.5'          /* ★ 브라우저 기본에 가까운 자연스러운 값 */
+    'line-height:1.5'
   ].join(';');
 
   var CELL_STYLE_TD = [
     'border:1px solid #aab7c4',
-    'padding:6px 10px',        /* ★ 글씨 한 줄에 딱 맞는 최소 패딩 */
-    'min-width:60px',
-    'height:auto',             /* ★ 고정 높이 제거 → 내용에 맞게 자동 */
+    'padding:6px 10px',
+    'min-width:50px',
     'background:#fff',
-    'font-size:0.88rem',       /* ★ 본문 글씨 크기와 동일 */
-    'vertical-align:middle',   /* ★ 커서 정중앙 */
+    'font-size:0.88rem',
+    'vertical-align:middle',
     'word-break:keep-all',
     'color:#2c3e50',
-    'line-height:1.5'          /* ★ 브라우저 기본에 가까운 자연스러운 값 */
+    'line-height:1.5'
   ].join(';');
 
   /* ══════════════════════════════════════════════
@@ -573,21 +572,32 @@
     return document.querySelectorAll('.body-editor .selected');
   }
 
-  /* ★ 표 삽입 */
+  /* ★ 셀 생성 헬퍼 - <br> 초기값으로 커서 중앙 배치 */
+  function makeCell(tag, styleStr) {
+    var cell = document.createElement(tag);
+    cell.style.cssText   = styleStr;
+    cell.contentEditable = 'true';
+    cell.innerHTML       = '<br>'; /* ★ 빈 셀에 <br> 삽입 → 커서가 중앙에 위치 */
+    return cell;
+  }
+
+  /* ★ 표 삽입
+       - table-layout: auto  → 브라우저가 내용에 맞게 열 너비 자동 분배
+       - 셀 width 고정 제거  → 열이 균등하게 나뉨
+       - 각 셀에 <br> 삽입   → 커서 중앙 배치
+  */
   function insertTable(rows, cols, hasHeader) {
     var editor = document.querySelector('.body-editor');
     if (!editor) return;
     editor.focus();
 
-    var editorWidth = editor.offsetWidth || 400;
-    var cellWidth   = Math.max(80, Math.floor((editorWidth - 20) / cols));
-
+    /* ★ table-layout:auto, width 고정 없음 */
     var tableStyle = [
       'border-collapse:collapse',
       'width:100%',
       'margin:8px 0',
       'font-size:0.88rem',
-      'table-layout:fixed'
+      'table-layout:auto'   /* ★ fixed → auto */
     ].join(';');
 
     var html = '<table style="' + tableStyle + '">';
@@ -596,12 +606,9 @@
       for (var c = 0; c < cols; c++) {
         var isHeader = hasHeader && r === 0;
         var tag      = isHeader ? 'th' : 'td';
-        var style    = (isHeader ? CELL_STYLE_TH : CELL_STYLE_TD)
-                     + ';width:' + cellWidth + 'px';
-        html += '<' + tag
-              + ' style="' + style + '"'
-              + ' contenteditable="true">'
-              + '</' + tag + '>';
+        var style    = isHeader ? CELL_STYLE_TH : CELL_STYLE_TD;
+        /* ★ width 고정 없이 스타일만, 내용은 <br> */
+        html += '<' + tag + ' style="' + style + '" contenteditable="true"><br></' + tag + '>';
       }
       html += '</tr>';
     }
@@ -629,12 +636,8 @@
     var tr    = cell.closest('tr');
     var cells = Array.from(tr.querySelectorAll('td, th'));
     var newTr = document.createElement('tr');
-    cells.forEach(function (refCell) {
-      var td = document.createElement('td');
-      var wMatch = refCell.style.cssText.match(/width:[^;]+/);
-      td.style.cssText   = CELL_STYLE_TD + (wMatch ? ';' + wMatch[0] : '');
-      td.contentEditable = 'true';
-      newTr.appendChild(td);
+    cells.forEach(function () {
+      newTr.appendChild(makeCell('td', CELL_STYLE_TD));
     });
     tr.insertAdjacentElement('afterend', newTr);
     isModified = true;
@@ -650,9 +653,7 @@
     table.querySelectorAll('tr').forEach(function (tr, ri) {
       var ref     = tr.children[cellIdx];
       var isFirst = ri === 0;
-      var newCell = document.createElement(isFirst ? 'th' : 'td');
-      newCell.style.cssText   = isFirst ? CELL_STYLE_TH : CELL_STYLE_TD;
-      newCell.contentEditable = 'true';
+      var newCell = makeCell(isFirst ? 'th' : 'td', isFirst ? CELL_STYLE_TH : CELL_STYLE_TD);
       if (ref) ref.insertAdjacentElement('afterend', newCell);
       else tr.appendChild(newCell);
     });
@@ -703,8 +704,8 @@
       if (idx < minCol) minCol = idx;
       if (idx > maxCol) maxCol = idx;
     });
-    first.rowSpan = rowNodes.length;
-    first.colSpan = maxCol - minCol + 1;
+    first.rowSpan     = rowNodes.length;
+    first.colSpan     = maxCol - minCol + 1;
     first.textContent = combined;
     first.classList.remove('selected');
     cells.slice(1).forEach(function (c) { c.remove(); });
@@ -729,9 +730,7 @@
     for (var r = 0; r < rs; r++) {
       for (var c = 0; c < cs; c++) {
         if (r === 0 && c === 0) continue;
-        var newCell = document.createElement('td');
-        newCell.style.cssText   = CELL_STYLE_TD;
-        newCell.contentEditable = 'true';
+        var newCell   = makeCell('td', CELL_STYLE_TD);
         var targetRow = allRows[rIdx + r];
         if (!targetRow) continue;
         var ref = targetRow.children[cIdx + c];
