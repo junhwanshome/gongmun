@@ -10,12 +10,14 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+  <!-- ── 헤더 ── -->
   <header class="header">
     <div class="header-inner">
       <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
       <nav class="nav">
-        <a href="index.html" class="nav-link active">🏠 홈</a>
-        <a href="editor.html" class="nav-link">✍️ 새 문서</a>
+        <a href="index.html"    class="nav-link active">🏠 홈</a>
+        <a href="editor.html"   class="nav-link">✍️ 새 문서</a>
         <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
       </nav>
     </div>
@@ -31,7 +33,7 @@
         <div id="org-name-hero" class="org-name-badge"></div>
       </section>
 
-      <!-- 빠른 시작 -->
+      <!-- 새 문서 작성 -->
       <section class="section">
         <h2 class="section-title">✍️ 새 문서 작성</h2>
         <div class="template-grid">
@@ -67,7 +69,7 @@
       <section class="section">
         <h2 class="section-title">
           📝 임시저장 문서
-          <span class="badge" id="draft-count">0</span>
+          <span class="badge badge-warning" id="draft-count">0</span>
         </h2>
         <div id="draft-list">
           <div class="empty-state">
@@ -92,7 +94,7 @@
         </div>
       </section>
 
-      <!-- 작성 팁 -->
+      <!-- 핵심 규칙 팁 -->
       <section class="section">
         <h2 class="section-title">💡 공문서 작성 핵심 규칙</h2>
         <div class="tip-grid">
@@ -114,7 +116,7 @@
           </div>
           <div class="tip-card">
             <h4>✅ 문서 마무리</h4>
-            <p>반드시 "끝."으로 마침<br><code>…내용 끝.</code></p>
+            <p>반드시 "끝."으로 마침<br><code>내용 끝.</code></p>
           </div>
           <div class="tip-card">
             <h4>🗣️ 표현 개선</h4>
@@ -132,82 +134,424 @@
     </div>
   </footer>
 
+  <!-- ════ 스크립트 로드 ════ -->
   <script src="data/rules.js"></script>
   <script src="data/templates.js"></script>
   <script src="js/common.js"></script>
+
+  <!-- ════ 안전장치: common.js 로드 실패 대비 ════ -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // 기관명 표시
-      const settings = Storage.getSettings();
-      const hero = document.getElementById('org-name-hero');
+
+    /* ── escapeHtml ── */
+    if (typeof escapeHtml === 'undefined') {
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g,  '&amp;')
+          .replace(/</g,  '&lt;')
+          .replace(/>/g,  '&gt;')
+          .replace(/"/g,  '&quot;')
+          .replace(/'/g,  '&#39;');
+      }
+    }
+
+    /* ── truncate ── */
+    if (typeof truncate === 'undefined') {
+      function truncate(str, len) {
+        len = len || 30;
+        if (!str) return '';
+        return str.length > len ? str.substr(0, len) + '…' : str;
+      }
+    }
+
+    /* ── formatDateShort ── */
+    if (typeof formatDateShort === 'undefined') {
+      function formatDateShort(date) {
+        if (!date) date = new Date();
+        var m  = String(date.getMonth() + 1).padStart(2, '0');
+        var d  = String(date.getDate()).padStart(2, '0');
+        var hh = String(date.getHours()).padStart(2, '0');
+        var mm = String(date.getMinutes()).padStart(2, '0');
+        return m + '/' + d + ' ' + hh + ':' + mm;
+      }
+    }
+
+    /* ── showToast ── */
+    if (typeof showToast === 'undefined') {
+      function showToast(message, type) {
+        type = type || 'info';
+        var container = document.getElementById('toast-container');
+        if (!container) {
+          container = document.createElement('div');
+          container.id = 'toast-container';
+          container.style.cssText =
+            'position:fixed;bottom:24px;right:24px;z-index:9999;' +
+            'display:flex;flex-direction:column;gap:8px;';
+          document.body.appendChild(container);
+        }
+        var toast = document.createElement('div');
+        toast.textContent = message;
+        var bg = { success:'#27ae60', error:'#e74c3c', warning:'#f39c12', info:'#3498db' };
+        toast.style.cssText =
+          'padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:500;' +
+          'color:#fff;background:' + (bg[type] || bg.info) + ';' +
+          'box-shadow:0 4px 16px rgba(0,0,0,.15);' +
+          'min-width:200px;max-width:340px;font-family:inherit;';
+        container.appendChild(toast);
+        setTimeout(function() {
+          if (toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 3000);
+      }
+    }
+
+    /* ── Storage (핵심!) ── */
+    if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
+      var Storage = {
+        getSettings: function() {
+          try {
+            var s = localStorage.getItem('doc_settings');
+            return s ? JSON.parse(s) : {
+              orgName: '',
+              approvalLevels: [
+                { title:'담당', name:'' },
+                { title:'과장', name:'' },
+                { title:'관장', name:'' }
+              ],
+              receivers: []
+            };
+          } catch(e) {
+            return { orgName:'', approvalLevels:[], receivers:[] };
+          }
+        },
+        saveSettings: function(s) {
+          try { localStorage.setItem('doc_settings', JSON.stringify(s)); return true; }
+          catch(e) { return false; }
+        },
+        getAllDrafts: function() {
+          try {
+            var list = [];
+            for (var i = 0; i < localStorage.length; i++) {
+              var key = localStorage.key(i);
+              if (key && key.indexOf('draft_') === 0) {
+                var item = JSON.parse(localStorage.getItem(key));
+                if (item) list.push(item);
+              }
+            }
+            return list.sort(function(a, b) {
+              return new Date(b.savedAt) - new Date(a.savedAt);
+            });
+          } catch(e) { return []; }
+        },
+        getDraft: function(id) {
+          try {
+            var item = localStorage.getItem('draft_' + id) || localStorage.getItem(id);
+            return item ? JSON.parse(item) : null;
+          } catch(e) { return null; }
+        },
+        saveDraft: function(draft) {
+          try {
+            localStorage.setItem('draft_' + draft.id, JSON.stringify(draft));
+            return true;
+          } catch(e) { return false; }
+        },
+        deleteDraft: function(id) {
+          try {
+            localStorage.removeItem('draft_' + id);
+            localStorage.removeItem(id);
+            return true;
+          } catch(e) { return false; }
+        },
+        getAllDocs: function() {
+          try {
+            var list = [];
+            var skip = ['doc_settings','doc_logo','doc_org_detail','doc_cooperators'];
+            for (var i = 0; i < localStorage.length; i++) {
+              var key = localStorage.key(i);
+              if (key && key.indexOf('doc_') === 0 && skip.indexOf(key) === -1) {
+                var item = JSON.parse(localStorage.getItem(key));
+                if (item) list.push(item);
+              }
+            }
+            return list.sort(function(a, b) {
+              return new Date(b.completedAt || b.savedAt) - new Date(a.completedAt || a.savedAt);
+            });
+          } catch(e) { return []; }
+        },
+        getDoc: function(id) {
+          try {
+            var item = localStorage.getItem('doc_' + id) || localStorage.getItem(id);
+            return item ? JSON.parse(item) : null;
+          } catch(e) { return null; }
+        },
+        saveDoc: function(doc) {
+          try {
+            var key = doc.id.indexOf('doc_') === 0 ? doc.id : 'doc_' + doc.id;
+            localStorage.setItem(key, JSON.stringify(doc));
+            return true;
+          } catch(e) { return false; }
+        },
+        deleteDoc: function(id) {
+          try {
+            localStorage.removeItem('doc_' + id);
+            localStorage.removeItem(id);
+            return true;
+          } catch(e) { return false; }
+        }
+      };
+    }
+
+    /* ── 문서 목록 렌더링 ── */
+    function renderDocList(docs, containerId, type) {
+      var container = document.getElementById(containerId);
+      if (!container || !docs || docs.length === 0) return;
+
+      var iconMap = {
+        internal:    '📋',
+        government:  '🏛️',
+        cooperation: '🤝',
+        sponsor:     '💝',
+        event:       '📢'
+      };
+
+      var html = '<div class="doc-list">';
+      docs.forEach(function(doc) {
+        var icon    = iconMap[doc.templateId] || '📄';
+        var title   = escapeHtml(truncate(doc.title || '(제목 없음)', 28));
+        var dateStr = formatDateShort(new Date(doc.savedAt || doc.completedAt || Date.now()));
+        var docId   = escapeHtml(doc.id);
+        var docType = type || 'draft';
+
+        html +=
+          '<div class="doc-list-item">' +
+            '<span class="doc-icon">' + icon + '</span>' +
+            '<div class="doc-info">' +
+              '<span class="doc-title-text">' + title + '</span>' +
+              '<span class="doc-date">' + dateStr + '</span>' +
+            '</div>' +
+            '<div class="doc-actions">' +
+              '<button class="btn btn-sm btn-primary" ' +
+                'onclick="location.href=\'editor.html?id=' + docId + '&type=' + docType + '\'">수정</button>' +
+              '<button class="btn btn-sm btn-secondary" ' +
+                'onclick="location.href=\'preview.html?id=' + docId + '&type=' + docType + '\'">보기</button>' +
+              '<button class="btn btn-sm btn-danger" ' +
+                'onclick="deleteDocItem(\'' + docId + '\',\'' + docType + '\')">삭제</button>' +
+            '</div>' +
+          '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    /* ── 문서 삭제 ── */
+    function deleteDocItem(id, type) {
+      if (!confirm('이 문서를 삭제하시겠습니까?')) return;
+      if (type === 'doc') {
+        Storage.deleteDoc(id);
+      } else {
+        Storage.deleteDraft(id);
+      }
+      showToast('문서가 삭제되었습니다.', 'info');
+      setTimeout(function() { window.location.reload(); }, 800);
+    }
+
+  </script>
+
+  <!-- ════ 페이지 초기화 ════ -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+      /* 기관명 표시 */
+      var settings = Storage.getSettings();
+      var hero     = document.getElementById('org-name-hero');
       if (hero) {
         if (settings.orgName) {
-          hero.textContent = `🏢 ${settings.orgName}`;
+          hero.textContent = '🏢 ' + settings.orgName;
           hero.style.display = 'inline-block';
         } else {
-          hero.innerHTML = '⚙️ <a href="settings.html">기관 설정을 먼저 해주세요</a>';
+          hero.innerHTML = '⚙️ <a href="settings.html" style="color:#2980b9;">기관 설정을 먼저 해주세요</a>';
           hero.style.display = 'inline-block';
         }
       }
 
-      // 임시저장 문서 목록
-      const drafts    = Storage.getAllDrafts();
-      const draftList = document.getElementById('draft-list');
-      const draftCount= document.getElementById('draft-count');
+      /* 임시저장 문서 목록 */
+      var drafts     = Storage.getAllDrafts();
+      var draftCount = document.getElementById('draft-count');
       if (draftCount) draftCount.textContent = drafts.length;
-      if (draftList && drafts.length > 0) {
+
+      if (drafts.length > 0) {
         renderDocList(drafts, 'draft-list', 'draft');
       }
 
-      // 완성 문서 목록
-      const docs    = Storage.getAllDocs();
-      const docList = document.getElementById('doc-list');
-      const docCount= document.getElementById('doc-count');
+      /* 완성 문서 목록 */
+      var docs     = Storage.getAllDocs();
+      var docCount = document.getElementById('doc-count');
       if (docCount) docCount.textContent = docs.length;
-      if (docList && docs.length > 0) {
+
+      if (docs.length > 0) {
         renderDocList(docs, 'doc-list', 'doc');
       }
+
     });
   </script>
 
+  <!-- ════ 인라인 스타일 ════ -->
   <style>
-    .hero-section { text-align:center; padding:40px 0 20px; }
-    .hero-title   { font-size:2rem; font-weight:700; color:#2c3e50; margin-bottom:10px; }
-    .hero-desc    { font-size:1rem; color:#666; margin-bottom:15px; }
-    .org-name-badge {
-      display:inline-block; background:#eaf4fb; color:#2980b9;
-      padding:6px 16px; border-radius:20px; font-size:0.95rem; font-weight:500;
+    /* ── 헤더 ── */
+    .header {
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
     }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 20px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      font-size: 1.1rem; font-weight: 700;
+      color: #2c3e50; text-decoration: none;
+    }
+    .logo:hover { color: #3498db; }
+    .nav { display: flex; gap: 4px; }
+    .nav-link {
+      padding: 6px 12px; border-radius: 7px;
+      font-size: 0.88rem; color: #666;
+      text-decoration: none; transition: .15s;
+    }
+    .nav-link:hover  { background: #ecf0f1; color: #2c3e50; }
+    .nav-link.active { background: #3498db; color: #fff; }
+
+    /* ── 메인 ── */
+    .main-content { padding: 24px 0 60px; }
+    .container    { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+    /* ── 히어로 ── */
+    .hero-section { text-align: center; padding: 40px 0 20px; }
+    .hero-title   { font-size: 2rem; font-weight: 700; color: #2c3e50; margin-bottom: 10px; }
+    .hero-desc    { font-size: 1rem; color: #666; margin-bottom: 15px; }
+    .org-name-badge {
+      display: inline-block; background: #eaf4fb; color: #2980b9;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 0.95rem; font-weight: 500;
+    }
+
+    /* ── 섹션 ── */
+    .section       { margin-bottom: 40px; }
+    .section-title {
+      font-size: 1.15rem; font-weight: 700; color: #2c3e50;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── 템플릿 카드 ── */
     .template-grid {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
     }
     .template-card {
-      display:flex; flex-direction:column; align-items:center; gap:8px;
-      padding:24px 16px; background:#fff; border:2px solid #e0e0e0; border-radius:12px;
-      text-decoration:none; color:#2c3e50; transition:all .2s; cursor:pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 24px 16px; background: #fff;
+      border: 2px solid #e0e0e0; border-radius: 12px;
+      text-decoration: none; color: #2c3e50;
+      transition: all .2s; cursor: pointer;
     }
-    .template-card:hover { border-color:#3498db; background:#eaf4fb; transform:translateY(-2px); }
-    .template-icon { font-size:2rem; }
-    .template-card strong { font-size:0.95rem; }
-    .template-card small  { font-size:0.8rem; color:#888; }
+    .template-card:hover {
+      border-color: #3498db; background: #eaf4fb;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(52,152,219,.15);
+    }
+    .template-icon  { font-size: 2rem; }
+    .template-card strong { font-size: 0.95rem; }
+    .template-card small  { font-size: 0.8rem; color: #888; }
+
+    /* ── 팁 카드 ── */
     .tip-grid {
-      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
     }
     .tip-card {
-      background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:16px;
+      background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 10px; padding: 16px;
     }
-    .tip-card h4  { font-size:0.95rem; margin-bottom:8px; color:#2c3e50; }
-    .tip-card p   { font-size:0.85rem; color:#555; line-height:1.6; }
-    .tip-card code { background:#f4f4f4; padding:2px 6px; border-radius:4px; font-size:0.82rem; }
-    .section      { margin-bottom:40px; }
-    .section-title{ font-size:1.2rem; font-weight:700; color:#2c3e50; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-    .empty-state  { text-align:center; padding:40px; color:#888; }
-    .empty-icon   { font-size:2.5rem; margin-bottom:10px; }
-    @media(max-width:768px) {
-      .hero-title { font-size:1.5rem; }
-      .template-grid { grid-template-columns:repeat(2,1fr); }
-      .tip-grid   { grid-template-columns:1fr; }
+    .tip-card h4  { font-size: 0.95rem; margin-bottom: 8px; color: #2c3e50; }
+    .tip-card p   { font-size: 0.85rem; color: #555; line-height: 1.6; }
+    .tip-card code {
+      background: #f4f4f4; padding: 2px 6px;
+      border-radius: 4px; font-size: 0.82rem;
+    }
+
+    /* ── 빈 상태 ── */
+    .empty-state { text-align: center; padding: 40px; color: #888; }
+    .empty-icon  { font-size: 2.5rem; margin-bottom: 10px; }
+
+    /* ── 문서 목록 ── */
+    .doc-list      { display: flex; flex-direction: column; gap: 8px; }
+    .doc-list-item {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 8px; padding: 10px 14px; transition: .15s;
+    }
+    .doc-list-item:hover { border-color: #3498db; background: #f8fbff; }
+    .doc-icon      { font-size: 1.4rem; flex-shrink: 0; }
+    .doc-info      {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .doc-title-text {
+      font-size: 0.9rem; font-weight: 500; color: #2c3e50;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .doc-date      { font-size: 0.78rem; color: #999; }
+    .doc-actions   { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* ── 배지 ── */
+    .badge {
+      display: inline-block; padding: 2px 9px;
+      border-radius: 12px; font-size: 0.76rem; font-weight: 600;
+    }
+    .badge-success { background: #e8f8f0; color: #27ae60; }
+    .badge-warning { background: #fef9e7; color: #f39c12; }
+
+    /* ── 버튼 ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 18px; border: none; border-radius: 7px;
+      font-size: 0.88rem; font-weight: 500; cursor: pointer;
+      transition: background .15s, transform .1s;
+      text-decoration: none; white-space: nowrap;
+      font-family: inherit; line-height: 1;
+    }
+    .btn:active          { transform: scale(.97); }
+    .btn-primary         { background: #3498db; color: #fff; }
+    .btn-primary:hover   { background: #2980b9; color: #fff; }
+    .btn-secondary       { background: #ecf0f1; color: #2c3e50; border: 1px solid #ddd; }
+    .btn-secondary:hover { background: #dde4e6; }
+    .btn-danger          { background: #e74c3c; color: #fff; }
+    .btn-danger:hover    { background: #c0392b; }
+    .btn-sm { padding: 5px 11px; font-size: 0.82rem; }
+
+    /* ── 푸터 ── */
+    .footer {
+      background: #fff; border-top: 1px solid #e0e0e0;
+      padding: 20px; text-align: center;
+      font-size: 0.82rem; color: #999; margin-top: 40px;
+    }
+
+    /* ── 반응형 ── */
+    @media (max-width: 768px) {
+      .hero-title    { font-size: 1.5rem; }
+      .template-grid { grid-template-columns: repeat(2, 1fr); }
+      .tip-grid      { grid-template-columns: 1fr; }
+      .doc-list-item { flex-wrap: wrap; }
+      .doc-actions   { width: 100%; justify-content: flex-end; }
+    }
+    @media (max-width: 480px) {
+      .template-grid { grid-template-columns: repeat(2, 1fr); }
+      .header-inner  { padding: 0 12px; }
+      .nav-link      { padding: 5px 8px; font-size: 0.82rem; }
     }
   </style>
+
 </body>
 </html>
