@@ -80,6 +80,12 @@
 
     let html = '';
 
+    /* ── doc-paper-inner: flex column으로 본문↑ 기관정보↓ ── */
+    html += `<div class="doc-paper-inner">`;
+
+    /* ━━━ 상단 본문 영역 ━━━ */
+    html += `<div class="doc-main-area">`;
+
     /* ① 기관명 */
     html += `
       <div class="doc-header-area">
@@ -89,26 +95,26 @@
     /* ② 수신·경유·참조 */
     html += `<div class="doc-meta-area">`;
     html += `
-        <div class="doc-meta-row">
-          <span class="doc-meta-label">수&nbsp;&nbsp;&nbsp;&nbsp;신</span>
-          <span class="doc-meta-colon">:</span>
-          <span class="doc-meta-value">${escapeHtml(receiver)}</span>
-        </div>`;
+      <div class="doc-meta-row">
+        <span class="doc-meta-label">수&nbsp;&nbsp;&nbsp;&nbsp;신</span>
+        <span class="doc-meta-colon">:</span>
+        <span class="doc-meta-value">${escapeHtml(receiver)}</span>
+      </div>`;
     if (via) {
       html += `
-        <div class="doc-meta-row">
-          <span class="doc-meta-label">경&nbsp;&nbsp;&nbsp;&nbsp;유</span>
-          <span class="doc-meta-colon">:</span>
-          <span class="doc-meta-value">${escapeHtml(via)}</span>
-        </div>`;
+      <div class="doc-meta-row">
+        <span class="doc-meta-label">경&nbsp;&nbsp;&nbsp;&nbsp;유</span>
+        <span class="doc-meta-colon">:</span>
+        <span class="doc-meta-value">${escapeHtml(via)}</span>
+      </div>`;
     }
     if (ref) {
       html += `
-        <div class="doc-meta-row">
-          <span class="doc-meta-label">참&nbsp;&nbsp;&nbsp;&nbsp;조</span>
-          <span class="doc-meta-colon">:</span>
-          <span class="doc-meta-value">${escapeHtml(ref)}</span>
-        </div>`;
+      <div class="doc-meta-row">
+        <span class="doc-meta-label">참&nbsp;&nbsp;&nbsp;&nbsp;조</span>
+        <span class="doc-meta-colon">:</span>
+        <span class="doc-meta-value">${escapeHtml(ref)}</span>
+      </div>`;
     }
     html += `</div>`;
 
@@ -120,7 +126,7 @@
         <span class="doc-title-text">${escapeHtml(title)}</span>
       </div>`;
 
-    /* ★ 구분선: 제목 바로 아래에만 ★ */
+    /* ★ 구분선 1: 제목 바로 아래 ★ */
     html += `<hr class="doc-title-divider">`;
 
     /* ④ 본문 */
@@ -130,12 +136,18 @@
     const attachments = f.attachments || f.attach || '';
     if (attachments) {
       html += `
-        <div class="doc-attach-area">
-          <span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>
-          <span class="doc-attach-colon">:</span>
-          <span class="doc-attach-value">${escapeHtml(attachments)}</span>
-        </div>`;
+      <div class="doc-attach-area">
+        <span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>
+        <span class="doc-attach-colon">:</span>
+        <span class="doc-attach-value">${escapeHtml(attachments)}</span>
+      </div>`;
     }
+
+    html += `</div>`;
+    /* ━━━ 상단 본문 영역 끝 ━━━ */
+
+    /* ━━━ 하단 기관정보 블록 (항상 용지 하단 고정) ━━━ */
+    html += `<div class="doc-org-footer">`;
 
     /* ⑥ 발신명의 */
     const senderName = f.senderName || orgName;
@@ -144,7 +156,7 @@
         <span class="doc-sender-value">${escapeHtml(senderName)}</span>
       </div>`;
 
-    /* ★ 구분선: 발신명의 바로 아래 ★ */
+    /* ★ 구분선 2: 발신명의 바로 아래 ★ */
     html += `<hr class="doc-sender-divider">`;
 
     /* ⑦ 결재란 + 협조자 */
@@ -153,8 +165,14 @@
     /* ⑧ 시행·접수 행 */
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
 
-    /* ⑨ 하단 정보 – hr 완전 없음 */
+    /* ⑨ 주소·연락처 */
     html += renderFooterInfo(doc, settings, orgDetail);
+
+    html += `</div>`;
+    /* ━━━ 하단 기관정보 블록 끝 ━━━ */
+
+    html += `</div>`;
+    /* ── doc-paper-inner 끝 ── */
 
     container.innerHTML = html;
   }
@@ -166,17 +184,22 @@
     return `<p>${escapeHtml(body).replace(/\n/g, '<br>')}</p>`;
   }
 
-  /* ── ⑦ 결재란: 한 줄 가로 나열, 테두리 없음 ────────────── */
+  /* ── ⑦ 결재란 + 협조자 ──────────────────────────────── */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
 
     const approverList = approvers.length
       ? approvers
-      : [{ title: '담당', name: '' }, { title: '사무국장', name: '' }, { title: '원장', name: '' }];
+      : [
+          { title: '담당',    name: '' },
+          { title: '사무국장', name: '' },
+          { title: '원장',    name: '' }
+        ];
 
     let html = '<div class="doc-approval-wrap">';
 
+    /* 결재자: 한 줄 가로 나열 */
     html += '<div class="doc-approval-row">';
     approverList.forEach(ap => {
       html += `
@@ -188,6 +211,7 @@
     });
     html += '</div>';
 
+    /* 협조자 */
     html += `
       <div class="doc-cooperator-row">
         <span class="doc-cooperator-label">협&nbsp;조&nbsp;자</span>
@@ -219,8 +243,7 @@
       </div>`;
   }
 
-  /* ── ⑨ 하단 정보: <hr> 완전 제거 ───────────────────────
-     ※ doc-footer-divider 포함 모든 <hr> 없음               */
+  /* ── ⑨ 주소·연락처: hr 완전 없음 ───────────────────── */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
@@ -241,7 +264,6 @@
     if (email)    contactStr += `&nbsp;/&nbsp;${escapeHtml(email)}`;
     if (openness) contactStr += `&nbsp;/&nbsp;${escapeHtml(openness)}`;
 
-    /* ★ <hr> 없음 – 구분선 완전 제거 ★ */
     return `
       <div class="doc-footer-wrap">
         <div class="doc-footer-addr">${addrStr}</div>
