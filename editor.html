@@ -99,9 +99,11 @@
       background: #fff; font-size: 0.78rem; cursor: pointer;
       font-family: inherit; transition: .15s; white-space: nowrap;
       display: inline-flex; align-items: center; gap: 3px;
+      min-width: 28px; justify-content: center;
     }
-    .fmt-btn:hover  { background: #eaf4fb; border-color: #3498db; color: #3498db; }
-    .fmt-btn:active { background: #dbeaf7; }
+    .fmt-btn:hover   { background: #eaf4fb; border-color: #3498db; color: #3498db; }
+    .fmt-btn:active  { background: #dbeaf7; }
+    .fmt-btn.active  { background: #3498db; color: #fff; border-color: #2980b9; }
     .fmt-separator {
       width: 1px; height: 20px; background: #ddd; margin: 0 2px;
     }
@@ -185,9 +187,8 @@
       font-weight: 600;
       text-align: center;
     }
-    .body-editor table td {
-      background: #fff;
-    }
+    .body-editor table td { background: #fff; }
+
     /* 선택된 셀 강조 */
     .body-editor table td.selected,
     .body-editor table th.selected {
@@ -197,17 +198,12 @@
 
     /* ── 표 팝업 ── */
     .table-popup {
-      position: fixed;
-      top: 50%; left: 50%;
+      position: fixed; top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 20px 24px;
-      z-index: 500;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
-      min-width: 260px;
-      display: none;
+      background: #fff; border: 1px solid #ddd;
+      border-radius: 10px; padding: 20px 24px;
+      z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,.18);
+      min-width: 260px; display: none;
     }
     .table-popup.visible { display: block; }
     .table-popup h4 {
@@ -219,13 +215,12 @@
       margin-bottom: 10px; font-size: 0.85rem;
     }
     .table-popup-row label { width: 3em; flex-shrink: 0; color: #555; font-weight: 600; }
-    .table-popup-row input {
+    .table-popup-row input[type="number"] {
       width: 70px; padding: 5px 8px;
       border: 1px solid #ddd; border-radius: 6px;
-      font-size: 0.88rem; font-family: inherit;
-      text-align: center;
+      font-size: 0.88rem; font-family: inherit; text-align: center;
     }
-    .table-popup-row input:focus {
+    .table-popup-row input[type="number"]:focus {
       outline: none; border-color: #3498db;
       box-shadow: 0 0 0 3px rgba(52,152,219,.12);
     }
@@ -390,7 +385,6 @@
 </head>
 <body>
 
-  <!-- ── 헤더 ── -->
   <header class="header">
     <div class="header-inner">
       <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
@@ -402,19 +396,15 @@
     </div>
   </header>
 
-  <!-- ── 경고 배너 ── -->
   <div id="org-name-notice" class="notice-bar" style="display:none;">
     ⚠️ 기관명이 설정되지 않았습니다.
     <a href="settings.html">기관 설정 바로가기 →</a>
   </div>
 
-  <!-- ── 메인 ── -->
   <div class="main-wrap">
 
     <!-- ════ 왼쪽: 입력 패널 ════ -->
     <div class="panel">
-
-      <!-- 패널 헤더 -->
       <div class="panel-header">
         <div class="template-wrap">
           <button class="tpl-btn active" data-template="internal">📋 내부결재</button>
@@ -432,15 +422,23 @@
         </div>
       </div>
 
-      <!-- 가이드 -->
       <div id="guide-panel" style="padding:8px 16px; font-size:0.8rem; color:#555; background:#f8f9fb; border-bottom:1px solid #f0f0f0;"></div>
 
-      <!-- ── 서식 툴바 (body 필드 포커스 시 표시) ── -->
+      <!-- ── 서식 툴바 ── -->
       <div class="format-toolbar" id="format-toolbar">
-        <button class="fmt-btn" id="fmt-bold"   title="굵게 (Ctrl+B)"><b>B</b></button>
-        <button class="fmt-btn" id="fmt-italic" title="기울기 (Ctrl+I)"><i>I</i></button>
+        <!-- 텍스트 서식 -->
+        <button class="fmt-btn" id="fmt-bold"      title="굵게 (Ctrl+B)"><b>B</b></button>
+        <button class="fmt-btn" id="fmt-italic"    title="기울기 (Ctrl+I)"><i>I</i></button>
         <button class="fmt-btn" id="fmt-underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
         <div class="fmt-separator"></div>
+
+        <!-- ★ 정렬 버튼 -->
+        <button class="fmt-btn" id="fmt-align-left"   title="왼쪽 정렬">≡ 좌</button>
+        <button class="fmt-btn" id="fmt-align-center" title="가운데 정렬">≡ 중</button>
+        <button class="fmt-btn" id="fmt-align-right"  title="오른쪽 정렬">≡ 우</button>
+        <div class="fmt-separator"></div>
+
+        <!-- 표 관련 -->
         <button class="fmt-btn" id="fmt-table"      title="표 삽입">⊞ 표 삽입</button>
         <button class="fmt-btn" id="fmt-add-row"    title="행 추가">↓ 행 추가</button>
         <button class="fmt-btn" id="fmt-add-col"    title="열 추가">→ 열 추가</button>
@@ -451,10 +449,8 @@
         <button class="fmt-btn" id="fmt-unmerge"    title="셀 분리">⊟ 셀 분리</button>
       </div>
 
-      <!-- 동적 폼 필드 -->
       <div id="form-fields"></div>
 
-      <!-- 하단 버튼 -->
       <div class="form-footer">
         <button id="spell-check-btn" class="btn btn-secondary btn-sm">🔤 맞춤법</button>
         <button id="rule-check-btn"  class="btn btn-secondary btn-sm">📋 규칙검사</button>
@@ -463,7 +459,6 @@
           👁️ 미리보기 <kbd>Ctrl+Enter</kbd>
         </button>
       </div>
-
     </div>
 
     <!-- ════ 가운데: 생성된 문서 ════ -->
@@ -494,10 +489,8 @@
 
   </div>
 
-  <!-- ── 표 삽입 팝업 오버레이 ── -->
-  <div class="table-popup-overlay" id="table-popup-overlay"></div>
-
   <!-- ── 표 삽입 팝업 ── -->
+  <div class="table-popup-overlay" id="table-popup-overlay"></div>
   <div class="table-popup" id="table-popup">
     <h4>⊞ 표 삽입</h4>
     <div class="table-popup-row">
@@ -517,7 +510,7 @@
     </div>
     <div class="table-popup-btns">
       <button class="btn btn-secondary btn-sm" id="table-popup-cancel">취소</button>
-      <button class="btn btn-primary btn-sm"   id="table-popup-ok">삽입</button>
+      <button class="btn btn-primary   btn-sm" id="table-popup-ok">삽입</button>
     </div>
   </div>
 
@@ -532,7 +525,7 @@
         <div class="check-empty"><div class="check-empty-icon">🔍</div><p>검사 중입니다…</p></div>
       </div>
       <div class="modal-footer">
-        <button id="auto-fix-btn"    class="btn btn-primary"    type="button">🔧 오류 자동수정</button>
+        <button id="auto-fix-btn" class="btn btn-primary" type="button">🔧 오류 자동수정</button>
         <button class="modal-close-btn btn btn-secondary" type="button">닫기</button>
       </div>
     </div>
@@ -666,8 +659,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', function(){
-
-      /* ── 폼 필드 CSS 주입 ── */
       var style = document.createElement('style');
       style.textContent = `
         #form-fields { padding: 4px 0; }
@@ -693,19 +684,15 @@
           outline: none; border-color: #3498db;
           box-shadow: 0 0 0 3px rgba(52,152,219,.12);
         }
-        #form-fields .form-textarea {
-          resize: vertical; min-height: 76px; line-height: 1.65;
-        }
+        #form-fields .form-textarea { resize: vertical; min-height: 76px; line-height: 1.65; }
         #form-fields .body-editor-wrap { flex: 1; min-width: 0; }
       `;
       document.head.appendChild(style);
 
-      /* ── 기관명 미설정 경고 ── */
       var settings = Storage.getSettings();
       var notice   = document.getElementById('org-name-notice');
       if (notice && !settings.orgName) notice.style.display = 'flex';
 
-      /* ── 맞춤법 ── */
       var spellBtn = document.getElementById('spell-check-btn');
       if (spellBtn) spellBtn.onclick = function(){
         var editor = document.getElementById('editor-content');
@@ -722,27 +709,23 @@
         Modal.close('spell-guide-modal');
       };
 
-      /* ── 규칙 검사 ── */
       var ruleCheckBtn = document.getElementById('rule-check-btn');
       if (ruleCheckBtn) ruleCheckBtn.onclick = function(){
         if (typeof openCheckModal === 'function') openCheckModal();
         else showToast('checker.js 로드를 확인해주세요.','error');
       };
 
-      /* ── 자동수정 ── */
       var autoFixBtn = document.getElementById('auto-fix-btn');
       if (autoFixBtn) autoFixBtn.onclick = function(){
         if (typeof applyAutoFix === 'function') applyAutoFix();
       };
 
-      /* ── 순화어 ── */
       var purifyBtn = document.getElementById('purify-btn');
       if (purifyBtn) purifyBtn.onclick = function(){
         if (typeof openPurifyModal === 'function') openPurifyModal();
         else showToast('checker.js 로드를 확인해주세요.','error');
       };
 
-      /* ── 미리보기 ── */
       var previewBtn = document.getElementById('preview-btn');
       if (previewBtn) previewBtn.onclick = function(){
         if (typeof goToPreview === 'function') goToPreview();
@@ -750,14 +733,12 @@
         else showToast('editor.js 로드를 확인해주세요.','error');
       };
 
-      /* ── 모달 닫기 ── */
       document.querySelectorAll('.modal-close-btn').forEach(function(btn){
         btn.onclick = function(){
           var modal = btn.closest('.modal-overlay');
           if (modal) Modal.close(modal.id);
         };
       });
-
     });
   </script>
 
