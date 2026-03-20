@@ -181,9 +181,16 @@
             + f.label
             + (f.required ? ' <span style="color:#e74c3c;">*</span>' : '')
             + '</label>';
+
+      /* ★ 필드별 rows 크기 조정 */
+      var rows = 3;
+      if (f.id === 'body')        rows = 10;
+      if (f.id === 'purpose')     rows = 4;
+      if (f.id === 'attachments') rows = 4;
+
       if (f.type === 'textarea') {
         html += '<textarea id="field-' + f.id + '" name="' + f.id + '" '
-              + 'class="form-control form-textarea" rows="3" '
+              + 'class="form-control form-textarea" rows="' + rows + '" '
               + 'placeholder="' + (f.placeholder || '') + '"></textarea>';
       } else {
         html += '<input id="field-' + f.id + '" name="' + f.id + '" type="text" '
@@ -245,7 +252,6 @@
     if (el) el.textContent = msg;
   }
 
-  /* ── 에디터 textarea 미리보기 ── */
   function updatePreview() {
     var ta = document.getElementById('editor-content');
     if (!ta) return;
@@ -282,9 +288,7 @@
         f.body.split('\n').forEach(function (line) { lines.push(line); });
       }
     } else {
-      /* internal / government / cooperation
-         purpose: 번호 없이 단독 출력
-         body: 사용자가 직접 번호 입력 → 그대로 출력 */
+      /* purpose: 번호 없이 단독 출력, body: 그대로 출력 */
       if (f.purpose) {
         lines.push(f.purpose);
         lines.push('');
