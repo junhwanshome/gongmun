@@ -110,7 +110,6 @@
       min-height: 100%;
     }
 
-    /* 본문 영역: 남은 공간 모두 차지 */
     .doc-main-area { flex: 1; }
 
     /* ━━━ 기관정보 블록: 항상 하단 고정 ━━━ */
@@ -131,30 +130,51 @@
       color: #111;
     }
 
-    /* ② 수신·경유·참조 */
+    /* ② 수신·경유·참조
+       ★ 레이블 너비를 고정하여 콜론(:) 위치 정렬 ★     */
     .doc-meta-area { margin-bottom: 10px; }
     .doc-meta-row {
       display: flex;
       align-items: baseline;
       font-size: 11pt;
-      line-height: 1.6;
-      margin-bottom: 4px;
+      line-height: 1.7;
+      margin-bottom: 2px;
     }
-    .doc-meta-label { width: 5em; font-weight: 600; white-space: nowrap; }
-    .doc-meta-colon { margin: 0 6px; }
+    .doc-meta-label {
+      display: inline-block;
+      width: 4.5em;          /* ★ 고정 너비로 콜론 정렬 ★ */
+      font-weight: 600;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+    .doc-meta-colon {
+      margin: 0 8px 0 0;     /* ★ 콜론 뒤 공백 8px ★ */
+      flex-shrink: 0;
+    }
     .doc-meta-value { flex: 1; }
 
-    /* ③ 제목 */
+    /* ③ 제목
+       ★ 레이블 너비 meta-label 과 동일하게 맞춤 ★      */
     .doc-title-area {
       display: flex;
       align-items: baseline;
       font-size: 12pt;
       font-weight: 700;
       padding-bottom: 8px;
+      line-height: 1.7;
     }
-    .doc-title-label { width: 5em; white-space: nowrap; }
-    .doc-title-colon { margin: 0 6px; }
-    .doc-title-text  { flex: 1; }
+    .doc-title-label {
+      display: inline-block;
+      width: 4.5em;          /* ★ meta-label 과 동일 ★ */
+      font-weight: 700;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+    }
+    .doc-title-colon {
+      margin: 0 8px 0 0;
+      flex-shrink: 0;
+    }
+    .doc-title-text { flex: 1; }
 
     /* ★★★ 구분선 1: 제목 바로 아래 ★★★ */
     .doc-title-divider {
@@ -164,34 +184,33 @@
     }
 
     /* ══════════════════════════════════════════
-       ④ 본문 영역 – 공문서 항목 스타일
+       ④ 본문 – 공문서 항목 스타일
     ══════════════════════════════════════════ */
     .doc-body-area {
       font-size: 11pt;
       line-height: 1.8;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
 
     /* 일반 줄 */
     .body-line {
       display: block;
       line-height: 1.8;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       white-space: pre-wrap;
       word-break: keep-all;
     }
 
     /* 빈 줄 간격 */
-    .body-blank {
-      height: 0.6em;
-    }
+    .body-blank { height: 0.5em; }
 
-    /* 항목 줄: 기호 + 내용 가로 정렬 */
+    /* 항목 줄: 기호 + 내용 가로 정렬
+       ★ padding-left 로 단계별 들여쓰기 ★             */
     .body-item {
       display: flex;
       align-items: flex-start;
       line-height: 1.8;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
       word-break: keep-all;
     }
     .body-item-symbol {
@@ -205,30 +224,38 @@
       word-break: keep-all;
     }
 
-    /* 본문 없음 */
     .body-empty { color: #aaa; }
 
-    /* 끝. 표시 (붙임 없을 때 본문 아래) */
+    /* 끝. 표시 (붙임 없을 때) */
     .body-end-mark {
       display: block;
       font-size: 11pt;
-      margin-top: 4px;
-      margin-bottom: 16px;
+      margin-top: 2px;
+      margin-bottom: 12px;
     }
 
-    /* ⑤ 붙임 */
+    /* ══════════════════════════════════════════
+       ⑤ 붙임
+       ★ 레이블과 내용 사이 간격 최소화 ★
+    ══════════════════════════════════════════ */
     .doc-attach-area {
       display: flex;
       align-items: flex-start;
       font-size: 11pt;
-      margin-bottom: 16px;
-      gap: 0;
+      margin-bottom: 12px;
     }
     .doc-attach-label {
       flex-shrink: 0;
       font-weight: 600;
       white-space: nowrap;
-      margin-right: 1em;   /* 붙임 뒤 1자 공백 */
+      /* ★ 레이블 너비: meta-label 과 동일 ★ */
+      width: 4.5em;
+      letter-spacing: 0.05em;
+    }
+    /* ★ 레이블과 내용 사이 1자(1em) 공백 ★ */
+    .doc-attach-gap {
+      flex-shrink: 0;
+      width: 1em;
     }
     .doc-attach-body {
       flex: 1;
@@ -283,7 +310,6 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 0;
       font-size: 10pt;
     }
     .doc-approval-title { font-weight: 600; white-space: nowrap; }
@@ -320,8 +346,6 @@
     .doc-exec-value  { flex: 1; }
     .doc-exec-spacer { flex: 1; }
     .doc-exec-recv   { white-space: nowrap; font-size: 10pt; }
-
-    /* 접수 날짜 공간: 0000.00.00 입력 너비 확보 */
     .doc-exec-recv-space {
       display: inline-block;
       width: 6.5em;
