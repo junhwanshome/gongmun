@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>문서 작성 - 공문서 작성 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link">🏠 홈</a>
+        <a href="editor.html" class="nav-link active">✍️ 새 문서</a>
+        <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 기관명 미설정 경고 -->
+  <div id="org-name-notice" class="notice-bar" style="display:none;">
+    ⚠️ 기관명이 설정되지 않았습니다.
+    <a href="settings.html">기관 설정 바로가기 →</a>
+  </div>
+
+  <main class="main-content">
+    <div class="editor-layout">
+
+      <!-- 왼쪽: 입력 패널 -->
+      <div class="editor-left">
+
+        <!-- 도구 모음 -->
+        <div class="editor-toolbar">
+          <div class="toolbar-left">
+            <a href="index.html" class="btn btn-secondary btn-sm">← 뒤로</a>
+            <div class="template-btns">
+              <button class="template-btn active" data-template="internal">📋 내부결재</button>
+              <button class="template-btn" data-template="government">🏛️ 지자체</button>
+              <button class="template-btn" data-template="cooperation">🤝 협조</button>
+              <button class="template-btn" data-template="sponsor">💝 후원</button>
+              <button class="template-btn" data-template="event">📢 행사</button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <span id="save-status" class="save-status"></span>
+            <button id="fill-example-btn" class="btn btn-secondary btn-sm">예시채우기</button>
+            <button id="save-draft-btn"   class="btn btn-primary    btn-sm">💾 임시저장 <kbd>Ctrl+S</kbd></button>
+          </div>
+        </div>
+
+        <!-- 가이드 패널 -->
+        <div id="guide-panel" class="guide-panel"></div>
+
+        <!-- 동적 폼 필드 -->
+        <div id="form-fields" class="form-fields-area"></div>
+
+        <!-- 생성된 문서 -->
+        <div class="editor-doc-area">
+          <label class="doc-area-label">📄 생성된 문서 (직접 수정 가능)</label>
+          <textarea id="editor-content" class="editor-textarea" rows="20"
+                    placeholder="왼쪽 항목을 입력하면 문서가 자동으로 생성됩니다."></textarea>
+        </div>
+
+        <!-- 하단 버튼 -->
+        <div class="editor-footer">
+          <button id="spell-check-btn" class="btn btn-secondary">
+            🔤 맞춤법 검사
+          </button>
+          <button id="rule-check-btn" class="btn btn-secondary">
+            📋 규칙 검사
+          </button>
+          <button id="purify-btn" class="btn btn-secondary">
+            ✨ 순화어
+          </button>
+          <button id="preview-btn" class="btn btn-primary">
+            👁️ 미리보기 <kbd>Ctrl+Enter</kbd>
+          </button>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 실시간 검사 패널 -->
+      <div class="editor-right">
+        <div id="realtime-check-panel" class="realtime-panel">
+          <div class="check-panel-header">
+            <span class="check-panel-title">🔍 실시간 검사</span>
+            <span id="check-summary"></span>
+          </div>
+          <div class="check-empty">
+            <div class="check-empty-icon">✅</div>
+            <p>내용을 입력하면<br>자동으로 검사합니다.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ── 규칙 검사 모달 ── -->
+  <div class="modal-overlay" id="check-modal" style="display:none;">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h3>📋 규칙 검사 결과</h3>
+        <button class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" id="check-modal-body"></div>
+      <div class="modal-footer">
+        <button id="auto-fix-btn" class="btn btn-primary">🔧 오류 자동수정</button>
+        <button class="modal-close-btn btn btn-secondary">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 순화어 모달 ── -->
+  <div class="modal-overlay" id="purify-modal" style="display:none;">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h3>✨ 순화어 제안</h3>
+        <button class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body" id="purify-modal-body"></div>
+      <div class="modal-footer">
+        <button class="modal-close-btn btn btn-secondary">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 맞춤법 검사 안내 모달 ── -->
+  <div class="modal-overlay" id="spell-guide-modal" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🔤 맞춤법 검사 안내</h3>
+        <button class="modal-close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="spell-guide-steps">
+          <div class="spell-step">
+            <span class="step-num">1</span>
+            <span>아래 버튼을 클릭하면 문서 내용이 <strong>클립보드에 복사</strong>됩니다.</span>
+          </div>
+          <div class="spell-step">
+            <span class="step-num">2</span>
+            <span>나라 맞춤법 검사기가 새 창으로 열립니다.</span>
+          </div>
+          <div class="spell-step">
+            <span class="step-num">3</span>
+            <span>검사기 입력창에 <strong>Ctrl+V</strong>로 붙여넣기 하세요.</span>
+          </div>
+          <div class="spell-step">
+            <span class="step-num">4</span>
+            <span>검사 결과를 확인하고 수정 후 다시 문서에 붙여넣기 하세요.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="open-speller-btn" class="btn btn-primary">
+          🔤 나라 맞춤법 검사기 열기
+        </button>
+        <button class="modal-close-btn btn btn-secondary">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/rules.js"></script>
+  <script src="data/templates.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/checker.js"></script>
+  <script src="js/editor.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 맞춤법 검사 버튼 → 안내 모달
+      const spellBtn = document.getElementById('spell-check-btn');
+      if (spellBtn) {
+        spellBtn.addEventListener('click', () => {
+          const editor = document.getElementById('editor-content');
+          if (editor && editor.value.trim()) {
+            copyToClipboard(editor.value);
+            showToast('내용이 클립보드에 복사되었습니다! 📋', 'success');
+          }
+          Modal.open('spell-guide-modal');
+        });
+      }
+
+      // 나라 맞춤법 검사기 열기
+      const openSpellerBtn = document.getElementById('open-speller-btn');
+      if (openSpellerBtn) {
+        openSpellerBtn.addEventListener('click', () => {
+          window.open('https://www.nara-speller.co.kr/speller/', 'speller',
+            'width=900,height=650,scrollbars=yes,resizable=yes');
+          Modal.close('spell-guide-modal');
+        });
+      }
+
+      // 기관명 확인
+      const settings = Storage.getSettings();
+      const notice   = document.getElementById('org-name-notice');
+      if (notice && !settings.orgName) notice.style.display = 'flex';
+    });
+  </script>
+
+  <style>
+    .notice-bar {
+      background:#fff3cd; color:#856404; border-bottom:1px solid #ffc107;
+      padding:8px 20px; font-size:0.88rem; display:flex; align-items:center; gap:10px;
+    }
+    .notice-bar a { color:#856404; font-weight:600; }
+    .editor-layout {
+      display:grid; grid-template-columns:1fr 300px; gap:20px;
+      max-width:1400px; margin:0 auto; padding:20px;
+    }
+    .editor-left   { display:flex; flex-direction:column; gap:16px; min-width:0; }
+    .editor-right  { position:sticky; top:20px; height:fit-content; }
+    .editor-toolbar{
+      display:flex; justify-content:space-between; align-items:center;
+      background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:10px 14px;
+      flex-wrap:wrap; gap:10px;
+    }
+    .toolbar-left, .toolbar-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .template-btns { display:flex; gap:6px; flex-wrap:wrap; }
+    .template-btn  {
+      padding:5px 12px; border:1px solid #ddd; border-radius:6px;
+      background:#f8f9fa; font-size:0.82rem; cursor:pointer; transition:.15s;
+    }
+    .template-btn:hover  { background:#eaf4fb; border-color:#3498db; }
+    .template-btn.active { background:#3498db; color:#fff; border-color:#3498db; }
+    .save-status   { font-size:0.8rem; color:#27ae60; }
+    .guide-panel   { background:#eaf4fb; border-radius:10px; padding:14px; }
+    .guide-card h4 { font-size:0.95rem; font-weight:700; margin-bottom:8px; color:#2c3e50; }
+    .guide-list    { margin:0; padding-left:18px; font-size:0.85rem; color:#555; }
+    .guide-list li { margin-bottom:4px; }
+    .form-fields-area { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:16px; }
+    .field-row     { display:flex; flex-direction:column; gap:4px; margin-bottom:12px; }
+    .field-row label{
+      font-size:0.85rem; font-weight:500; color:#444;
+    }
+    .field-row label.required::after { content:' *'; color:#e74c3c; }
+    .field-row-half{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field-row-half .field-row { margin-bottom:0; }
+    .mt-1          { margin-top:4px; }
+    .editor-doc-area { display:flex; flex-direction:column; gap:6px; }
+    .doc-area-label{ font-size:0.85rem; font-weight:600; color:#444; }
+    .editor-textarea{
+      width:100%; font-family:'Noto Sans KR', monospace; font-size:0.9rem;
+      line-height:1.8; border:1px solid #ddd; border-radius:8px; padding:12px;
+      resize:vertical; min-height:300px; box-sizing:border-box;
+    }
+    .editor-footer {
+      display:flex; gap:10px; flex-wrap:wrap;
+      background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:12px;
+    }
+    .realtime-panel{
+      background:#fff; border:1px solid #e0e0e0; border-radius:10px;
+      padding:14px; max-height:80vh; overflow-y:auto;
+    }
+    .check-panel-header {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid #eee;
+    }
+    .check-panel-title { font-weight:700; font-size:0.95rem; color:#2c3e50; }
+    .check-empty       { text-align:center; padding:20px; color:#888; }
+    .check-empty-icon  { font-size:2rem; margin-bottom:8px; }
+    .check-list        { display:flex; flex-direction:column; gap:8px; }
+    .check-item        { border-radius:6px; padding:10px; font-size:0.83rem; }
+    .check-item-error  { background:#fdf2f2; border-left:3px solid #e74c3c; }
+    .check-item-warning{ background:#fffbf0; border-left:3px solid #f39c12; }
+    .check-item-info   { background:#f0f7ff; border-left:3px solid #3498db; }
+    .check-item-header { display:flex; gap:6px; align-items:flex-start; margin-bottom:4px; }
+    .check-msg         { font-weight:500; }
+    .check-desc        { color:#666; font-size:0.8rem; margin-top:4px; }
+    .check-fix         { display:flex; align-items:center; gap:6px; margin-top:6px; font-size:0.82rem; }
+    .check-original    { background:#fde8e8; padding:2px 6px; border-radius:3px; }
+    .check-arrow       { color:#888; }
+    .check-suggestion  { background:#e8f5e9; padding:2px 6px; border-radius:3px; }
+    .check-summary-badges { display:flex; gap:4px; }
+    .spell-guide-steps { display:flex; flex-direction:column; gap:14px; }
+    .spell-step        { display:flex; align-items:flex-start; gap:12px; font-size:0.9rem; }
+    .step-num          {
+      background:#3498db; color:#fff; width:24px; height:24px;
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:0.8rem; font-weight:700; flex-shrink:0;
+    }
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.5);
+      display:flex; align-items:center; justify-content:center; z-index:1000;
+    }
+    .modal-box {
+      background:#fff; border-radius:12px; padding:24px;
+      width:90%; max-width:520px; max-height:85vh;
+      display:flex; flex-direction:column; gap:16px;
+    }
+    .modal-lg          { max-width:720px; }
+    .modal-header      { display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h3   { font-size:1.1rem; font-weight:700; }
+    .modal-close-btn   { background:none; border:none; font-size:1.1rem; cursor:pointer; }
+    .modal-body        { overflow-y:auto; flex:1; }
+    .modal-footer      { display:flex; justify-content:flex-end; gap:10px; }
+    kbd                { font-size:0.75rem; background:#eee; padding:1px 5px; border-radius:3px; }
+    @media(max-width:1024px) {
+      .editor-layout   { grid-template-columns:1fr; }
+      .editor-right    { position:static; }
+      .realtime-panel  { max-height:300px; }
+    }
+    @media(max-width:600px) {
+      .template-btn    { font-size:0.75rem; padding:4px 8px; }
+      .editor-footer   { flex-direction:column; }
+    }
+  </style>
+</body>
+</html>
