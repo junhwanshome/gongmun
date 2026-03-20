@@ -50,7 +50,7 @@
     .badge-draft     { background: #fff3cd; color: #856404; }
     .badge-completed { background: #d1e7dd; color: #0f5132; }
 
-    /* 버튼 공통 */
+    /* ── 버튼 공통 ───────────────────────────────────── */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -110,6 +110,7 @@
       min-height: 100%;
     }
 
+    /* 본문 영역: 남은 공간 모두 차지 */
     .doc-main-area { flex: 1; }
 
     /* ━━━ 기관정보 블록: 항상 하단 고정 ━━━ */
@@ -162,23 +163,95 @@
       margin: 0 0 20px 0;
     }
 
-    /* ④ 본문 */
+    /* ══════════════════════════════════════════
+       ④ 본문 영역 – 공문서 항목 스타일
+    ══════════════════════════════════════════ */
     .doc-body-area {
       font-size: 11pt;
       line-height: 1.8;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+    }
+
+    /* 일반 줄 */
+    .body-line {
+      display: block;
+      line-height: 1.8;
+      margin-bottom: 2px;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+
+    /* 빈 줄 간격 */
+    .body-blank {
+      height: 0.6em;
+    }
+
+    /* 항목 줄: 기호 + 내용 가로 정렬 */
+    .body-item {
+      display: flex;
+      align-items: flex-start;
+      line-height: 1.8;
+      margin-bottom: 2px;
+      word-break: keep-all;
+    }
+    .body-item-symbol {
+      flex-shrink: 0;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .body-item-content {
+      flex: 1;
+      white-space: pre-wrap;
+      word-break: keep-all;
+    }
+
+    /* 본문 없음 */
+    .body-empty { color: #aaa; }
+
+    /* 끝. 표시 (붙임 없을 때 본문 아래) */
+    .body-end-mark {
+      display: block;
+      font-size: 11pt;
+      margin-top: 4px;
+      margin-bottom: 16px;
     }
 
     /* ⑤ 붙임 */
     .doc-attach-area {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       font-size: 11pt;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      gap: 0;
     }
-    .doc-attach-label { width: 5em; font-weight: 600; white-space: nowrap; }
-    .doc-attach-colon { margin: 0 6px; }
-    .doc-attach-value { flex: 1; }
+    .doc-attach-label {
+      flex-shrink: 0;
+      font-weight: 600;
+      white-space: nowrap;
+      margin-right: 1em;   /* 붙임 뒤 1자 공백 */
+    }
+    .doc-attach-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    /* 붙임 1개 */
+    .doc-attach-item {
+      display: block;
+      line-height: 1.8;
+    }
+    /* 붙임 2개 이상 */
+    .doc-attach-item-row {
+      display: flex;
+      align-items: flex-start;
+      line-height: 1.8;
+    }
+    .doc-attach-num {
+      flex-shrink: 0;
+      font-weight: 600;
+      min-width: 1.8em;
+    }
+    .doc-attach-item-text { flex: 1; }
 
     /* ⑥ 발신명의 */
     .doc-sender-area {
@@ -204,7 +277,6 @@
       align-items: center;
       gap: 24px;
       margin-bottom: 0;
-      padding-bottom: 0;
       line-height: 1.4;
     }
     .doc-approval-cell {
@@ -214,11 +286,7 @@
       gap: 0;
       font-size: 10pt;
     }
-    .doc-approval-title {
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    /* ★★★ 이름 공간: 밑줄·테두리 없이 빈 공간만 확보 ★★★ */
+    .doc-approval-title { font-weight: 600; white-space: nowrap; }
     .doc-approval-sign {
       display: inline-block;
       width: 60px;
@@ -253,16 +321,15 @@
     .doc-exec-spacer { flex: 1; }
     .doc-exec-recv   { white-space: nowrap; font-size: 10pt; }
 
-    /* ★★★ 접수 날짜 공간: 0000.00.00 입력 너비 확보 ★★★ */
+    /* 접수 날짜 공간: 0000.00.00 입력 너비 확보 */
     .doc-exec-recv-space {
       display: inline-block;
-      width: 6.5em;   /* "0000.00.00" 글자 너비에 맞춤 */
+      width: 6.5em;
       height: 1.2em;
       vertical-align: baseline;
-      /* 테두리·밑줄 없음 */
     }
 
-    /* ⑨ 주소·연락처 – hr 없음 */
+    /* ⑨ 주소·연락처 */
     .doc-footer-wrap    { margin-top: 4px; }
     .doc-footer-addr    { font-size: 9pt; color: #333; margin-bottom: 2px; }
     .doc-footer-contact { font-size: 9pt; color: #333; }
