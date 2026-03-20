@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기관 설정 - 공문서 작성 도우미</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- 헤더 -->
+  <header class="header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="index.html" class="header-logo">
+          <span>🏛️</span>
+          공문서 작성 도우미
+        </a>
+        <nav class="header-nav">
+          <a href="index.html">🏠 홈</a>
+          <a href="editor.html">✍️ 새 문서</a>
+          <a href="settings.html">⚙️ 기관설정</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 -->
+  <main class="main-content">
+    <div class="container">
+      <div class="settings-page">
+
+        <!-- 페이지 타이틀 -->
+        <div style="display:flex;align-items:center;
+          justify-content:space-between;margin-bottom:24px;
+          flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="font-size:22px;font-weight:700;
+              color:var(--gray-800)">
+              ⚙️ 기관 설정
+            </h2>
+            <p style="font-size:13px;color:var(--gray-500);
+              margin-top:4px">
+              기관명과 결재라인을 설정하면
+              공문서 작성이 더 편리해요
+            </p>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline"
+              id="reset-settings-btn">
+              🔄 초기화
+            </button>
+            <button class="btn btn-primary"
+              id="save-settings-btn">
+              💾 저장하기
+            </button>
+          </div>
+        </div>
+
+        <!-- 기관 기본 정보 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              🏛️ 기관 기본 정보
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required">
+              기관명
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              id="org-name"
+              placeholder="예: ○○사회복지관, ○○노인복지센터"
+              maxlength="50"
+            />
+            <div class="form-hint">
+              공문서 발신명의에 사용돼요
+              (예: ○○사회복지관장)
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 결재라인 설정 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              ✍️ 결재라인 설정
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline"
+                id="default-approval-btn">
+                기본값
+              </button>
+              <button class="btn btn-sm btn-outline"
+                id="preview-approval-btn">
+                미리보기
+              </button>
+              <button class="btn btn-sm btn-primary"
+                id="add-approval-btn">
+                + 단계 추가
+              </button>
+            </div>
+          </div>
+
+          <!-- 안내 -->
+          <div class="guide-panel" style="margin-bottom:16px">
+            <div class="guide-panel-title">
+              💡 결재라인 안내
+            </div>
+            <ul class="guide-list">
+              <li>위에서 아래 순서로 결재해요</li>
+              <li>최소 2단계, 최대 7단계까지 설정해요</li>
+              <li>이름은 나중에 수정 가능해요</li>
+              <li>직위만 입력해도 돼요</li>
+            </ul>
+          </div>
+
+          <!-- 결재라인 목록 -->
+          <div id="approval-levels">
+            <!-- js로 렌더링 -->
+          </div>
+
+          <!-- 미리보기 -->
+          <div id="approval-preview"
+            style="display:none;margin-top:16px;
+              padding:12px;background:var(--accent);
+              border-radius:var(--border-radius);
+              font-size:13px">
+            <strong>결재라인 미리보기</strong>
+            <div id="approval-preview-text"
+              style="margin-top:8px;color:var(--primary);
+                font-weight:600">
+            </div>
+          </div>
+
+          <!-- 결재란 미리보기 테이블 -->
+          <div style="margin-top:16px">
+            <div style="font-size:13px;font-weight:600;
+              color:var(--gray-700);margin-bottom:8px">
+              결재란 미리보기
+            </div>
+            <div id="approval-table-preview">
+              <!-- js로 렌더링 -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 자주 쓰는 수신처 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              📮 자주 쓰는 수신처
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline"
+                id="default-receiver-btn">
+                기본값
+              </button>
+              <button class="btn btn-sm btn-primary"
+                id="add-receiver-btn">
+                + 수신처 추가
+              </button>
+            </div>
+          </div>
+
+          <!-- 안내 -->
+          <div class="guide-panel" style="margin-bottom:16px">
+            <div class="guide-panel-title">
+              💡 수신처 안내
+            </div>
+            <ul class="guide-list">
+              <li>문서 작성시 수신처 목록에서 선택해요</li>
+              <li>자주 쓰는 수신처를 미리 저장해요</li>
+              <li>수신자와 담당부서를 함께 저장해요</li>
+            </ul>
+          </div>
+
+          <!-- 컬럼 헤더 -->
+          <div style="display:flex;gap:8px;
+            margin-bottom:8px;padding:0 8px">
+            <div style="flex:1;font-size:12px;
+              font-weight:600;color:var(--gray-600)">
+              수신자 직위
+            </div>
+            <div style="flex:1;font-size:12px;
+              font-weight:600;color:var(--gray-600)">
+              담당부서
+            </div>
+            <div style="width:32px"></div>
+          </div>
+
+          <!-- 수신처 목록 -->
+          <div id="receiver-list">
+            <!-- js로 렌더링 -->
+          </div>
+
+        </div>
+
+        <!-- 저장 버튼 (하단) -->
+        <div style="display:flex;justify-content:center;
+          gap:12px;margin-top:8px;margin-bottom:40px">
+          <a href="index.html" class="btn btn-outline btn-lg">
+            취소
+          </a>
+          <button class="btn btn-primary btn-lg"
+            id="save-settings-btn-bottom">
+            💾 설정 저장하기
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- 스크립트 -->
+  <script src="data/rules.js"></script>
+  <script src="data/templates.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/settings.js"></script>
+
+  <!-- 추가 스타일 -->
+  <style>
+    /* 결재라인 테이블 미리보기 */
+    #approval-table-preview table {
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    #approval-table-preview th,
+    #approval-table-preview td {
+      border: 1px solid var(--gray-400);
+      padding: 8px 16px;
+      text-align: center;
+      min-width: 70px;
+    }
+
+    #approval-table-preview th {
+      background: var(--gray-100);
+      font-weight: 600;
+    }
+
+    #approval-table-preview td {
+      height: 50px;
+      color: var(--gray-500);
+      font-size: 12px;
+    }
+  </style>
+
+  <!-- 결재란 미리보기 업데이트 스크립트 -->
+  <script>
+    // 결재란 테이블 미리보기 업데이트
+    function updateApprovalTablePreview() {
+      const settings = Storage.getSettings();
+      const levels = settings.approvalLevels;
+      const container = document.getElementById(
+        'approval-table-preview'
+      );
+      if (!container || !levels.length) return;
+
+      let html = `<table>`;
+
+      // 직위 행
+      html += `<tr>`;
+      levels.forEach(l => {
+        html += `<th>${escapeHtml(l.title || '미입력')}</th>`;
+      });
+      html += `</tr>`;
+
+      // 서명 행
+      html += `<tr>`;
+      levels.forEach(l => {
+        html += `<td>${escapeHtml(l.name || '서명')}</td>`;
+      });
+      html += `</tr>`;
+
+      html += `</table>`;
+      container.innerHTML = html;
+    }
+
+    // 설정 변경시 미리보기 업데이트
+    document.addEventListener('DOMContentLoaded', () => {
+      updateApprovalTablePreview();
+
+      // 입력 변경 감지
+      document.addEventListener('input', (e) => {
+        if (e.target.closest('#approval-levels')) {
+          setTimeout(updateApprovalTablePreview, 300);
+        }
+      });
+    });
+
+    // settings.js의 renderApprovalLevels 후 미리보기 업데이트
+    const _originalRender = window.renderApprovalLevels;
+    if (typeof renderApprovalLevels === 'function') {
+      const originalRenderApproval = renderApprovalLevels;
+      window.renderApprovalLevels = function(levels) {
+        originalRenderApproval(levels);
+        updateApprovalTablePreview();
+      };
+    }
+
+    // 하단 저장 버튼
+    document.addEventListener('DOMContentLoaded', () => {
+      const bottomBtn = document.getElementById(
+        'save-settings-btn-bottom'
+      );
+      if (bottomBtn) {
+        bottomBtn.addEventListener('click', saveAllSettings);
+      }
+    });
+  </script>
+
+</body>
+</html>
