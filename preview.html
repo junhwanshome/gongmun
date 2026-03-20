@@ -84,40 +84,47 @@
 
     /* ══════════════════════════════
        수신·경유·참조·제목
-       ★ 레이블+콜론 하나의 span으로 묶음
+       ★ doc-row-label: width auto (글자 딱 맞게)
+       ★ doc-row-colon: 콜론 고정 span
+       ★ doc-row-value: 한 칸 띄우고 시작
        ★ 글씨 크기 11pt 통일
     ══════════════════════════════ */
     .doc-meta-area { margin-bottom: 8px; }
-    .doc-meta-row {
+
+    .doc-meta-row,
+    .doc-title-area {
       display: flex; align-items: baseline;
       font-size: 11pt; font-weight: 400;
       line-height: 1.7; margin-bottom: 3px;
     }
 
-    /* ★ 레이블+콜론 통합 span
-       width 고정으로 세 줄 콜론 위치 맞춤 */
-    .doc-meta-label-colon {
+    /* 레이블: 글자 딱 맞게, 너비 고정 없음 */
+    .doc-row-label {
       display: inline-block;
-      width: 6em;              /* 수신/참조/제목 레이블+콜론 너비 통일 */
-      font-weight: 600;
       white-space: nowrap;
       flex-shrink: 0;
+      font-weight: 600;
       font-size: 11pt;
-      letter-spacing: 0;
-    }
-    .doc-meta-value {
-      flex: 1;
-      font-size: 11pt;
-      padding-left: 4px;      /* 콜론 뒤 한 칸 간격 */
+      /* ★ width 없음 – 글자 크기에 맞게 */
     }
 
-    /* 제목 행: 굵기만 강조 */
-    .doc-title-area {
-      display: flex; align-items: baseline;
-      font-size: 11pt; font-weight: 700;
-      padding-bottom: 8px;
+    /* 콜론: 양쪽 여백 최소화 */
+    .doc-row-colon {
+      flex-shrink: 0;
+      margin: 0 4px;    /* ★ 콜론 앞뒤 4px만 */
+      font-weight: 600;
     }
-    .doc-title-text { flex: 1; padding-left: 4px; }
+
+    /* 값: 나머지 공간 */
+    .doc-row-value,
+    .doc-title-text {
+      flex: 1;
+      font-size: 11pt;
+    }
+
+    /* 제목만 굵게 */
+    .doc-title-area { font-weight: 700; }
+
     .doc-title-divider {
       border: none; border-top: 1.5px solid #111;
       margin: 0 0 20px 0;
@@ -126,7 +133,7 @@
     /* ══════════════════════════════
        본문
        ★ white-space: normal
-       ★ padding-left 로만 들여쓰기
+       ★ padding-left 1em 단위 들여쓰기
     ══════════════════════════════ */
     .doc-body-area { font-size: 11pt; margin-bottom: 16px; }
     .doc-body-line {
@@ -139,8 +146,7 @@
 
     /* ══════════════════════════════
        붙임
-       ★ 레이블 뒤 &nbsp;&nbsp; 두 칸 직접 삽입
-       ★ gap 요소 제거
+       ★ 레이블 뒤 &nbsp; 한 칸
     ══════════════════════════════ */
     .doc-attach-area {
       display: flex; align-items: flex-start;
