@@ -1,6 +1,6 @@
 /**
  * js/editor.js
- * 공문서 에디터 - 셀 세로 높이 2배 확대
+ * 공문서 에디터 - 표 텍스트 변환 개선 + 기본 셀 크기 확대
  */
 (function () {
   'use strict';
@@ -126,39 +126,6 @@
   };
 
   /* ══════════════════════════════════════════════
-     ★ 셀 스타일 상수 (세로 높이 2배)
-        padding 상하: 10px → 20px
-        min-height: 36px → 72px
-        line-height: 1.6 → 2.0
-  ══════════════════════════════════════════════ */
-  var CELL_STYLE_TH = [
-    'border:1.5px solid #2c3e50',
-    'padding:20px 14px',       /* ★ 상하 패딩 2배 */
-    'min-width:80px',
-    'min-height:72px',         /* ★ 최소 높이 2배 */
-    'background:#eaf2fb',
-    'font-weight:700',
-    'text-align:center',
-    'vertical-align:middle',
-    'word-break:keep-all',
-    'color:#1a252f',
-    'letter-spacing:0.02em',
-    'line-height:2.0'          /* ★ 행 높이 2배 */
-  ].join(';');
-
-  var CELL_STYLE_TD = [
-    'border:1px solid #aab7c4',
-    'padding:20px 14px',       /* ★ 상하 패딩 2배 */
-    'min-width:80px',
-    'min-height:72px',         /* ★ 최소 높이 2배 */
-    'background:#fff',
-    'vertical-align:middle',
-    'word-break:keep-all',
-    'color:#2c3e50',
-    'line-height:2.0'          /* ★ 행 높이 2배 */
-  ].join(';');
-
-  /* ══════════════════════════════════════════════
      초기화
   ══════════════════════════════════════════════ */
   function initEditor() {
@@ -263,6 +230,7 @@
 
     container.innerHTML = html;
 
+    /* 일반 입력 이벤트 */
     container.querySelectorAll('input, textarea').forEach(function (el) {
       el.addEventListener('input', function () {
         isModified = true;
@@ -272,6 +240,7 @@
       });
     });
 
+    /* rich 편집기 이벤트 */
     var richEl = container.querySelector('.body-editor');
     if (richEl) {
       richEl.addEventListener('input', function () {
@@ -357,13 +326,16 @@
   }
 
   /* ══════════════════════════════════════════════
-     HTML → 텍스트 변환
+     ★ HTML → 텍스트 변환 (개선판)
+        표 → 구분선 없이 공백 정렬 텍스트로
+        나머지 → 줄글
   ══════════════════════════════════════════════ */
   function richToText(html) {
     if (!html) return '';
     var div = document.createElement('div');
     div.innerHTML = html;
 
+    /* ── 표 → 공백 정렬 텍스트 (구분선 없음) ── */
     div.querySelectorAll('table').forEach(function (table) {
       var rows = Array.from(table.querySelectorAll('tr'));
       var grid = rows.map(function (tr) {
@@ -375,6 +347,7 @@
       var cols = grid.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
       if (cols === 0) { table.remove(); return; }
 
+      /* 열 너비 계산 (한글 2바이트 기준) */
       var widths = [];
       for (var c = 0; c < cols; c++) {
         var max = 2;
@@ -389,29 +362,35 @@
         widths.push(max);
       }
 
+      /* ★ 셀 패딩: 구분선 없이 | 로만 구분 */
       function padCell(text, width) {
         var bytes = 0;
         for (var i = 0; i < text.length; i++) {
           bytes += text.charCodeAt(i) > 127 ? 2 : 1;
         }
+        /* 좌우 공백 1칸 + 우측 정렬 패딩 */
         return ' ' + text + ' '.repeat(Math.max(1, width - bytes + 1));
       }
 
       var textLines = [];
+
       grid.forEach(function (row, ri) {
         var line = widths.map(function (w, ci) {
           return padCell(row[ci] || '', w);
         }).join('|');
+
+        /* 헤더 행 앞뒤에 구분선 대신 빈 줄 */
         if (ri === 0) textLines.push('');
         textLines.push(line);
         if (ri === 0) {
+          /* 헤더 아래 점선 */
           var dashes = widths.map(function (w) {
             return '-'.repeat(w + 2);
           }).join('+');
           textLines.push(dashes);
         }
       });
-      textLines.push('');
+      textLines.push(''); /* 표 아래 빈 줄 */
 
       var pre = document.createElement('pre');
       pre.style.cssText = 'font-family:inherit;margin:0;line-height:1.7;white-space:pre;';
@@ -419,8 +398,15 @@
       table.replaceWith(pre);
     });
 
-    div.querySelectorAll('br').forEach(function (br) { br.replaceWith('\n'); });
-    div.querySelectorAll('p, div, li').forEach(function (el) { el.prepend('\n'); });
+    /* br → 줄바꿈 */
+    div.querySelectorAll('br').forEach(function (br) {
+      br.replaceWith('\n');
+    });
+
+    /* 블록 요소 → 줄바꿈 */
+    div.querySelectorAll('p, div, li').forEach(function (el) {
+      el.prepend('\n');
+    });
 
     return (div.textContent || div.innerText || '')
       .replace(/\n{3,}/g, '\n\n')
@@ -428,7 +414,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     금액 천단위 콤마 변환
+     ★ 금액 천단위 콤마 변환
   ══════════════════════════════════════════════ */
   function convertAmount(text) {
     if (!text) return text;
@@ -571,21 +557,51 @@
     return document.querySelectorAll('.body-editor .selected');
   }
 
-  /* ★ 표 삽입 - 세로 높이 2배 적용 */
+  /* ★ 표 삽입 - 기본 셀 크기 확대 */
   function insertTable(rows, cols, hasHeader) {
     var editor = document.querySelector('.body-editor');
     if (!editor) return;
     editor.focus();
-
-    var editorWidth = editor.offsetWidth || 400;
-    var cellWidth   = Math.max(100, Math.floor((editorWidth - 20) / cols));
 
     var tableStyle = [
       'border-collapse:collapse',
       'width:100%',
       'margin:10px 0',
       'font-size:0.88rem',
-      'table-layout:fixed'
+      'table-layout:fixed'          /* 열 너비 균등 분배 */
+    ].join(';');
+
+    /* ★ 셀 너비: 편집기 너비 ÷ 열 수, 최소 100px */
+    var editorWidth = editor.offsetWidth || 400;
+    var cellWidth   = Math.max(100, Math.floor((editorWidth - 20) / cols));
+
+    var thStyle = [
+      'border:1.5px solid #2c3e50',
+      'padding:10px 14px',          /* ★ 패딩 확대 */
+      'width:' + cellWidth + 'px',  /* ★ 셀 너비 지정 */
+      'min-width:80px',             /* ★ 최소 너비 80px */
+      'min-height:36px',            /* ★ 최소 높이 */
+      'background:#eaf2fb',
+      'font-weight:700',
+      'text-align:center',
+      'vertical-align:middle',
+      'word-break:keep-all',
+      'color:#1a252f',
+      'letter-spacing:0.02em',
+      'line-height:1.6'             /* ★ 행 높이 */
+    ].join(';');
+
+    var tdStyle = [
+      'border:1px solid #aab7c4',
+      'padding:10px 14px',          /* ★ 패딩 확대 */
+      'width:' + cellWidth + 'px',  /* ★ 셀 너비 지정 */
+      'min-width:80px',             /* ★ 최소 너비 80px */
+      'min-height:36px',            /* ★ 최소 높이 */
+      'background:#fff',
+      'vertical-align:middle',
+      'word-break:keep-all',
+      'color:#2c3e50',
+      'line-height:1.6'             /* ★ 행 높이 */
     ].join(';');
 
     var html = '<table style="' + tableStyle + '">';
@@ -594,9 +610,7 @@
       for (var c = 0; c < cols; c++) {
         var isHeader = hasHeader && r === 0;
         var tag      = isHeader ? 'th' : 'td';
-        /* ★ 셀 너비 + 공통 스타일 상수 사용 */
-        var extraStyle = ';width:' + cellWidth + 'px;';
-        var style = (isHeader ? CELL_STYLE_TH : CELL_STYLE_TD) + extraStyle;
+        var style    = isHeader ? thStyle : tdStyle;
         html += '<' + tag
               + ' style="' + style + '"'
               + ' contenteditable="true">'
@@ -621,7 +635,7 @@
     updatePreview();
   }
 
-  /* ★ 행 추가 - 높이 스타일 상수 사용 */
+  /* ★ 행 추가 - 셀 크기 유지 */
   function addRow() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -630,10 +644,11 @@
     var newTr = document.createElement('tr');
     cells.forEach(function (refCell) {
       var td = document.createElement('td');
-      /* 기존 셀의 width만 유지하고 나머지는 TD 스타일 상수 적용 */
-      var wMatch = refCell.style.cssText.match(/width:[^;]+/);
-      td.style.cssText = CELL_STYLE_TD + (wMatch ? ';' + wMatch[0] : '');
-      td.contentEditable = 'true';
+      td.style.cssText = refCell.style.cssText.replace('background:#eaf2fb','background:#fff')
+                                              .replace('font-weight:700','')
+                                              .replace('text-align:center','');
+      td.style.background = '#fff';
+      td.contentEditable  = 'true';
       newTr.appendChild(td);
     });
     tr.insertAdjacentElement('afterend', newTr);
@@ -641,7 +656,7 @@
     updatePreview();
   }
 
-  /* ★ 열 추가 - 높이 스타일 상수 사용 */
+  /* ★ 열 추가 - 셀 크기 유지 */
   function addCol() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -651,7 +666,13 @@
       var ref     = tr.children[cellIdx];
       var isFirst = ri === 0;
       var newCell = document.createElement(isFirst ? 'th' : 'td');
-      newCell.style.cssText = isFirst ? CELL_STYLE_TH : CELL_STYLE_TD;
+      if (ref) {
+        newCell.style.cssText = ref.style.cssText;
+      } else {
+        newCell.style.cssText = isFirst
+          ? 'border:1.5px solid #2c3e50;padding:10px 14px;min-width:80px;min-height:36px;background:#eaf2fb;font-weight:700;text-align:center;vertical-align:middle;word-break:keep-all;color:#1a252f;line-height:1.6;'
+          : 'border:1px solid #aab7c4;padding:10px 14px;min-width:80px;min-height:36px;background:#fff;vertical-align:middle;word-break:keep-all;color:#2c3e50;line-height:1.6;';
+      }
       newCell.contentEditable = 'true';
       if (ref) ref.insertAdjacentElement('afterend', newCell);
       else tr.appendChild(newCell);
@@ -715,18 +736,18 @@
     var rs = cell.rowSpan || 1;
     var cs = cell.colSpan || 1;
     if (rs <= 1 && cs <= 1) { if (typeof showToast === 'function') showToast('병합된 셀이 아닙니다.', 'warning'); return; }
-    var tr      = cell.closest('tr');
-    var table   = cell.closest('table');
+    var tr    = cell.closest('tr');
+    var table = cell.closest('table');
     var allRows = Array.from(table.querySelectorAll('tr'));
-    var rIdx    = allRows.indexOf(tr);
-    var cIdx    = Array.from(tr.children).indexOf(cell);
+    var rIdx  = allRows.indexOf(tr);
+    var cIdx  = Array.from(tr.children).indexOf(cell);
     cell.rowSpan = 1;
     cell.colSpan = 1;
     for (var r = 0; r < rs; r++) {
       for (var c = 0; c < cs; c++) {
         if (r === 0 && c === 0) continue;
         var newCell = document.createElement('td');
-        newCell.style.cssText  = CELL_STYLE_TD;
+        newCell.style.cssText = 'border:1px solid #aab7c4;padding:10px 14px;min-width:80px;min-height:36px;background:#fff;vertical-align:middle;word-break:keep-all;color:#2c3e50;line-height:1.6;';
         newCell.contentEditable = 'true';
         var targetRow = allRows[rIdx + r];
         if (!targetRow) continue;
