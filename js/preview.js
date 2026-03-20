@@ -163,10 +163,7 @@
   function buildBody(raw) {
     if (!raw || !raw.trim()) return '<p class="body-empty">(본문 없음)</p>';
 
-    /* ── 용어 순화 ── */
     raw = applyTermReplace(raw);
-
-    /* ── 날짜 자동 변환 ── */
     raw = applyDateFormat(raw);
 
     const lines = raw.split('\n');
@@ -174,16 +171,12 @@
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-
-      /* 빈 줄 → 단락 간격 */
       if (!line.trim()) {
         html += '<div class="body-blank"></div>';
         continue;
       }
-
-      /* 항목 기호 감지 및 들여쓰기 적용 */
       const parsed = parseBodyLine(line);
-      html += renderBodyLine(parsed, i === lines.length - 1);
+      html += renderBodyLine(parsed);
     }
 
     return html;
@@ -191,164 +184,134 @@
 
   /* ── 항목 기호 감지 ──────────────────────────────────── */
   function parseBodyLine(line) {
-    /* 들여쓰기 단계별 정규식 */
     const patterns = [
-      /* 8단계: ㉮㉯㉰㉱... */
-      { level: 8, re: /^(\s*)(㉮|㉯|㉰|㉱|㉲|㉳|㉴|㉵|㉶|㉷|㉸|㉹|㉺|㉻)(\s)(.*)/ },
-      /* 7단계: ①②③... */
-      { level: 7, re: /^(\s*)(①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩)(\s)(.*)/ },
-      /* 6단계: (가)(나)... */
-      { level: 6, re: /^(\s*)\((가|나|다|라|마|바|사|아|자|차|카|타|파|하)\)(\s)(.*)/ },
-      /* 5단계: (1)(2)... */
-      { level: 5, re: /^(\s*)\((\d+)\)(\s)(.*)/ },
-      /* 4단계: 가)나)... */
-      { level: 4, re: /^(\s*)(가|나|다|라|마|바|사|아|자|차|카|타|파|하)\)(\s)(.*)/ },
-      /* 3단계: 1)2)... */
-      { level: 3, re: /^(\s*)(\d+)\)(\s)(.*)/ },
-      /* 2단계: 가.나.... */
-      { level: 2, re: /^(\s*)(가|나|다|라|마|바|사|아|자|차|카|타|파|하)\.(\s)(.*)/ },
-      /* 1단계: 1.2.... */
-      { level: 1, re: /^(\s*)(\d+)\.(\s)(.*)/ },
+      { level: 8, re: /^(\s*)(㉮|㉯|㉰|㉱|㉲|㉳|㉴|㉵|㉶|㉷|㉸|㉹|㉺|㉻)\s(.+)/ },
+      { level: 7, re: /^(\s*)(①|②|③|④|⑤|⑥|⑦|⑧|⑨|⑩)\s(.+)/ },
+      { level: 6, re: /^(\s*)\((가|나|다|라|마|바|사|아|자|차|카|타|파|하)\)\s(.+)/ },
+      { level: 5, re: /^(\s*)\((\d+)\)\s(.+)/ },
+      { level: 4, re: /^(\s*)(가|나|다|라|마|바|사|아|자|차|카|타|파|하)\)\s(.+)/ },
+      { level: 3, re: /^(\s*)(\d+)\)\s(.+)/ },
+      { level: 2, re: /^(\s*)(가|나|다|라|마|바|사|아|자|차|카|타|파|하)\.\s(.+)/ },
+      { level: 1, re: /^(\s*)(\d+)\.\s(.+)/ },
     ];
 
     for (const p of patterns) {
       const m = line.match(p.re);
       if (m) {
-        /* 기호 조합 */
-        let symbol, content;
-        if (p.level === 5 || p.level === 6) {
-          /* (1) / (가) 형태 */
-          symbol  = `(${m[2]})`;
-          content = m[4];
-        } else {
-          symbol  = p.level === 3 || p.level === 4 ? `${m[2]})` : `${m[2]}.`;
-          if (p.level === 7 || p.level === 8) symbol = m[2];
-          content = m[4];
-        }
-        return { level: p.level, symbol, content: content.trim() };
+        let symbol;
+        if (p.level === 5)      symbol = `(${m[2]})`;
+        else if (p.level === 6) symbol = `(${m[2]})`;
+        else if (p.level === 7 || p.level === 8) symbol = m[2];
+        else if (p.level === 3 || p.level === 4) symbol = `${m[2]})`;
+        else                    symbol = `${m[2]}.`;
+        return { level: p.level, symbol, content: m[3].trim() };
       }
     }
 
-    /* 기호 없는 일반 줄 */
     return { level: 0, symbol: '', content: line };
   }
 
   /* ── 항목 줄 HTML 생성 ───────────────────────────────── */
-  function renderBodyLine(parsed, isLast) {
+  function renderBodyLine(parsed) {
     const { level, symbol, content } = parsed;
 
-    /* 들여쓰기: 1단계=0em, 2단계=2em, 3단계=4em ... */
-    const indentEm = level > 0 ? (level - 1) * 2 : 0;
+    /* ★ 들여쓰기: 2단계=2em, 3단계=4em, 4단계=6em ... ★
+       1단계는 0em (왼쪽 기본선)                          */
+    const indentEm = level > 1 ? (level - 1) * 2 : 0;
 
-    /* 쌍점(:) 뒤 1칸 띄우기 자동 적용 */
     const formattedContent = formatColon(escapeHtml(content));
 
-    let lineHtml = '';
     if (level === 0) {
-      /* 일반 줄 */
-      lineHtml = `<div class="body-line" style="padding-left:${indentEm}em;">${formattedContent}</div>`;
-    } else {
-      /* 항목 줄: 기호 + 내용 정렬 */
-      const symbolWidth = getSymbolWidth(level);
-      lineHtml = `
-        <div class="body-item" style="padding-left:${indentEm}em;">
-          <span class="body-item-symbol" style="min-width:${symbolWidth}em;">${escapeHtml(symbol)}&nbsp;</span>
-          <span class="body-item-content">${formattedContent}</span>
-        </div>`;
+      return `<div class="body-line"
+                   style="padding-left:${indentEm}em;"
+              >${formatColon(escapeHtml(content))}</div>`;
     }
 
-    return lineHtml;
+    const symbolWidth = getSymbolWidth(level);
+    return `
+      <div class="body-item" style="padding-left:${indentEm}em;">
+        <span class="body-item-symbol"
+              style="min-width:${symbolWidth}em;"
+        >${escapeHtml(symbol)}&nbsp;</span>
+        <span class="body-item-content">${formattedContent}</span>
+      </div>`;
   }
 
-  /* ── 기호 너비 (단계별) ──────────────────────────────── */
+  /* ── 기호 너비 ───────────────────────────────────────── */
   function getSymbolWidth(level) {
-    const widths = { 1: 1.5, 2: 1.5, 3: 1.8, 4: 1.8, 5: 2.2, 6: 2.2, 7: 1.2, 8: 1.2 };
-    return widths[level] || 1.5;
+    const w = { 1:1.6, 2:1.6, 3:1.8, 4:1.8, 5:2.2, 6:2.2, 7:1.4, 8:1.4 };
+    return w[level] || 1.6;
   }
 
   /* ── 쌍점(:) 뒤 1칸 띄우기 ──────────────────────────── */
   function formatColon(str) {
-    /* 이미 ": " 인 경우는 그대로, ":"만 있으면 ": " 로 변환
-       단, 시간 표기(09:30 등)는 제외                        */
+    /* 시간(09:30) 제외하고 콜론 뒤 공백 없으면 추가 */
     return str.replace(/(:)(?!\s)(?!\d{2})/g, ': ');
   }
 
   /* ── 날짜 자동 변환 ──────────────────────────────────── */
   function applyDateFormat(str) {
-    /* 2024.09.06 → 2024. 9. 6. */
-    str = str.replace(
+    return str.replace(
       /(\d{4})\.0?(\d{1,2})\.0?(\d{1,2})\.?/g,
       (_, y, m, d) => `${y}. ${parseInt(m)}. ${parseInt(d)}.`
     );
-    /* 2024.9.6 → 2024. 9. 6. (마침표 뒤 공백 없는 경우) */
-    str = str.replace(
-      /(\d{4})\.\s*0?(\d{1,2})\.\s*0?(\d{1,2})\.?/g,
-      (_, y, m, d) => `${y}. ${parseInt(m)}. ${parseInt(d)}.`
-    );
-    return str;
   }
 
-  /* ── 용어 순화 자동 치환 ─────────────────────────────── */
+  /* ── 용어 순화 ───────────────────────────────────────── */
   function applyTermReplace(str) {
     const terms = [
-      ['홈페이지', '누리집'],
-      ['다운로드', '내려받기'],
-      ['매뉴얼', '설명서'],
-      ['체크리스트', '점검표'],
-      ['인프라', '기반'],
-      ['로드맵', '단계별 이행안'],
-      ['가이드북', '안내서'],
-      ['스크린도어', '안전문'],
-      ['당해', '그'],
-      ['금일', '오늘'],
-      ['향후', '앞으로'],
-      ['게첨하다', '걸다'],
-      ['징구', '요구'],
-      ['제고하다', '높이다'],
-      ['득하다', '받다'],
-      ['상이한', '서로 다른'],
-      ['부합하는', '맞는'],
-      ['공지 사항', '알림 사항'],
-      ['공지사항', '알림 사항'],
+      ['홈페이지','누리집'], ['다운로드','내려받기'],
+      ['매뉴얼','설명서'],   ['체크리스트','점검표'],
+      ['인프라','기반'],     ['로드맵','단계별 이행안'],
+      ['가이드북','안내서'], ['스크린도어','안전문'],
+      ['당해','그'],         ['금일','오늘'],
+      ['향후','앞으로'],     ['게첨하다','걸다'],
+      ['징구','요구'],       ['제고하다','높이다'],
+      ['득하다','받다'],     ['상이한','서로 다른'],
+      ['부합하는','맞는'],   ['공지 사항','알림 사항'],
+      ['공지사항','알림 사항'],
     ];
-    terms.forEach(([from, to]) => {
-      str = str.split(from).join(to);
-    });
+    terms.forEach(([f, t]) => { str = str.split(f).join(t); });
     return str;
   }
 
   /* ═══════════════════════════════════════════════════════
-     붙임 렌더링 – 공문서 규칙 적용
-     - 1개: 번호 없이
-     - 2개 이상: 1. 2. 번호 자동
-     - 끝. 표시: 붙임 있으면 마지막 붙임 뒤에, 없으면 본문 뒤에
+     붙임 렌더링
+     - 1개: 번호 없이, 같은 줄 끝에 끝.
+     - 2개↑: 번호 자동, 마지막 줄 끝에 끝.
+     - 없음: 본문 아래 끝.
   ═══════════════════════════════════════════════════════ */
   function renderAttachments(f) {
     const raw = f.attachments || f.attach || '';
 
-    /* 붙임 없는 경우: 본문 끝에 끝. 표시 */
+    /* 붙임 없음 → 본문 바로 아래 끝. */
     if (!raw.trim()) {
       return `<div class="body-end-mark">&nbsp;&nbsp;끝.</div>`;
     }
 
-    /* 붙임 항목 분리 (줄바꿈 또는 / 로 구분) */
     const items = raw.split(/\n|\//).map(s => s.trim()).filter(Boolean);
 
     let html = '<div class="doc-attach-area">';
+
+    /* ★ 레이블: "붙  임" 뒤 1자 공백만 ★ */
     html += '<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>';
+    html += '<span class="doc-attach-gap"></span>';
     html += '<span class="doc-attach-body">';
 
     if (items.length === 1) {
-      /* 1개: 번호 없음 */
+      /* 1개: 번호 없음, 바로 내용 + 끝. */
       html += `<span class="doc-attach-item">${escapeHtml(items[0])}&nbsp;&nbsp;끝.</span>`;
     } else {
-      /* 2개 이상: 번호 자동 */
+      /* 2개↑: 번호 자동 */
       items.forEach((item, idx) => {
         const isLast = idx === items.length - 1;
-        html += `<div class="doc-attach-item-row">
-          <span class="doc-attach-num">${idx + 1}.&nbsp;</span>
-          <span class="doc-attach-item-text">${escapeHtml(item)}${isLast ? '&nbsp;&nbsp;끝.' : ''}</span>
-        </div>`;
+        html += `
+          <div class="doc-attach-item-row">
+            <span class="doc-attach-num">${idx + 1}.&nbsp;</span>
+            <span class="doc-attach-item-text">
+              ${escapeHtml(item)}${isLast ? '&nbsp;&nbsp;끝.' : ''}
+            </span>
+          </div>`;
       });
     }
 
@@ -393,17 +356,14 @@
 
   /* ── ⑧ 시행·접수 행 ─────────────────────────────────── */
   function renderExecRow(doc, settings, orgDetail, docNum, dateStr) {
-    const orgCode  = settings.orgCode  || orgDetail.orgCode
-                  || orgDetail.orgName || settings.orgName || '○○';
-
-    /* 날짜 자동 변환 적용 */
-    const formattedDate = dateStr ? applyDateFormat(dateStr) : '';
-
-    const execNum  = docNum
+    const orgCode   = settings.orgCode  || orgDetail.orgCode
+                   || orgDetail.orgName || settings.orgName || '○○';
+    const formatted = dateStr ? applyDateFormat(dateStr) : '';
+    const execNum   = docNum
       ? `${orgCode} ${docNum}`
       : `${orgCode} ${new Date().getFullYear()} - `;
-    const execDate = formattedDate
-      ? `(${formattedDate})`
+    const execDate  = formatted
+      ? `(${formatted})`
       : `(${new Date().getFullYear()}.　.　.)`;
 
     return `
