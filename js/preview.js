@@ -80,13 +80,13 @@
 
     let html = '';
 
-    /* ① 기관명 ──────────────────── 구분선 없음 */
+    /* ① 기관명 */
     html += `
       <div class="doc-header-area">
         <div class="doc-org-name">${escapeHtml(orgName)}</div>
       </div>`;
 
-    /* ② 수신·경유·참조 ───────────── 구분선 없음 */
+    /* ② 수신·경유·참조 */
     html += `<div class="doc-meta-area">`;
     html += `
         <div class="doc-meta-row">
@@ -112,7 +112,7 @@
     }
     html += `</div>`;
 
-    /* ③ 제목 ────────────────────── 구분선 없음 */
+    /* ③ 제목 */
     html += `
       <div class="doc-title-area">
         <span class="doc-title-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
@@ -120,7 +120,7 @@
         <span class="doc-title-text">${escapeHtml(title)}</span>
       </div>`;
 
-    /* ★ 구분선 1: 제목 바로 아래에만 ★ */
+    /* ★ 구분선: 제목 바로 아래에만 ★ */
     html += `<hr class="doc-title-divider">`;
 
     /* ④ 본문 */
@@ -144,7 +144,7 @@
         <span class="doc-sender-value">${escapeHtml(senderName)}</span>
       </div>`;
 
-    /* ★ 구분선 2: 발신명의 바로 아래 ★ */
+    /* ★ 구분선: 발신명의 바로 아래 ★ */
     html += `<hr class="doc-sender-divider">`;
 
     /* ⑦ 결재란 + 협조자 */
@@ -153,7 +153,7 @@
     /* ⑧ 시행·접수 행 */
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
 
-    /* ⑨ 하단 정보 (구분선 없음) */
+    /* ⑨ 하단 정보 – hr 완전 없음 */
     html += renderFooterInfo(doc, settings, orgDetail);
 
     container.innerHTML = html;
@@ -171,14 +171,12 @@
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
 
-    /* 결재자 목록: 설정값 없으면 기본값 사용 */
     const approverList = approvers.length
       ? approvers
       : [{ title: '담당', name: '' }, { title: '사무국장', name: '' }, { title: '원장', name: '' }];
 
     let html = '<div class="doc-approval-wrap">';
 
-    /* ── 결재자: 한 줄 가로 나열 ── */
     html += '<div class="doc-approval-row">';
     approverList.forEach(ap => {
       html += `
@@ -190,7 +188,6 @@
     });
     html += '</div>';
 
-    /* ── 협조자 행 ── */
     html += `
       <div class="doc-cooperator-row">
         <span class="doc-cooperator-label">협&nbsp;조&nbsp;자</span>
@@ -222,7 +219,8 @@
       </div>`;
   }
 
-  /* ── ⑨ 하단 정보: 시행·접수 아래 구분선 없음 ───────────── */
+  /* ── ⑨ 하단 정보: <hr> 완전 제거 ───────────────────────
+     ※ doc-footer-divider 포함 모든 <hr> 없음               */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
@@ -243,9 +241,9 @@
     if (email)    contactStr += `&nbsp;/&nbsp;${escapeHtml(email)}`;
     if (openness) contactStr += `&nbsp;/&nbsp;${escapeHtml(openness)}`;
 
+    /* ★ <hr> 없음 – 구분선 완전 제거 ★ */
     return `
       <div class="doc-footer-wrap">
-        <hr class="doc-footer-divider">
         <div class="doc-footer-addr">${addrStr}</div>
         <div class="doc-footer-contact">${contactStr}</div>
       </div>`;
