@@ -182,7 +182,7 @@
     return `<p>${escapeHtml(body).replace(/\n/g, '<br>')}</p>`;
   }
 
-  /* ── ⑦ 결재란 + 협조자: 공백 제거, 결재자 왼쪽 정렬 ────── */
+  /* ── ⑦ 결재란 + 협조자 ──────────────────────────────── */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
@@ -197,19 +197,16 @@
 
     let html = '<div class="doc-approval-wrap">';
 
-    /* 결재자: 왼쪽 정렬, 한 줄 가로 나열 */
     html += '<div class="doc-approval-row">';
     approverList.forEach(ap => {
       html += `
         <div class="doc-approval-cell">
-          <div class="doc-approval-title">${escapeHtml(ap.title || '')}</div>
-          <div class="doc-approval-sign"></div>
-          <div class="doc-approval-name">${escapeHtml(ap.name || '')}</div>
+          <span class="doc-approval-title">${escapeHtml(ap.title || '')}</span>
+          <span class="doc-approval-sign"></span>
         </div>`;
     });
     html += '</div>';
 
-    /* 협조자: 결재자 바로 아래, 공백 없음 */
     html += `
       <div class="doc-cooperator-row">
         <span class="doc-cooperator-label">협&nbsp;조&nbsp;자</span>
@@ -231,13 +228,17 @@
       ? `(${dateStr})`
       : `(${new Date().getFullYear()}.　.　.)`;
 
+    /* ★★★ 접수: 0000.00.00 쓸 수 있는 공간 확보 ★★★
+       - "접  수" 레이블 + "(" + 날짜입력공간(8em) + ")" 구조  */
     return `
       <div class="doc-exec-row">
         <span class="doc-exec-label">시&nbsp;&nbsp;&nbsp;행</span>
         <span class="doc-exec-value">${escapeHtml(execNum)}&nbsp;&nbsp;${escapeHtml(execDate)}</span>
         <span class="doc-exec-spacer"></span>
         <span class="doc-exec-label">접&nbsp;&nbsp;&nbsp;수</span>
-        <span class="doc-exec-recv">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+        <span class="doc-exec-recv">(</span>
+        <span class="doc-exec-recv-space"></span>
+        <span class="doc-exec-recv">)</span>
       </div>`;
   }
 
