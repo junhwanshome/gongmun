@@ -1,6 +1,6 @@
 /**
  * js/preview.js
- * 공문서 미리보기 — 기관명 아래 구분선, 결재란 테두리 없음
+ * 공문서 미리보기 — 구분선을 기관명 텍스트 border-bottom으로 바로 아래 붙임
  */
 (function () {
   'use strict';
@@ -16,10 +16,7 @@
     var id     = params.id;
     var type   = params.type || 'draft';
 
-    if (!id) {
-      showToast('문서 ID가 없습니다.', 'error');
-      return;
-    }
+    if (!id) { showToast('문서 ID가 없습니다.', 'error'); return; }
 
     currentType = type;
     currentDoc  = (type === 'doc') ? Storage.getDoc(id) : Storage.getDraft(id);
@@ -53,9 +50,9 @@
       }
     }
     if (currentType === 'doc') {
-      ['complete-btn', 'complete-btn-b'].forEach(function (id) {
+      ['complete-btn','complete-btn-b'].forEach(function (id) {
         var b = document.getElementById(id);
-        if (b) { b.disabled = true; b.style.opacity = '.5'; b.style.cursor = 'not-allowed'; }
+        if (b) { b.disabled=true; b.style.opacity='.5'; b.style.cursor='not-allowed'; }
       });
     }
   }
@@ -104,29 +101,48 @@
 
     var html = '';
 
-    /* ── 1. 기관명 ── */
-    html += '<div class="doc-header-area">';
+    /* ══════════════════════════════
+       1. 기관명 블록
+          — border-bottom 으로 구분선을
+            기관명 텍스트 바로 아래에 붙임
+    ══════════════════════════════ */
+    html += '<div class="doc-header-block">';
+
     if (classNo) {
       html += '<div class="doc-classno">분류번호: ' + escapeHtml(classNo) + '</div>';
     }
+
     if (logo) {
-      html += '<div class="doc-logo-wrap"><img class="doc-logo-img" src="' + logo + '" alt="기관로고"></div>';
+      /*
+       * 로고가 있을 때는 img 아래에 border-bottom 구분선을
+       * 별도 div로 표현 (img에 직접 border 주면 이미지 테두리처럼 보임)
+       */
+      html += '<div class="doc-logo-wrap">'
+            + '<img class="doc-logo-img" src="' + logo + '" alt="기관로고">'
+            + '</div>'
+            + '<div style="border-top:2px solid #111;width:100%;margin-top:8px;"></div>';
     } else {
+      /*
+       * 로고 없음 → 기관명 텍스트에 border-bottom 직접 적용
+       * .doc-org-name { border-bottom: 2px solid #111; padding-bottom: 6px; }
+       */
       html += '<div class="doc-org-name">' + escapeHtml(orgName) + '</div>';
     }
-    html += '</div>';
 
-    /* ★ 구분선: 기관명 바로 아래에만 ★ */
-    html += '<hr class="doc-org-divider">';
+    html += '</div>'; /* /doc-header-block */
 
-    /* ── 2. 수신·경유·참조 ── */
+    /* ══════════════════════════════
+       2. 수신·경유·참조
+    ══════════════════════════════ */
     html += '<div class="doc-meta-area">';
+
     if (via) {
       html += '<div class="doc-meta-row">'
             + '<span class="doc-meta-label">경&nbsp;&nbsp;유</span>'
             + '<span class="doc-meta-value">' + escapeHtml(via) + '</span>'
             + '</div>';
     }
+
     var recvDisplay = receiver;
     if (!recvDisplay) {
       var rcvs = (settings.receivers || [])
@@ -138,32 +154,40 @@
           + '<span class="doc-meta-label">수&nbsp;&nbsp;신</span>'
           + '<span class="doc-meta-value">' + escapeHtml(recvDisplay) + '</span>'
           + '</div>';
+
     if (reference) {
       html += '<div class="doc-meta-row">'
             + '<span class="doc-meta-label">참&nbsp;&nbsp;조</span>'
             + '<span class="doc-meta-value">' + escapeHtml(reference) + '</span>'
             + '</div>';
     }
-    html += '</div>';
 
-    /* ── 3. 제목 (구분선 없음) ── */
+    html += '</div>'; /* /doc-meta-area */
+
+    /* ══════════════════════════════
+       3. 제목
+    ══════════════════════════════ */
     html += '<div class="doc-title-area">'
           + '<span class="doc-title-label">제&nbsp;&nbsp;&nbsp;목:</span>'
           + '<span class="doc-title-text">' + escapeHtml(title) + '</span>'
           + '</div>';
 
-    /* ── 4. 본문 ── */
+    /* ══════════════════════════════
+       4. 본문
+    ══════════════════════════════ */
     html += buildBody(tmpl, f, body, purpose,
               eventDate, eventPlace, eventTarget,
               grantAmount, grantDate, sponsorName);
 
-    /* ── 5. 붙임 ── */
+    /* ══════════════════════════════
+       5. 붙임
+    ══════════════════════════════ */
     if (attachments && attachments.trim()) {
-      var items = attachments.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      var items = attachments.split('\n').map(function(s){return s.trim();}).filter(Boolean);
       html += '<div class="doc-attach-area">';
       html += '<div class="doc-attach-label">붙&nbsp;&nbsp;임</div>';
       items.forEach(function (item, idx) {
-        html += '<div class="doc-attach-item">' + (idx + 1) + '. ' + escapeHtml(item) + '&nbsp;&nbsp;1부.</div>';
+        html += '<div class="doc-attach-item">' + (idx+1) + '. ' + escapeHtml(item) + '&nbsp;&nbsp;1부.</div>';
       });
       html += '<div class="doc-end-mark">끝.</div>';
       html += '</div>';
@@ -171,13 +195,19 @@
       html += '<div class="doc-end-mark">끝.</div>';
     }
 
-    /* ── 6. 발신명의 ── */
+    /* ══════════════════════════════
+       6. 발신명의
+    ══════════════════════════════ */
     html += '<div class="doc-sender-area">' + escapeHtml(senderName) + '</div>';
 
-    /* ── 7. 결재란 ── */
+    /* ══════════════════════════════
+       7. 결재란
+    ══════════════════════════════ */
     html += renderApprovalBlock(settings, cooperators);
 
-    /* ── 8. 하단 정보 ── */
+    /* ══════════════════════════════
+       8. 하단 정보선
+    ══════════════════════════════ */
     html += renderFooterInfo(docNo, rcptNo, dateStr, orgName, address, contact, faxNo, homepage);
 
     container.innerHTML = html;
@@ -193,10 +223,8 @@
     var html = '<div class="doc-body-area">';
 
     if (tmpl === 'event') {
-      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span>'
-            + '<span>귀 기관의 무궁한 발전을 기원합니다.</span></div>';
-      html += '<div class="doc-body-item"><span class="doc-body-num">2.</span>'
-            + '<span>아래와 같이 행사를 안내드립니다.</span></div>';
+      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span><span>귀 기관의 무궁한 발전을 기원합니다.</span></div>';
+      html += '<div class="doc-body-item"><span class="doc-body-num">2.</span><span>아래와 같이 행사를 안내드립니다.</span></div>';
       html += '</div>';
       html += '<table class="doc-event-table">';
       var eRows = [
@@ -207,20 +235,15 @@
         ['내&nbsp;&nbsp;&nbsp;용', body]
       ];
       eRows.forEach(function (r) {
-        if (r[1]) {
-          html += '<tr><th>' + r[0] + '</th><td>' + escapeHtml(r[1]) + '</td></tr>';
-        }
+        if (r[1]) html += '<tr><th>' + r[0] + '</th><td>' + escapeHtml(r[1]) + '</td></tr>';
       });
       html += '</table>';
       if (purpose) {
-        html += '<div class="doc-body-area"><div class="doc-body-item">'
-              + '<span class="doc-body-num">3.</span>'
-              + '<span>' + escapeHtml(purpose) + '</span></div></div>';
+        html += '<div class="doc-body-area"><div class="doc-body-item"><span class="doc-body-num">3.</span><span>' + escapeHtml(purpose) + '</span></div></div>';
       }
 
     } else if (tmpl === 'sponsor') {
-      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span>'
-            + '<span>귀하의 따뜻한 후원에 진심으로 감사드립니다.</span></div>';
+      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span><span>귀하의 따뜻한 후원에 진심으로 감사드립니다.</span></div>';
       if (sponsorName) html += '<div class="doc-body-item"><span class="doc-body-num">2.</span><span>후원자: '   + escapeHtml(sponsorName) + '</span></div>';
       if (grantDate)   html += '<div class="doc-body-item"><span class="doc-body-num">3.</span><span>후원일자: ' + escapeHtml(grantDate)   + '</span></div>';
       if (grantAmount) html += '<div class="doc-body-item"><span class="doc-body-num">4.</span><span>후원금액: ' + escapeHtml(grantAmount) + '</span></div>';
@@ -231,9 +254,7 @@
       var paras = [purpose, body].filter(Boolean);
       if (paras.length === 0) paras = [''];
       paras.forEach(function (p, idx) {
-        html += '<div class="doc-body-item">'
-              + '<span class="doc-body-num">' + (idx + 1) + '.</span>'
-              + '<span>' + escapeHtml(p) + '</span></div>';
+        html += '<div class="doc-body-item"><span class="doc-body-num">' + (idx+1) + '.</span><span>' + escapeHtml(p) + '</span></div>';
       });
       html += '</div>';
     }
@@ -247,23 +268,16 @@
   function renderApprovalBlock(settings, cooperators) {
     var levels = settings.approvalLevels;
     if (!levels || levels.length === 0) {
-      levels = [
-        { title: '담당', name: '' },
-        { title: '과장', name: '' },
-        { title: '관장', name: '' }
-      ];
+      levels = [{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}];
     }
 
     var html = '<div class="doc-approval-area">';
 
-    /* 협조자 */
     if (cooperators.length) {
-      html += '<div class="doc-coop-block">';
-      html += '<div class="doc-coop-title">협조자</div>';
-      html += '<div class="doc-approval-row">';
+      html += '<div class="doc-coop-block"><div class="doc-coop-title">협조자</div><div class="doc-approval-row">';
       cooperators.forEach(function (c) {
-        var ctitle = typeof c === 'object' ? (c.title || c.name || '') : c;
-        var cname  = typeof c === 'object' ? (c.name  || '') : '';
+        var ctitle = typeof c==='object' ? (c.title||c.name||'') : c;
+        var cname  = typeof c==='object' ? (c.name||'') : '';
         html += '<div class="doc-approval-cell">'
               + '<span class="doc-approval-title">' + escapeHtml(ctitle) + '</span>'
               + '<span class="doc-approval-sign"></span>'
@@ -273,13 +287,12 @@
       html += '</div></div>';
     }
 
-    /* 결재자 */
     html += '<div class="doc-approval-row">';
     levels.forEach(function (l) {
       html += '<div class="doc-approval-cell">'
-            + '<span class="doc-approval-title">' + escapeHtml(l.title || '') + '</span>'
+            + '<span class="doc-approval-title">' + escapeHtml(l.title||'') + '</span>'
             + '<span class="doc-approval-sign"></span>'
-            + '<span class="doc-approval-name">'  + escapeHtml(l.name  || '') + '</span>'
+            + '<span class="doc-approval-name">'  + escapeHtml(l.name||'')  + '</span>'
             + '</div>';
     });
     html += '</div>';
@@ -298,12 +311,8 @@
     html += '<div class="doc-footer-content">';
     html += '<div class="doc-footer-left">';
     html += '<div class="doc-footer-numrow">';
-    html += '<span><strong>시행</strong>&nbsp;'
-          + escapeHtml(docNo || (orgName + '-'))
-          + '&nbsp;&nbsp;(' + escapeHtml(dateStr) + ')</span>';
-    html += '<span><strong>접수</strong>&nbsp;('
-          + (rcptNo ? escapeHtml(rcptNo) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
-          + ')</span>';
+    html += '<span><strong>시행</strong>&nbsp;' + escapeHtml(docNo||(orgName+'-')) + '&nbsp;&nbsp;(' + escapeHtml(dateStr) + ')</span>';
+    html += '<span><strong>접수</strong>&nbsp;(' + (rcptNo ? escapeHtml(rcptNo) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') + ')</span>';
     html += '</div>';
     if (address) html += '<div class="doc-footer-addr">' + escapeHtml(address) + '</div>';
     html += '</div>';
@@ -318,7 +327,7 @@
   }
 
   /* ══════════════════════════════════════════
-     일반 텍스트 변환 (복사용)
+     복사용 텍스트
   ══════════════════════════════════════════ */
   function buildPlainText(doc) {
     var f = doc.fields || {};
@@ -326,25 +335,23 @@
     var lines = [];
     lines.push(s.orgName || '');
     lines.push('');
-    if (f.via || f['경유']) lines.push('경유: ' + (f.via || f['경유'] || ''));
-    lines.push('수신: ' + (f.receiver || f['수신'] || ''));
-    if (f.reference || f['참조']) lines.push('참조: ' + (f.reference || f['참조'] || ''));
+    if (f.via||f['경유']) lines.push('경유: '+(f.via||f['경유']||''));
+    lines.push('수신: '+(f.receiver||f['수신']||''));
+    if (f.reference||f['참조']) lines.push('참조: '+(f.reference||f['참조']||''));
     lines.push('');
-    lines.push('제 목: ' + (f.title || f['제목'] || doc.title || ''));
+    lines.push('제 목: '+(f.title||f['제목']||doc.title||''));
     lines.push('');
-    if (f.purpose || f['목적']) lines.push('1. ' + (f.purpose || f['목적'] || ''));
-    if (f.body    || f['내용']) lines.push('2. ' + (f.body    || f['내용'] || ''));
+    if (f.purpose||f['목적']) lines.push('1. '+(f.purpose||f['목적']||''));
+    if (f.body||f['내용'])    lines.push('2. '+(f.body||f['내용']||''));
     lines.push('');
-    var attach = f.attachments || f['붙임'] || '';
+    var attach = f.attachments||f['붙임']||'';
     if (attach.trim()) {
       lines.push('붙임');
-      attach.split('\n').forEach(function (a, i) {
-        if (a.trim()) lines.push('  ' + (i + 1) + '. ' + a.trim() + '  1부.');
-      });
+      attach.split('\n').forEach(function(a,i){ if(a.trim()) lines.push('  '+(i+1)+'. '+a.trim()+'  1부.'); });
     }
     lines.push('끝.');
     lines.push('');
-    lines.push(f.senderName || f['발신명의'] || s.orgName || '');
+    lines.push(f.senderName||f['발신명의']||s.orgName||'');
     return lines.join('\n');
   }
 
@@ -352,103 +359,85 @@
      이벤트 바인딩
   ══════════════════════════════════════════ */
   function bindEvents() {
-    function el(id, fn) {
-      var e = document.getElementById(id);
-      if (e) e.addEventListener('click', fn);
-    }
+    function el(id, fn) { var e=document.getElementById(id); if(e) e.addEventListener('click',fn); }
 
-    el('back-btn', function () { window.location.href = 'index.html'; });
+    el('back-btn', function(){ window.location.href='index.html'; });
 
-    function goEdit() {
-      if (!currentDoc) return;
-      window.location.href = 'editor.html?id='
-        + encodeURIComponent(currentDoc.id) + '&type=' + currentType;
+    function goEdit(){
+      if(!currentDoc) return;
+      window.location.href='editor.html?id='+encodeURIComponent(currentDoc.id)+'&type='+currentType;
     }
     el('edit-btn',   goEdit);
     el('edit-btn-b', goEdit);
 
-    function doCopy() {
-      if (!currentDoc) return;
+    function doCopy(){
+      if(!currentDoc) return;
       copyToClipboard(buildPlainText(currentDoc));
-      showToast('📋 클립보드에 복사되었습니다.', 'success');
+      showToast('📋 클립보드에 복사되었습니다.','success');
     }
     el('copy-btn',   doCopy);
     el('copy-btn-b', doCopy);
 
-    function doPrint() { window.print(); }
+    function doPrint(){ window.print(); }
     el('print-btn',   doPrint);
     el('print-btn-b', doPrint);
 
-    function openComplete() {
-      if (currentType !== 'doc') Modal.open('complete-modal');
-    }
+    function openComplete(){ if(currentType!=='doc') Modal.open('complete-modal'); }
     el('complete-btn',   openComplete);
     el('complete-btn-b', openComplete);
-    el('complete-cancel-btn',  function () { Modal.close('complete-modal'); });
-    el('complete-confirm-btn', function () { Modal.close('complete-modal'); saveAsComplete(); });
+    el('complete-cancel-btn',  function(){ Modal.close('complete-modal'); });
+    el('complete-confirm-btn', function(){ Modal.close('complete-modal'); saveAsComplete(); });
 
-    function openDelete() { Modal.open('delete-modal'); }
+    function openDelete(){ Modal.open('delete-modal'); }
     el('delete-btn',   openDelete);
     el('delete-btn-b', openDelete);
-    el('delete-cancel-btn',  function () { Modal.close('delete-modal'); });
-    el('delete-confirm-btn', function () { Modal.close('delete-modal'); doDelete(); });
+    el('delete-cancel-btn',  function(){ Modal.close('delete-modal'); });
+    el('delete-confirm-btn', function(){ Modal.close('delete-modal'); doDelete(); });
 
-    ['complete-modal', 'delete-modal'].forEach(function (id) {
-      var overlay = document.getElementById(id);
-      if (overlay) {
-        overlay.addEventListener('click', function (e) {
-          if (e.target === overlay) Modal.close(id);
-        });
-      }
+    ['complete-modal','delete-modal'].forEach(function(id){
+      var overlay=document.getElementById(id);
+      if(overlay) overlay.addEventListener('click',function(e){ if(e.target===overlay) Modal.close(id); });
     });
 
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') {
-        Modal.close('complete-modal');
-        Modal.close('delete-modal');
-      }
-      if (e.ctrlKey && e.key === 'p') {
-        e.preventDefault();
-        doPrint();
-      }
+    document.addEventListener('keydown',function(e){
+      if(e.key==='Escape'){ Modal.close('complete-modal'); Modal.close('delete-modal'); }
+      if(e.ctrlKey&&e.key==='p'){ e.preventDefault(); doPrint(); }
     });
   }
 
   /* ══════════════════════════════════════════
      완성 저장
   ══════════════════════════════════════════ */
-  function saveAsComplete() {
-    if (!currentDoc) return;
-    var doc = JSON.parse(JSON.stringify(currentDoc));
-    doc.completedAt = new Date().toISOString();
-    doc.status = 'complete';
-    var saved = Storage.saveDoc(doc);
-    if (saved && currentType === 'draft') Storage.deleteDraft(currentDoc.id);
-    if (saved) {
-      showToast('✅ 완성 문서함에 저장되었습니다.', 'success');
-      currentType = 'doc';
-      currentDoc  = doc;
-      updateStatus();
+  function saveAsComplete(){
+    if(!currentDoc) return;
+    var doc=JSON.parse(JSON.stringify(currentDoc));
+    doc.completedAt=new Date().toISOString();
+    doc.status='complete';
+    var saved=Storage.saveDoc(doc);
+    if(saved&&currentType==='draft') Storage.deleteDraft(currentDoc.id);
+    if(saved){
+      showToast('✅ 완성 문서함에 저장되었습니다.','success');
+      currentType='doc'; currentDoc=doc; updateStatus();
     } else {
-      showToast('저장 중 오류가 발생했습니다.', 'error');
+      showToast('저장 중 오류가 발생했습니다.','error');
     }
   }
 
   /* ══════════════════════════════════════════
      삭제
   ══════════════════════════════════════════ */
-  function doDelete() {
-    if (!currentDoc) return;
-    if (currentType === 'doc') Storage.deleteDoc(currentDoc.id);
+  function doDelete(){
+    if(!currentDoc) return;
+    if(currentType==='doc') Storage.deleteDoc(currentDoc.id);
     else Storage.deleteDraft(currentDoc.id);
-    showToast('🗑️ 삭제되었습니다.', 'info');
-    setTimeout(function () { window.location.href = 'index.html'; }, 800);
+    showToast('🗑️ 삭제되었습니다.','info');
+    setTimeout(function(){ window.location.href='index.html'; },800);
   }
 
   /* ══════════════════════════════════════════
      DOMContentLoaded
   ══════════════════════════════════════════ */
-  document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener('DOMContentLoaded', function(){
     initPreview();
     bindEvents();
   });
