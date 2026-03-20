@@ -8,9 +8,6 @@
   let currentDoc  = null;
   let currentType = 'draft';
 
-  /* ══════════════════════════════════════════════
-     초기화
-  ══════════════════════════════════════════════ */
   function initPreview() {
     const params = new URLSearchParams(location.search);
     const id     = params.get('id');
@@ -43,9 +40,6 @@
     updateStatus();
   }
 
-  /* ══════════════════════════════════════════════
-     상태 배지
-  ══════════════════════════════════════════════ */
   function updateStatus() {
     const badge = document.getElementById('status-badge');
     if (!badge) return;
@@ -60,9 +54,6 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     문서 렌더링
-  ══════════════════════════════════════════════ */
   function renderPreview(doc) {
     const container = document.getElementById('doc-preview');
     if (!container) return;
@@ -89,14 +80,14 @@
                <div class="doc-org-name">${esc(orgName)}</div>
              </div>`;
 
-    /* ② 수신·경유·참조 — 레이블+콜론 통합, width:auto */
+    /* ② 수신·경유·참조 */
     html += `<div class="doc-meta-area">`;
     html += metaRow('수&nbsp;&nbsp;&nbsp;&nbsp;신', esc(receiver));
     if (via) html += metaRow('경&nbsp;&nbsp;&nbsp;&nbsp;유', esc(via));
     if (ref) html += metaRow('참&nbsp;&nbsp;&nbsp;&nbsp;조', esc(ref));
     html += `</div>`;
 
-    /* ③ 제목 — 글씨 크기 11pt, bold */
+    /* ③ 제목 */
     html += `<div class="doc-title-area">
                <span class="doc-row-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
                <span class="doc-row-colon">:&nbsp;</span>
@@ -104,7 +95,7 @@
              </div>`;
     html += `<hr class="doc-title-divider">`;
 
-    /* ④ 본문 — purpose + body 통합 렌더링 */
+    /* ④ 본문 */
     const attachList = parseAttachments(f.attachments || f.attach || '');
     html += `<div class="doc-body-area">${buildBody(f, tmpl, attachList.length === 0)}</div>`;
 
@@ -113,30 +104,24 @@
       html += renderAttach(attachList);
     }
 
-    html += `</div>`; /* end doc-main-area */
+    html += `</div>`;
 
-    /* ──────────── 하단 기관정보 블록 ──────────── */
+    /* 하단 기관정보 블록 */
     html += `<div class="doc-org-footer">`;
-
     const senderName = f.senderName || orgName;
     html += `<div class="doc-sender-area">
                <span class="doc-sender-value">${esc(senderName)}</span>
              </div>`;
     html += `<hr class="doc-sender-divider">`;
-
     html += renderApprovalBlock(doc, settings, orgDetail);
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
     html += renderFooterInfo(doc, settings, orgDetail);
-
-    html += `</div>`; /* end doc-org-footer */
-    html += `</div>`; /* end doc-paper-inner */
+    html += `</div>`;
+    html += `</div>`;
 
     container.innerHTML = html;
   }
 
-  /* ══════════════════════════════════════════════
-     메타 행 헬퍼 — width:auto, 콜론 통합
-  ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
               <span class="doc-row-label">${labelHtml}</span>
@@ -147,13 +132,12 @@
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     ★ purpose 필드를 템플릿별로 body와 함께 조합하여 렌더링
-     ★ 들여쓰기 자동 감지 (INDENT_RULES)
+     ★ purpose: 번호 없이 단독 출력
+     ★ body: 사용자 입력 그대로 출력
+     ★ 들여쓰기 자동 감지
      ★ \u00A0 포함 앞뒤 공백 완전 제거
-     ★ white-space: normal (CSS)
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
-    /* ── 템플릿별 본문 라인 조합 ── */
     let rawLines = [];
 
     if (tmpl === 'event') {
@@ -173,30 +157,15 @@
         f.body.split('\n').forEach(line => rawLines.push(line));
       }
     } else {
-      /* internal / government / cooperation */
-      let idx = 1;
+      /* internal / government / cooperation
+         purpose: 번호 없이 단독 출력, 빈 줄로 body와 구분
+         body: 사용자가 직접 번호 입력 → 그대로 출력 */
       if (f.purpose) {
-        rawLines.push(idx + '. ' + f.purpose);
-        idx++;
+        f.purpose.split('\n').forEach(line => rawLines.push(line));
+        rawLines.push('');
       }
       if (f.body) {
-        /* body의 첫 줄이 이미 숫자 기호로 시작하면 그대로 사용,
-           아니면 idx 번호를 붙여서 사용 */
-        const bodyLines = f.body.split('\n');
-        const firstLine = bodyLines[0].replace(/^[\s\u00A0]+/, '');
-        const startsWithNumber = /^\d+\./.test(firstLine);
-
-        if (f.purpose && startsWithNumber) {
-          /* body가 자체적으로 번호를 가질 때는 그대로 출력 */
-          bodyLines.forEach(line => rawLines.push(line));
-        } else if (f.purpose) {
-          /* purpose가 있고 body가 번호 없이 시작하면 idx 번호 붙임 */
-          rawLines.push(idx + '. ' + bodyLines[0]);
-          for (let i = 1; i < bodyLines.length; i++) rawLines.push(bodyLines[i]);
-        } else {
-          /* purpose 없이 body만 있을 때 그대로 출력 */
-          bodyLines.forEach(line => rawLines.push(line));
-        }
+        f.body.split('\n').forEach(line => rawLines.push(line));
       }
     }
 
@@ -209,10 +178,9 @@
         : empty;
     }
 
-    /* ── 들여쓰기 규칙 ── */
     const INDENT_RULES = [
       { re: /^(\d+\.)\s*/,       em: 0 },
-      { re: /^([가-힣]\.)\s*/,   em: 2 },   /* 가. 나. → 2칸(2em) */
+      { re: /^([가-힣]\.)\s*/,   em: 2 },
       { re: /^(\d+\))\s*/,       em: 4 },
       { re: /^([가-힣]\))\s*/,   em: 6 },
       { re: /^(\(\d+\))\s*/,     em: 8 },
@@ -227,7 +195,6 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* ★ \u00A0 포함 앞뒤 공백 완전 제거 */
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -266,9 +233,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     날짜 변환
-  ══════════════════════════════════════════════ */
   function convertDate(text) {
     return text.replace(
       /(\d{4})\.(\d{1,2})\.(\d{1,2})(\.)?(\([월화수목금토일]\))?/g,
@@ -277,16 +241,10 @@
     );
   }
 
-  /* ══════════════════════════════════════════════
-     콜론 뒤 공백 (시간 패턴 제외)
-  ══════════════════════════════════════════════ */
   function applyColonSpace(text) {
     return text.replace(/:(?!\s)(?!\d{2})/g, ': ');
   }
 
-  /* ══════════════════════════════════════════════
-     행정용어 순화
-  ══════════════════════════════════════════════ */
   function convertTerms(text) {
     const map = {
       '홈페이지': '누리집',
@@ -303,12 +261,6 @@
     return text;
   }
 
-  /* ══════════════════════════════════════════════
-     붙임 파싱
-     ★ 마지막 문자가 "."이 아니면 자동으로 "." 추가
-     ★ \u00A0 포함 앞뒤 공백 완전 제거
-     ★ 이미 "1." 등 번호가 붙은 경우 중복 방지
-  ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
     if (!raw.trim()) return [];
     return raw.split('\n')
@@ -317,17 +269,12 @@
           .replace(/^[\s\u00A0]+/, '')
           .replace(/[\s\u00A0]+$/, '');
         if (!trimmed) return '';
-        /* 이미 "1. " 형식 번호가 붙은 경우 번호 제거 (renderAttach에서 다시 붙임) */
         const withoutNum = trimmed.replace(/^\d+\.\s*/, '');
         return withoutNum.endsWith('.') ? withoutNum : withoutNum + '.';
       })
       .filter(Boolean);
   }
 
-  /* ══════════════════════════════════════════════
-     붙임 렌더링
-     ★ 붙임 레이블 뒤 두 칸 띄어쓰기 (&nbsp;&nbsp;)
-  ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
     html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;</span>`;
@@ -347,9 +294,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     결재·협조자 블록
-  ══════════════════════════════════════════════ */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
@@ -379,9 +323,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     시행·접수 행
-  ══════════════════════════════════════════════ */
   function renderExecRow(doc, settings, orgDetail, docNum, dateStr) {
     const orgCode = settings.orgCode  || orgDetail.orgCode
                  || orgDetail.orgName || settings.orgName || '○○';
@@ -401,9 +342,6 @@
             </div>`;
   }
 
-  /* ══════════════════════════════════════════════
-     주소·연락처
-  ══════════════════════════════════════════════ */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
@@ -430,9 +368,6 @@
             </div>`;
   }
 
-  /* ══════════════════════════════════════════════
-     유틸리티
-  ══════════════════════════════════════════════ */
   function safeJSON(key) {
     try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; }
   }
@@ -451,9 +386,6 @@
     if (c) c.innerHTML = `<p style="color:red;padding:40px;">${esc(msg)}</p>`;
   }
 
-  /* ══════════════════════════════════════════════
-     이벤트 바인딩
-  ══════════════════════════════════════════════ */
   function bindEvents() {
     const $ = id => document.getElementById(id);
 
@@ -489,9 +421,6 @@
     });
   }
 
-  /* ══════════════════════════════════════════════
-     완성 저장
-  ══════════════════════════════════════════════ */
   function saveAsComplete() {
     if (!currentDoc) return;
     try {
@@ -508,9 +437,6 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     삭제
-  ══════════════════════════════════════════════ */
   function doDelete() {
     if (!currentDoc) return;
     if (!confirm('이 문서를 삭제하시겠습니까?')) return;
@@ -526,9 +452,6 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     진입점
-  ══════════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', () => {
     initPreview();
     bindEvents();
