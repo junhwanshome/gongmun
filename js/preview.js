@@ -1,7 +1,11 @@
+/**
+ * js/preview.js
+ * 공문서 미리보기 - 전체 수정사항 반영
+ */
 (function () {
   'use strict';
 
-  let currentDoc = null;
+  let currentDoc  = null;
   let currentType = 'draft';
 
   /* ══════════════════════════════════════════════
@@ -16,7 +20,7 @@
 
     try {
       const docs = JSON.parse(localStorage.getItem('doc_completed') || '[]');
-      currentDoc  = docs.find(d => d.id === id) || null;
+      currentDoc = docs.find(d => d.id === id) || null;
       if (currentDoc) currentType = 'completed';
     } catch (e) {}
 
@@ -65,7 +69,7 @@
 
     const settings  = safeJSON('doc_settings');
     const orgDetail = safeJSON('doc_org_detail');
-    const orgName   = settings.orgName  || orgDetail.orgName  || '○○기관';
+    const orgName   = settings.orgName || orgDetail.orgName || '○○기관';
     const f         = doc.fields || {};
     const tmpl      = doc.templateId || 'internal';
 
@@ -73,8 +77,8 @@
     const receiver = f.receiver  || '';
     const via      = f.via       || '';
     const ref      = f.reference || f.ref || '';
-    const docNum   = f.docNumber || f.docNum || '';
-    const dateStr  = f.date      || doc.date  || '';
+    const docNum   = f.docNo     || f.docNumber || f.docNum || '';
+    const dateStr  = f.date      || doc.date || '';
 
     let html = '';
     html += `<div class="doc-paper-inner">`;
@@ -85,22 +89,22 @@
                <div class="doc-org-name">${esc(orgName)}</div>
              </div>`;
 
-    /* ② 수신·경유·참조 */
+    /* ② 수신·경유·참조 — 레이블+콜론 통합, width:auto */
     html += `<div class="doc-meta-area">`;
     html += metaRow('수&nbsp;&nbsp;&nbsp;&nbsp;신', esc(receiver));
     if (via) html += metaRow('경&nbsp;&nbsp;&nbsp;&nbsp;유', esc(via));
     if (ref) html += metaRow('참&nbsp;&nbsp;&nbsp;&nbsp;조', esc(ref));
     html += `</div>`;
 
-    /* ③ 제목 */
+    /* ③ 제목 — 글씨 크기 11pt, bold */
     html += `<div class="doc-title-area">
                <span class="doc-row-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
-               <span class="doc-row-colon">:</span>
+               <span class="doc-row-colon">:&nbsp;</span>
                <span class="doc-title-text">${esc(title)}</span>
              </div>`;
     html += `<hr class="doc-title-divider">`;
 
-    /* ④ 본문 */
+    /* ④ 본문 — purpose + body 통합 렌더링 */
     const attachList = parseAttachments(f.attachments || f.attach || '');
     html += `<div class="doc-body-area">${buildBody(f, tmpl, attachList.length === 0)}</div>`;
 
@@ -131,21 +135,73 @@
   }
 
   /* ══════════════════════════════════════════════
-     메타 행 헬퍼
+     메타 행 헬퍼 — width:auto, 콜론 통합
   ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
               <span class="doc-row-label">${labelHtml}</span>
-              <span class="doc-row-colon">:</span>
+              <span class="doc-row-colon">:&nbsp;</span>
               <span class="doc-row-value">${valueHtml}</span>
             </div>`;
   }
 
   /* ══════════════════════════════════════════════
      본문 빌더
+     ★ purpose 필드를 템플릿별로 body와 함께 조합하여 렌더링
+     ★ 들여쓰기 자동 감지 (INDENT_RULES)
+     ★ \u00A0 포함 앞뒤 공백 완전 제거
+     ★ white-space: normal (CSS)
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
-    const raw = f.body || f.content || '';
+    /* ── 템플릿별 본문 라인 조합 ── */
+    let rawLines = [];
+
+    if (tmpl === 'event') {
+      rawLines.push('1. 귀 기관의 무궁한 발전을 기원합니다.');
+      rawLines.push('2. 아래와 같이 행사를 안내드립니다.');
+      if (f.eventDate)   rawLines.push('일  시: ' + (f.eventDate   || ''));
+      if (f.eventPlace)  rawLines.push('장  소: ' + (f.eventPlace  || ''));
+      if (f.eventTarget) rawLines.push('대  상: ' + (f.eventTarget || ''));
+      if (f.body)        rawLines.push('내  용: ' + (f.body        || ''));
+      if (f.purpose)     rawLines.push('3. ' + f.purpose);
+    } else if (tmpl === 'sponsor') {
+      rawLines.push('1. 귀하의 따뜻한 후원에 진심으로 감사드립니다.');
+      if (f.sponsorName) rawLines.push('2. 후원자: '   + f.sponsorName);
+      if (f.grantDate)   rawLines.push('3. 후원일자: ' + f.grantDate);
+      if (f.grantAmount) rawLines.push('4. 후원금액: ' + f.grantAmount);
+      if (f.body) {
+        f.body.split('\n').forEach(line => rawLines.push(line));
+      }
+    } else {
+      /* internal / government / cooperation */
+      let idx = 1;
+      if (f.purpose) {
+        rawLines.push(idx + '. ' + f.purpose);
+        idx++;
+      }
+      if (f.body) {
+        /* body의 첫 줄이 이미 숫자 기호로 시작하면 그대로 사용,
+           아니면 idx 번호를 붙여서 사용 */
+        const bodyLines = f.body.split('\n');
+        const firstLine = bodyLines[0].replace(/^[\s\u00A0]+/, '');
+        const startsWithNumber = /^\d+\./.test(firstLine);
+
+        if (f.purpose && startsWithNumber) {
+          /* body가 자체적으로 번호를 가질 때는 그대로 출력 */
+          bodyLines.forEach(line => rawLines.push(line));
+        } else if (f.purpose) {
+          /* purpose가 있고 body가 번호 없이 시작하면 idx 번호 붙임 */
+          rawLines.push(idx + '. ' + bodyLines[0]);
+          for (let i = 1; i < bodyLines.length; i++) rawLines.push(bodyLines[i]);
+        } else {
+          /* purpose 없이 body만 있을 때 그대로 출력 */
+          bodyLines.forEach(line => rawLines.push(line));
+        }
+      }
+    }
+
+    const raw = rawLines.join('\n');
+
     if (!raw.trim()) {
       const empty = `<div class="doc-body-line doc-body-empty">(본문 없음)</div>`;
       return appendEnd
@@ -153,15 +209,16 @@
         : empty;
     }
 
+    /* ── 들여쓰기 규칙 ── */
     const INDENT_RULES = [
       { re: /^(\d+\.)\s*/,       em: 0 },
-      { re: /^([가-힣]\.)\s*/,   em: 1 },
-      { re: /^(\d+\))\s*/,       em: 2 },
-      { re: /^([가-힣]\))\s*/,   em: 3 },
-      { re: /^(\(\d+\))\s*/,     em: 4 },
-      { re: /^(\([가-힣]\))\s*/, em: 5 },
-      { re: /^([①-⑳])\s*/,     em: 6 },
-      { re: /^([㉮-㉻])\s*/,    em: 7 },
+      { re: /^([가-힣]\.)\s*/,   em: 2 },   /* 가. 나. → 2칸(2em) */
+      { re: /^(\d+\))\s*/,       em: 4 },
+      { re: /^([가-힣]\))\s*/,   em: 6 },
+      { re: /^(\(\d+\))\s*/,     em: 8 },
+      { re: /^(\([가-힣]\))\s*/, em: 10 },
+      { re: /^([①-⑳])\s*/,     em: 12 },
+      { re: /^([㉮-㉻])\s*/,    em: 14 },
     ];
 
     const lines = raw.split('\n');
@@ -170,6 +227,7 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
+      /* ★ \u00A0 포함 앞뒤 공백 완전 제거 */
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -198,7 +256,7 @@
       const displaySymbol  = symbol ? `${esc(symbol)}&nbsp;` : '';
       const endMark        = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
-      html += `<div class="doc-body-line" style="padding-left:${indentEm}em;">`
+      html += `<div class="doc-body-line" style="padding-left:${indentEm * 0.5}em;">`
             + displaySymbol
             + esc(displayContent)
             + endMark
@@ -214,9 +272,8 @@
   function convertDate(text) {
     return text.replace(
       /(\d{4})\.(\d{1,2})\.(\d{1,2})(\.)?(\([월화수목금토일]\))?/g,
-      (_, y, m, d, dot, day) => {
-        return `${y}. ${parseInt(m, 10)}. ${parseInt(d, 10)}${dot || '.'}${day || ''}`;
-      }
+      (_, y, m, d, dot, day) =>
+        `${y}. ${parseInt(m, 10)}. ${parseInt(d, 10)}${dot || '.'}${day || ''}`
     );
   }
 
@@ -249,6 +306,8 @@
   /* ══════════════════════════════════════════════
      붙임 파싱
      ★ 마지막 문자가 "."이 아니면 자동으로 "." 추가
+     ★ \u00A0 포함 앞뒤 공백 완전 제거
+     ★ 이미 "1." 등 번호가 붙은 경우 중복 방지
   ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
     if (!raw.trim()) return [];
@@ -258,18 +317,20 @@
           .replace(/^[\s\u00A0]+/, '')
           .replace(/[\s\u00A0]+$/, '');
         if (!trimmed) return '';
-        /* ★ 마지막이 "."이면 그대로, 아니면 "." 추가 */
-        return trimmed.endsWith('.') ? trimmed : trimmed + '.';
+        /* 이미 "1. " 형식 번호가 붙은 경우 번호 제거 (renderAttach에서 다시 붙임) */
+        const withoutNum = trimmed.replace(/^\d+\.\s*/, '');
+        return withoutNum.endsWith('.') ? withoutNum : withoutNum + '.';
       })
       .filter(Boolean);
   }
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
+     ★ 붙임 레이블 뒤 두 칸 띄어쓰기 (&nbsp;&nbsp;)
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
-    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;</span>`;
+    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;</span>`;
     html += `<span class="doc-attach-content">`;
 
     if (list.length === 1) {
@@ -310,12 +371,10 @@
                </div>`;
     });
     html += `</div>`;
-
     html += `<div class="doc-cooperator-row">
                <span class="doc-coop-label">협&nbsp;조&nbsp;자</span>
                <span class="doc-cooperator-value">${esc(cooperators)}</span>
              </div>`;
-
     html += `</div>`;
     return html;
   }
@@ -381,10 +440,10 @@
   function esc(str) {
     if (!str) return '';
     return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;');
   }
 
   function showError(msg) {
