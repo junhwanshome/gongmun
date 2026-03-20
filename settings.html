@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기관 설정 - 공문서 작성 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link">🏠 홈</a>
+        <a href="editor.html" class="nav-link">✍️ 새 문서</a>
+        <a href="settings.html" class="nav-link active">⚙️ 기관설정</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width:800px;">
+
+      <div class="page-header">
+        <h1>⚙️ 기관 설정</h1>
+        <div class="page-header-actions">
+          <button id="reset-settings-btn" class="btn btn-danger btn-sm">🔄 초기화</button>
+          <button id="save-settings-btn" class="btn btn-primary">💾 저장</button>
+        </div>
+      </div>
+
+      <!-- 로고 업로드 -->
+      <div class="settings-card">
+        <h3>🖼️ 기관 로고</h3>
+        <div id="logo-drop-zone" class="logo-drop-zone">
+          <img id="logo-preview" src="" alt="로고 미리보기" style="display:none; max-height:80px; margin-bottom:10px;">
+          <p>이미지를 드래그하거나 아래 버튼으로 업로드하세요</p>
+          <p class="hint">PNG, JPG, GIF / 최대 2MB / 권장 높이 300px 이하</p>
+          <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+            <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+              📁 파일 선택
+              <input type="file" id="logo-input" accept="image/*" style="display:none;">
+            </label>
+            <button id="delete-logo-btn" class="btn btn-danger btn-sm" style="display:none;">🗑️ 삭제</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 기관 기본 정보 -->
+      <div class="settings-card">
+        <h3>🏢 기관 기본 정보</h3>
+        <div class="form-group">
+          <label class="form-label required">기관명</label>
+          <input type="text" id="org-name" class="form-input" placeholder="예: ○○사회복지관" maxlength="50">
+          <small class="hint">문서 상단 발신명의에 사용됩니다.</small>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">우편번호</label>
+            <input type="text" id="org-zipCode" class="form-input" placeholder="예: 12345">
+          </div>
+          <div class="form-group" style="flex:2">
+            <label class="form-label">주소</label>
+            <input type="text" id="org-address" class="form-input" placeholder="예: 서울시 강남구 ○○로 123">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">홈페이지</label>
+          <input type="text" id="org-homepage" class="form-input" placeholder="예: www.welfare.or.kr">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">전화</label>
+            <input type="text" id="org-tel" class="form-input" placeholder="예: 02-1234-5678">
+          </div>
+          <div class="form-group">
+            <label class="form-label">팩스</label>
+            <input type="text" id="org-fax" class="form-input" placeholder="예: 02-1234-5679">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">이메일</label>
+            <input type="text" id="org-email" class="form-input" placeholder="예: info@welfare.or.kr">
+          </div>
+          <div class="form-group">
+            <label class="form-label">공개구분</label>
+            <input type="text" id="org-disclosure" class="form-input" placeholder="예: 공개">
+          </div>
+        </div>
+      </div>
+
+      <!-- 결재라인 -->
+      <div class="settings-card">
+        <h3>✅ 결재라인 설정</h3>
+        <div class="card-actions">
+          <button id="default-approval-btn" class="btn btn-secondary btn-sm">기본값</button>
+          <button id="preview-approval-btn" class="btn btn-secondary btn-sm">미리보기</button>
+          <button id="add-approval-btn"     class="btn btn-primary    btn-sm">+ 단계 추가</button>
+        </div>
+        <div class="guide-box">
+          <ul>
+            <li>2단계 ~ 7단계까지 설정 가능합니다.</li>
+            <li>직위는 필수, 성명은 선택 입력입니다.</li>
+            <li>결재 순서는 위에서 아래 순입니다.</li>
+          </ul>
+        </div>
+        <div id="approval-levels"></div>
+        <div id="approval-preview" style="display:none; margin-top:16px;">
+          <h4>결재란 미리보기</h4>
+          <div id="approval-table-preview"></div>
+        </div>
+      </div>
+
+      <!-- 협조자 -->
+      <div class="settings-card">
+        <h3>🤝 협조자 설정</h3>
+        <div class="card-actions">
+          <button id="add-cooperator-btn" class="btn btn-primary btn-sm">+ 협조자 추가</button>
+        </div>
+        <div class="guide-box">
+          <ul>
+            <li>최대 5명까지 등록 가능합니다.</li>
+            <li>결재란 왼쪽에 협조자 칸이 추가됩니다.</li>
+          </ul>
+        </div>
+        <div id="cooperator-list"></div>
+      </div>
+
+      <!-- 자주 쓰는 수신처 -->
+      <div class="settings-card">
+        <h3>📬 자주 쓰는 수신처</h3>
+        <div class="card-actions">
+          <button id="default-receiver-btn" class="btn btn-secondary btn-sm">기본값</button>
+          <button id="add-receiver-btn"     class="btn btn-primary    btn-sm">+ 수신처 추가</button>
+        </div>
+        <div class="guide-box">
+          <ul>
+            <li>최대 20개까지 등록 가능합니다.</li>
+            <li>문서 작성 시 선택하면 자동으로 입력됩니다.</li>
+          </ul>
+        </div>
+        <div class="receiver-header">
+          <span>수신자 직위</span>
+          <span>담당부서</span>
+        </div>
+        <div id="receiver-list"></div>
+      </div>
+
+      <!-- 하단 저장 버튼 -->
+      <div class="form-actions">
+        <a href="index.html" class="btn btn-secondary">취소</a>
+        <button id="save-settings-btn-bottom" class="btn btn-primary">💾 저장하기</button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="data/rules.js"></script>
+  <script src="data/templates.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/settings.js"></script>
+
+  <style>
+    .page-header         { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .page-header h1      { font-size:1.5rem; font-weight:700; color:#2c3e50; }
+    .page-header-actions { display:flex; gap:10px; }
+    .settings-card       { background:#fff; border:1px solid #e0e0e0; border-radius:12px; padding:24px; margin-bottom:20px; }
+    .settings-card h3    { font-size:1.05rem; font-weight:700; color:#2c3e50; margin-bottom:16px; }
+    .card-actions        { display:flex; gap:8px; margin-bottom:12px; }
+    .guide-box           { background:#f8f9fa; border-left:3px solid #3498db; padding:10px 14px; border-radius:0 8px 8px 0; margin-bottom:14px; font-size:0.85rem; color:#555; }
+    .guide-box ul        { margin:0; padding-left:16px; }
+    .guide-box li        { margin-bottom:4px; }
+    .logo-drop-zone      { border:2px dashed #b0c4de; border-radius:10px; padding:24px; text-align:center; background:#f8fbff; transition:.2s; }
+    .logo-drop-zone.drag-over { border-color:#3498db; background:#eaf4fb; }
+    .logo-drop-zone p    { color:#666; font-size:0.9rem; margin:4px 0; }
+    .logo-drop-zone .hint{ font-size:0.8rem; color:#999; }
+    .form-row            { display:flex; gap:12px; }
+    .form-row .form-group{ flex:1; }
+    .form-group          { margin-bottom:14px; }
+    .form-label          { display:block; font-size:0.88rem; font-weight:500; color:#444; margin-bottom:5px; }
+    .form-label.required::after { content:' *'; color:#e74c3c; }
+    .hint                { font-size:0.8rem; color:#999; display:block; margin-top:4px; }
+    .approval-level-item { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .level-num           { font-size:0.85rem; color:#888; min-width:40px; }
+    .approval-title      { flex:1.2; }
+    .approval-name       { flex:1; }
+    .cooperator-item,
+    .receiver-item       { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+    .coop-num,
+    .receiver-num        { font-size:0.85rem; color:#888; min-width:24px; text-align:center; }
+    .receiver-header     { display:flex; gap:8px; padding:0 32px 6px; font-size:0.82rem; color:#888; font-weight:500; }
+    .receiver-header span{ flex:1; }
+    .form-actions        { display:flex; justify-content:flex-end; gap:12px; margin-top:24px; }
+    .approval-preview-table { width:auto; border-collapse:collapse; margin-top:8px; }
+    .approval-preview-table th,
+    .approval-preview-table td {
+      border:1px solid #ccc; padding:6px 16px; font-size:0.85rem;
+      text-align:center; min-width:70px; height:40px;
+    }
+    .approval-preview-table th { background:#f0f4f8; font-weight:600; }
+    @media(max-width:600px) {
+      .form-row          { flex-direction:column; }
+      .page-header       { flex-direction:column; gap:12px; align-items:flex-start; }
+    }
+  </style>
+</body>
+</html>
