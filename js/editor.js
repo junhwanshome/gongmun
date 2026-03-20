@@ -35,7 +35,7 @@
     'line-height:1.5'
   ].join(';');
 
-  /* ── 셀 생성 헬퍼 ── */
+  /* ── 셀 생성 헬퍼 (커서 중앙 + auto layout) ── */
   function makeCell(tag, styleStr) {
     var el = document.createElement(tag);
     el.style.cssText = styleStr;
@@ -321,10 +321,12 @@
     var div = document.createElement('div');
     div.innerHTML = html;
 
+    /* 표 → ASCII 텍스트 변환 (이전 방식 복원) */
     div.querySelectorAll('table').forEach(function (table) {
       var rows = Array.from(table.querySelectorAll('tr'));
       if (!rows.length) { table.remove(); return; }
 
+      /* 2차원 배열로 셀 텍스트 수집 */
       var grid = rows.map(function (tr) {
         return Array.from(tr.querySelectorAll('th, td')).map(function (cell) {
           return cell.textContent.trim();
@@ -333,6 +335,7 @@
 
       var colCount = grid.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
 
+      /* 컬럼 최대 너비 계산 (한글 2바이트 고려) */
       function dispLen(s) {
         var len = 0;
         for (var i = 0; i < s.length; i++) {
@@ -354,12 +357,14 @@
         colWidths.push(w);
       }
 
+      /* 텍스트 표 생성 */
       var lines = [];
       grid.forEach(function (row, ri) {
         var cells = colWidths.map(function (w, ci) {
           return ' ' + padCell(row[ci] || '', w - 1);
         });
         lines.push('|' + cells.join('|') + '|');
+        /* 헤더 아래 구분선 */
         if (ri === 0) {
           var sep = colWidths.map(function (w) { return '-'.repeat(w); });
           lines.push('|' + sep.join('|') + '|');
@@ -372,10 +377,12 @@
       table.replaceWith(pre);
     });
 
+    /* <br> → 줄바꿈 */
     div.querySelectorAll('br').forEach(function (br) {
       br.replaceWith('\n');
     });
 
+    /* 블록 요소 → 줄바꿈 */
     div.querySelectorAll('p, div, li').forEach(function (el) {
       el.insertAdjacentText('afterend', '\n');
     });
@@ -405,19 +412,30 @@
 
     var lines = [];
 
+    /* 기관명 */
     if (f.org) lines.push(f.org, '');
+
+    /* 수신 / 참조 */
     if (f.receiver) lines.push('수신 : ' + f.receiver);
     if (f.ref) lines.push('참조 : ' + f.ref);
     if (f.receiver || f.ref) lines.push('');
+
+    /* 문서번호 (government) */
     if (f.docnum) { lines.push('문서번호 : ' + f.docnum); lines.push(''); }
+
+    /* 제목 */
     if (f.title) { lines.push('제  목 : ' + f.title); lines.push(''); }
+
+    /* 본문 */
     if (bodyText) { lines.push(bodyText); lines.push(''); }
 
+    /* 붙임 */
     if (f.attach && f.attach.trim()) {
       lines.push('붙  임 : ' + f.attach.trim().split('\n').join('\n        '));
       lines.push('');
     }
 
+    /* 시행/발신 정보 */
     var meta = [];
     if (f.dept) meta.push(f.dept);
     if (f.contact) meta.push(f.contact);
@@ -634,6 +652,8 @@
       var cell = e.target.closest('td, th');
       if (cell) {
         activeCell = cell;
+        var table = cell.closest('table');
+        var rows = Array.from(table.rows);
         var ri = cell.closest('tr').rowIndex;
         var ci = Array.from(cell.parentNode.children).indexOf(cell);
         selStart = { cell: cell, row: ri, col: ci };
@@ -649,40 +669,23 @@
         selEnd = { cell: cell, row: ri, col: ci };
       }
     });
+    document.addEventListener('mouseup', function () {
+      /* 선택 유지 */
+    });
   }
 
   /* ══════════════════════════════════════════
-     키보드 셀 이동 (↑↓Tab)
+     Tab 키 → 다음 셀 이동
   ══════════════════════════════════════════ */
   function moveToNextCell(e) {
+    if (e.key !== 'Tab') return;
     var cell = e.target.closest('td, th');
     if (!cell) return;
-
-    /* Tab → 좌우 이동 */
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      var cells = Array.from(cell.closest('table').querySelectorAll('td, th'));
-      var idx = cells.indexOf(cell);
-      var next = cells[idx + (e.shiftKey ? -1 : 1)];
-      if (next) { next.focus(); activeCell = next; }
-      return;
-    }
-
-    /* ↑ ↓ → 위아래 셀 이동 */
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      var table = cell.closest('table');
-      var rows = Array.from(table.rows);
-      var rowIdx = cell.closest('tr').rowIndex;
-      var colIdx = Array.from(cell.parentNode.children).indexOf(cell);
-      var targetRowIdx = e.key === 'ArrowUp' ? rowIdx - 1 : rowIdx + 1;
-      if (targetRowIdx < 0 || targetRowIdx >= rows.length) return;
-      var targetCell = rows[targetRowIdx].cells[colIdx];
-      if (targetCell) {
-        e.preventDefault();
-        targetCell.focus();
-        activeCell = targetCell;
-      }
-    }
+    e.preventDefault();
+    var cells = Array.from(cell.closest('table').querySelectorAll('td, th'));
+    var idx = cells.indexOf(cell);
+    var next = cells[idx + (e.shiftKey ? -1 : 1)];
+    if (next) { next.focus(); activeCell = next; }
   }
 
   /* ══════════════════════════════════════════
@@ -706,24 +709,30 @@
      이벤트 바인딩
   ══════════════════════════════════════════ */
   function bindEvents() {
+    /* 템플릿 버튼 */
     document.querySelectorAll('.tpl-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         selectTemplate(btn.dataset.tpl, true);
       });
     });
 
+    /* 저장 버튼 */
     var btnSave = document.getElementById('btn-save');
     if (btnSave) btnSave.addEventListener('click', saveDraft);
 
+    /* 미리보기 버튼 */
     var btnPreview = document.getElementById('btn-preview');
     if (btnPreview) btnPreview.addEventListener('click', goPreview);
 
+    /* 예시 채우기 */
     var btnExample = document.getElementById('btn-example');
     if (btnExample) btnExample.addEventListener('click', fillExample);
 
+    /* 표 삽입 팝업 */
     var btnTable = document.getElementById('btn-insert-table');
     if (btnTable) btnTable.addEventListener('click', insertTable);
 
+    /* 표 조작 버튼 */
     var tableActions = {
       'btn-add-row': addRow,
       'btn-add-col': addCol,
@@ -737,8 +746,10 @@
       if (el) el.addEventListener('click', tableActions[id]);
     });
 
+    /* Tab 키 → 셀 이동 */
     document.addEventListener('keydown', moveToNextCell);
 
+    /* Ctrl+S 저장 */
     document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
@@ -746,6 +757,7 @@
       }
     });
 
+    /* Ctrl+Shift+R 강력 새로고침 */
     document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
         e.preventDefault();
@@ -765,6 +777,9 @@
     return safeJSON(localStorage.getItem('draft_' + id));
   }
 
+  /* ══════════════════════════════════════════
+     테이블 팝업 제어
+  ══════════════════════════════════════════ */
   function showTablePopup() {
     var popup = document.getElementById('table-popup');
     if (popup) popup.style.display = 'flex';
@@ -776,7 +791,7 @@
   }
 
   /* ══════════════════════════════════════════
-     전역 노출
+     전역 노출 (HTML에서 직접 호출하는 함수들)
   ══════════════════════════════════════════ */
   window.selectTemplate = selectTemplate;
   window.onFieldInput = onFieldInput;
