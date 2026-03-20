@@ -84,7 +84,8 @@
 
     /* ══════════════════════════════
        수신·경유·참조·제목
-       글씨 크기 11pt 통일
+       ★ 레이블+콜론 하나의 span으로 묶음
+       ★ 글씨 크기 11pt 통일
     ══════════════════════════════ */
     .doc-meta-area { margin-bottom: 8px; }
     .doc-meta-row {
@@ -92,22 +93,31 @@
       font-size: 11pt; font-weight: 400;
       line-height: 1.7; margin-bottom: 3px;
     }
-    .doc-meta-label {
-      display: inline-block;
-      width: 5em; font-weight: 600;
-      white-space: nowrap; flex-shrink: 0;
-      font-size: 11pt;
-    }
-    .doc-colon { margin: 0 6px 0 0; flex-shrink: 0; }
-    .doc-meta-value { flex: 1; font-size: 11pt; }
 
-    /* 제목 행: 크기 통일, 굵기만 강조 */
+    /* ★ 레이블+콜론 통합 span
+       width 고정으로 세 줄 콜론 위치 맞춤 */
+    .doc-meta-label-colon {
+      display: inline-block;
+      width: 6em;              /* 수신/참조/제목 레이블+콜론 너비 통일 */
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: 11pt;
+      letter-spacing: 0;
+    }
+    .doc-meta-value {
+      flex: 1;
+      font-size: 11pt;
+      padding-left: 4px;      /* 콜론 뒤 한 칸 간격 */
+    }
+
+    /* 제목 행: 굵기만 강조 */
     .doc-title-area {
       display: flex; align-items: baseline;
       font-size: 11pt; font-weight: 700;
       padding-bottom: 8px;
     }
-    .doc-title-text { flex: 1; }
+    .doc-title-text { flex: 1; padding-left: 4px; }
     .doc-title-divider {
       border: none; border-top: 1.5px solid #111;
       margin: 0 0 20px 0;
@@ -129,8 +139,8 @@
 
     /* ══════════════════════════════
        붙임
-       ★ gap 요소 대신 &nbsp;&nbsp; 직접 삽입
-       ★ label 고정 너비 없음
+       ★ 레이블 뒤 &nbsp;&nbsp; 두 칸 직접 삽입
+       ★ gap 요소 제거
     ══════════════════════════════ */
     .doc-attach-area {
       display: flex; align-items: flex-start;
@@ -139,11 +149,6 @@
     .doc-attach-label {
       font-weight: 600;
       white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .doc-attach-gap {
-      display: inline-block;
-      width: 1em;              /* ★ 붙임 레이블 뒤 한 글자 간격 */
       flex-shrink: 0;
     }
     .doc-attach-content {
@@ -180,7 +185,6 @@
     .doc-approval-space {
       display: inline-block;
       width: 48px; height: 1.2em;
-      /* 서명 공간: 밑줄 없음 */
     }
 
     /* ── 협조자 ── */
