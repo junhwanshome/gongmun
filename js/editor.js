@@ -5,18 +5,12 @@
 (function () {
   'use strict';
 
-  /* ══════════════════════════════════════════
-     전역 변수 (단 한 번만 선언)
-  ══════════════════════════════════════════ */
   var currentDocId      = null;
   var currentTemplateId = 'internal';
   var isModified        = false;
   var editorAutoSave    = null;
   var realtimeTimer     = null;
 
-  /* ══════════════════════════════════════════
-     템플릿 정의
-  ══════════════════════════════════════════ */
   var TEMPLATE_FIELDS = {
     internal: {
       label: '내부결재',
@@ -87,9 +81,6 @@
     }
   };
 
-  /* ══════════════════════════════════════════
-     예시 데이터
-  ══════════════════════════════════════════ */
   var EXAMPLES = {
     internal: {
       title:'2024년 사회복지시설 운영현황 보고', date:'2024. 3. 20.', receiver:'관장',
@@ -101,7 +92,7 @@
       title:'2024년 사회복지시설 운영현황 보고', date:'2024. 3. 20.',
       receiver:'○○시장', reference:'사회복지과장', docNo:'복지-2024-0001',
       purpose:'「사회복지사업법」 제6조에 따라 2024년도 1분기 운영현황을 보고합니다.',
-      body:'1. 시설 현황\n   가. 시설명: 임마누엘집\n   나. 정원: 50명\n2. 이용자 현황: 45명',
+      body:'1. 시설 현황\n가. 시설명: 임마누엘집\n나. 정원: 50명\n2. 이용자 현황: 45명',
       attachments:'운영현황 보고서 1부', senderName:'임마누엘집'
     },
     cooperation: {
@@ -127,16 +118,12 @@
     }
   };
 
-  /* ══════════════════════════════════════════
-     초기화
-  ══════════════════════════════════════════ */
   function initEditor() {
-    var params   = getUrlParams();
-    var tmplId   = params.template || 'internal';
-    var docId    = params.id;
-    var docType  = params.type || 'draft';
+    var params  = getUrlParams();
+    var tmplId  = params.template || 'internal';
+    var docId   = params.id;
+    var docType = params.type || 'draft';
 
-    /* 기존 문서 불러오기 */
     if (docId) {
       var existing = (docType === 'doc') ? Storage.getDoc(docId) : Storage.getDraft(docId);
       if (existing) {
@@ -149,51 +136,37 @@
       }
     }
 
-    /* 새 문서 */
     currentDocId = generateId('draft');
     selectTemplate(tmplId);
     prefillOrgDefaults();
   }
 
-  /* ══════════════════════════════════════════
-     기관 기본값 채우기
-  ══════════════════════════════════════════ */
   function prefillOrgDefaults() {
     var settings = Storage.getSettings();
-    var detail   = (typeof ExtendedStorage !== 'undefined') ? ExtendedStorage.getOrgDetail() : {};
     setFieldValue('senderName', settings.orgName || '');
     setFieldValue('date', getTodayString());
   }
 
-  /* ══════════════════════════════════════════
-     템플릿 선택
-  ══════════════════════════════════════════ */
   function selectTemplate(tmplId) {
     if (!TEMPLATE_FIELDS[tmplId]) tmplId = 'internal';
     currentTemplateId = tmplId;
 
-    /* 버튼 활성화 */
     document.querySelectorAll('.template-btn').forEach(function (btn) {
       btn.classList.remove('active');
       if (btn.dataset.template === tmplId) btn.classList.add('active');
     });
 
-    /* 가이드 패널 */
     var guide = document.getElementById('guide-panel');
     if (guide) {
       guide.innerHTML = '<strong>' + TEMPLATE_FIELDS[tmplId].label + '</strong> 작성 가이드: '
         + '제목은 간결하게, 본문은 육하원칙에 따라 작성하세요.';
     }
 
-    /* 폼 렌더링 */
     renderFormFields(tmplId);
     prefillOrgDefaults();
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════
-     폼 필드 렌더링
-  ══════════════════════════════════════════ */
   function renderFormFields(tmplId) {
     var container = document.getElementById('form-fields');
     if (!container) return;
@@ -211,18 +184,17 @@
       if (f.type === 'textarea') {
         html += '<textarea id="field-' + f.id + '" name="' + f.id + '" '
               + 'class="form-control form-textarea" rows="3" '
-              + 'placeholder="' + (f.placeholder||'') + '"></textarea>';
+              + 'placeholder="' + (f.placeholder || '') + '"></textarea>';
       } else {
         html += '<input id="field-' + f.id + '" name="' + f.id + '" type="text" '
               + 'class="form-control" '
-              + 'placeholder="' + (f.placeholder||'') + '">';
+              + 'placeholder="' + (f.placeholder || '') + '">';
       }
       html += '</div>';
     });
 
     container.innerHTML = html;
 
-    /* 실시간 미리보기 이벤트 */
     container.querySelectorAll('input, textarea').forEach(function (el) {
       el.addEventListener('input', function () {
         isModified = true;
@@ -233,9 +205,6 @@
     });
   }
 
-  /* ══════════════════════════════════════════
-     필드 값 설정 / 가져오기
-  ══════════════════════════════════════════ */
   function setFieldValue(id, value) {
     var el = document.getElementById('field-' + id);
     if (el) el.value = value || '';
@@ -253,9 +222,6 @@
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════
-     모든 필드 수집
-  ══════════════════════════════════════════ */
   function collectFields() {
     var tpl    = TEMPLATE_FIELDS[currentTemplateId];
     var fields = {};
@@ -267,9 +233,6 @@
     return fields;
   }
 
-  /* ══════════════════════════════════════════
-     문서 제목 결정
-  ══════════════════════════════════════════ */
   function getDocTitle() {
     var title = getFieldValue('title');
     if (!title) title = getFieldValue('sponsorName') ? '후원자 감사 서한' : '';
@@ -277,17 +240,12 @@
     return title;
   }
 
-  /* ══════════════════════════════════════════
-     저장 상태 표시
-  ══════════════════════════════════════════ */
   function setSaveStatus(msg) {
     var el = document.getElementById('save-status');
     if (el) el.textContent = msg;
   }
 
-  /* ══════════════════════════════════════════
-     미리보기 업데이트 (editor-content textarea)
-  ══════════════════════════════════════════ */
+  /* ── 에디터 textarea 미리보기 ── */
   function updatePreview() {
     var ta = document.getElementById('editor-content');
     if (!ta) return;
@@ -331,7 +289,11 @@
     if (f.attachments) {
       lines.push('붙  임');
       f.attachments.split('\n').forEach(function (a, i) {
-        if (a.trim()) lines.push('  ' + (i+1) + '. ' + a.trim() + '  1부.');
+        var trimmed = a.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
+        if (trimmed) {
+          var item = trimmed.endsWith('.') ? trimmed : trimmed + '.';
+          lines.push('  ' + (i + 1) + '. ' + item);
+        }
       });
     }
     lines.push('끝.');
@@ -341,9 +303,6 @@
     ta.value = lines.join('\n');
   }
 
-  /* ══════════════════════════════════════════
-     예시 채우기
-  ══════════════════════════════════════════ */
   function fillExample() {
     var ex = EXAMPLES[currentTemplateId];
     if (!ex) return;
@@ -353,9 +312,6 @@
     if (typeof showToast === 'function') showToast('예시 데이터를 채웠습니다.', 'info');
   }
 
-  /* ══════════════════════════════════════════
-     임시저장
-  ══════════════════════════════════════════ */
   function saveDraft() {
     var fields = collectFields();
     var title  = getDocTitle();
@@ -375,7 +331,7 @@
     var ok = Storage.saveDraft(draft);
     if (ok) {
       isModified = false;
-      setSaveStatus('저장됨 ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}));
+      setSaveStatus('저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
       if (typeof showToast === 'function') showToast('💾 임시저장되었습니다.', 'success');
     } else {
       if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'error');
@@ -383,9 +339,6 @@
     return ok;
   }
 
-  /* ══════════════════════════════════════════
-     미리보기 (preview.html 이동)
-  ══════════════════════════════════════════ */
   function goPreview() {
     saveDraft();
     setTimeout(function () {
@@ -393,53 +346,40 @@
     }, 300);
   }
 
-  /* ══════════════════════════════════════════
-     이벤트 바인딩
-  ══════════════════════════════════════════ */
   function bindEvents() {
-
-    /* 템플릿 버튼 */
     document.querySelectorAll('.template-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         selectTemplate(btn.dataset.template);
       });
     });
 
-    /* 예시 채우기 */
     var fillBtn = document.getElementById('fill-example-btn');
     if (fillBtn) fillBtn.addEventListener('click', fillExample);
 
-    /* 임시저장 버튼 */
     var saveBtn = document.getElementById('save-draft-btn');
     if (saveBtn) saveBtn.addEventListener('click', saveDraft);
 
-    /* Ctrl+S */
     document.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveDraft(); }
     });
 
-    /* 미리보기 버튼 */
     var previewBtn = document.getElementById('preview-btn');
     if (previewBtn) previewBtn.addEventListener('click', goPreview);
 
-    /* Ctrl+Enter */
     document.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); goPreview(); }
     });
 
-    /* 규칙 검사 */
     var ruleBtn = document.getElementById('rule-check-btn');
     if (ruleBtn) ruleBtn.addEventListener('click', function () {
       if (typeof Modal !== 'undefined') Modal.open('check-modal');
     });
 
-    /* 순화어 */
     var purifyBtn = document.getElementById('purify-btn');
     if (purifyBtn) purifyBtn.addEventListener('click', function () {
       if (typeof Modal !== 'undefined') Modal.open('purify-modal');
     });
 
-    /* 모달 닫기 */
     document.querySelectorAll('.modal-close-btn, .modal-overlay').forEach(function (el) {
       el.addEventListener('click', function (e) {
         if (e.target === el) {
@@ -449,20 +389,15 @@
       });
     });
 
-    /* 자동저장 30초 */
     editorAutoSave = setInterval(function () {
       if (isModified) saveDraft();
     }, 30000);
   }
 
-  /* ══════════════════════════════════════════
-     DOMContentLoaded
-  ══════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function () {
     initEditor();
     bindEvents();
 
-    /* 기관명 미설정 경고 */
     var settings = Storage.getSettings();
     var notice   = document.getElementById('org-name-notice');
     if (notice && !settings.orgName) notice.style.display = 'flex';
