@@ -85,7 +85,9 @@
                <div class="doc-org-name">${esc(orgName)}</div>
              </div>`;
 
-    /* ② 수신·경유·참조 */
+    /* ② 수신·경유·참조
+       ★ 레이블과 콜론을 하나의 span으로 묶어
+          "수    신:" 형태로 출력, 뒤에 한 칸만 */
     html += `<div class="doc-meta-area">`;
     html += metaRow('수&nbsp;&nbsp;&nbsp;&nbsp;신', esc(receiver));
     if (via) html += metaRow('경&nbsp;&nbsp;&nbsp;&nbsp;유', esc(via));
@@ -94,8 +96,7 @@
 
     /* ③ 제목 */
     html += `<div class="doc-title-area">
-               <span class="doc-meta-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
-               <span class="doc-colon">:</span>
+               <span class="doc-meta-label-colon">제&nbsp;&nbsp;&nbsp;&nbsp;목&nbsp;:</span>
                <span class="doc-title-text">${esc(title)}</span>
              </div>`;
     html += `<hr class="doc-title-divider">`;
@@ -132,22 +133,20 @@
 
   /* ══════════════════════════════════════════════
      메타 행 헬퍼
+     ★ 레이블과 콜론을 하나의 span으로 묶음
+        "수    신:" + 한 칸 + 값
   ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
-              <span class="doc-meta-label">${labelHtml}</span>
-              <span class="doc-colon">:</span>
-              <span class="doc-meta-value">${valueHtml}</span>
+              <span class="doc-meta-label-colon">${labelHtml}&nbsp;:</span>
+              <span class="doc-meta-value">&nbsp;${valueHtml}</span>
             </div>`;
   }
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     ★ 핵심 수정:
-       1) line.trim() 으로 앞뒤 공백 완전 제거
-       2) 기호 감지 후 기호+공백 부분을 정규식으로 추출
-       3) 기호와 내용을 분리해서 렌더링
-       4) padding-left 로만 들여쓰기 제어
+     ★ \u00A0 포함 모든 공백 완전 제거
+     ★ 기호 분리 후 padding-left 로만 들여쓰기
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const raw = f.body || f.content || '';
@@ -158,16 +157,15 @@
         : empty;
     }
 
-    /* 들여쓰기 규칙: 기호 정규식 + padding-left em */
     const INDENT_RULES = [
-      { re: /^(\d+\.)\s*/,       em: 0  },  // 1단계: 1.
-      { re: /^([가-힣]\.)\s*/,   em: 2  },  // 2단계: 가.
-      { re: /^(\d+\))\s*/,       em: 4  },  // 3단계: 1)
-      { re: /^([가-힣]\))\s*/,   em: 6  },  // 4단계: 가)
-      { re: /^(\(\d+\))\s*/,     em: 8  },  // 5단계: (1)
-      { re: /^(\([가-힣]\))\s*/, em: 10 },  // 6단계: (가)
-      { re: /^([①-⑳])\s*/,     em: 12 },  // 7단계: ①
-      { re: /^([㉮-㉻])\s*/,    em: 14 },  // 8단계: ㉮
+      { re: /^(\d+\.)\s*/,       em: 0  },
+      { re: /^([가-힣]\.)\s*/,   em: 2  },
+      { re: /^(\d+\))\s*/,       em: 4  },
+      { re: /^([가-힣]\))\s*/,   em: 6  },
+      { re: /^(\(\d+\))\s*/,     em: 8  },
+      { re: /^(\([가-힣]\))\s*/, em: 10 },
+      { re: /^([①-⑳])\s*/,     em: 12 },
+      { re: /^([㉮-㉻])\s*/,    em: 14 },
     ];
 
     const lines = raw.split('\n');
@@ -176,35 +174,36 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* ★ 앞뒤 공백 완전 제거 */
-      const trimmed = line.trim();
+      /* ★ \u00A0(non-breaking space) 포함 모든 앞뒤 공백 제거 */
+      const trimmed = line
+        .replace(/^[\s\u00A0]+/, '')
+        .replace(/[\s\u00A0]+$/, '');
+
       if (trimmed === '') {
         html += `<div class="doc-body-line">&nbsp;</div>`;
         return;
       }
 
-      /* ★ 기호 감지 및 분리 */
-      let indentEm  = 0;
-      let symbol    = '';
-      let content   = trimmed;
+      /* 기호 감지 및 분리 */
+      let indentEm = 0;
+      let symbol   = '';
+      let content  = trimmed;
 
       for (const rule of INDENT_RULES) {
         const m = trimmed.match(rule.re);
         if (m) {
           indentEm = rule.em;
-          symbol   = m[0].trimEnd(); /* 기호만 (뒤 공백 제거) */
-          content  = trimmed.slice(m[0].length); /* 기호 이후 내용 */
+          symbol   = m[0].replace(/[\s\u00A0]+$/, '');
+          content  = trimmed.slice(m[0].length)
+                            .replace(/^[\s\u00A0]+/, '');
           break;
         }
       }
 
-      /* 텍스트 변환 */
       const displayContent = convertTerms(applyColonSpace(convertDate(content)));
       const displaySymbol  = symbol ? `${esc(symbol)}&nbsp;` : '';
+      const endMark        = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
-      const endMark = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
-
-      /* ★ 기호 + 한 칸 + 내용, padding-left 로 들여쓰기 */
       html += `<div class="doc-body-line" style="padding-left:${indentEm}em;">`
             + displaySymbol
             + esc(displayContent)
@@ -255,42 +254,34 @@
 
   /* ══════════════════════════════════════════════
      붙임 파싱
+     ★ \u00A0 포함 모든 공백 제거
   ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
     if (!raw.trim()) return [];
-    return raw.split('\n').map(l => l.trim()).filter(Boolean);
+    return raw.split('\n')
+      .map(l => l.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, ''))
+      .filter(Boolean);
   }
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
-     ★ doc-attach-gap 제거
-     ★ "붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;" 로 직접 두 칸 삽입
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
+    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;</span>`;
+    html += `<span class="doc-attach-content">`;
 
     if (list.length === 1) {
-      /* 붙임  내용  끝. */
-      html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`
-            + `<span class="doc-attach-gap"></span>`
-            + `<span class="doc-attach-content">`
-            + `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`
-            + `</span>`;
+      html += `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`;
     } else {
-      /* 붙임  1. 내용
-               2. 내용  끝. */
-      html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`
-            + `<span class="doc-attach-gap"></span>`
-            + `<span class="doc-attach-content">`;
       list.forEach((item, i) => {
         const isLast  = i === list.length - 1;
         const endMark = isLast ? '&nbsp;&nbsp;끝.' : '';
         html += `<span class="doc-attach-line">${i + 1}.&nbsp;${esc(item)}${endMark}</span>`;
       });
-      html += `</span>`;
     }
 
-    html += `</div>`;
+    html += `</span></div>`;
     return html;
   }
 
