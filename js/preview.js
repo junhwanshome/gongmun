@@ -67,26 +67,26 @@
       try { return JSON.parse(localStorage.getItem('doc_org_detail') || '{}'); } catch (e) { return {}; }
     })();
 
-    const orgName  = settings.orgName || orgDetail.orgName || '○○기관';
+    const orgName  = settings.orgName  || orgDetail.orgName  || '○○기관';
     const f        = doc.fields || {};
     const tmpl     = doc.templateId || 'internal';
 
-    const title    = f.title || doc.title || '(제목 없음)';
+    const title    = f.title    || doc.title || '(제목 없음)';
     const receiver = f.receiver || '';
-    const via      = f.via || '';
+    const via      = f.via      || '';
     const ref      = f.reference || f.ref || '';
     const docNum   = f.docNumber || f.docNum || '';
-    const dateStr  = f.date || doc.date || '';
+    const dateStr  = f.date     || doc.date  || '';
 
     let html = '';
 
-    /* ① 기관명 ─────────────────── 구분선 없음 */
+    /* ① 기관명 ──────────────────── 구분선 없음 */
     html += `
       <div class="doc-header-area">
         <div class="doc-org-name">${escapeHtml(orgName)}</div>
       </div>`;
 
-    /* ② 수신·경유·참조 ──────────── 구분선 없음 */
+    /* ② 수신·경유·참조 ───────────── 구분선 없음 */
     html += `<div class="doc-meta-area">`;
     html += `
         <div class="doc-meta-row">
@@ -112,7 +112,7 @@
     }
     html += `</div>`;
 
-    /* ③ 제목 ───────────────────── 구분선 없음 */
+    /* ③ 제목 ────────────────────── 구분선 없음 */
     html += `
       <div class="doc-title-area">
         <span class="doc-title-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
@@ -144,11 +144,17 @@
         <span class="doc-sender-value">${escapeHtml(senderName)}</span>
       </div>`;
 
-    /* ⑦ 결재란 */
+    /* ★ 구분선: 발신명의 바로 아래 ★ */
+    html += `<hr class="doc-sender-divider">`;
+
+    /* ⑦ 결재란 + 협조자 */
     html += renderApprovalBlock(doc, settings, orgDetail);
 
-    /* ⑧ 하단 정보 */
-    html += renderFooterInfo(doc, settings, orgDetail, docNum, dateStr);
+    /* ⑧ 시행·접수 행 */
+    html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
+
+    /* ⑨ 하단 정보선 + 주소 등 */
+    html += renderFooterInfo(doc, settings, orgDetail);
 
     container.innerHTML = html;
   }
@@ -160,38 +166,91 @@
     return `<p>${escapeHtml(body).replace(/\n/g, '<br>')}</p>`;
   }
 
-  /* ── 결재란: 테두리/사각박스 완전 제거 ──────────────────── */
+  /* ── ⑦ 결재란 + 협조자 ──────────────────────────────── */
   function renderApprovalBlock(doc, settings, orgDetail) {
-    const approvers = settings.approvers || orgDetail.approvers || [];
-    if (!approvers.length) return '';
+    const approvers   = settings.approvers   || orgDetail.approvers   || [];
+    const cooperators = settings.cooperators || orgDetail.cooperators || '';
 
-    let html = '<div class="doc-approval-area">';
-    approvers.forEach(ap => {
-      html += `
-        <div class="doc-approval-cell">
-          <div class="doc-approval-title">${escapeHtml(ap.title || '')}</div>
-          <div class="doc-approval-sign"></div>
-          <div class="doc-approval-name">${escapeHtml(ap.name || '')}</div>
-        </div>`;
-    });
+    let html = '<div class="doc-approval-wrap">';
+
+    /* 결재자 행 */
+    html += '<div class="doc-approval-row">';
+    if (approvers.length) {
+      approvers.forEach(ap => {
+        html += `
+          <div class="doc-approval-cell">
+            <div class="doc-approval-title">${escapeHtml(ap.title || '')}</div>
+            <div class="doc-approval-sign"></div>
+            <div class="doc-approval-name">${escapeHtml(ap.name || '')}</div>
+          </div>`;
+      });
+    } else {
+      /* 기본값: 담당 / 사무국장 / 원장 */
+      ['담당', '사무국장', '원장'].forEach(t => {
+        html += `
+          <div class="doc-approval-cell">
+            <div class="doc-approval-title">${t}</div>
+            <div class="doc-approval-sign"></div>
+            <div class="doc-approval-name"></div>
+          </div>`;
+      });
+    }
+    html += '</div>';
+
+    /* 협조자 행 */
+    html += `
+      <div class="doc-cooperator-row">
+        <span class="doc-cooperator-label">협&nbsp;조&nbsp;자</span>
+        <span class="doc-cooperator-value">${escapeHtml(cooperators)}</span>
+      </div>`;
+
     html += '</div>';
     return html;
   }
 
-  /* ── 하단 정보 ──────────────────────────────────────── */
-  function renderFooterInfo(doc, settings, orgDetail, docNum, dateStr) {
+  /* ── ⑧ 시행·접수 행 ─────────────────────────────────── */
+  function renderExecRow(doc, settings, orgDetail, docNum, dateStr) {
+    const orgCode  = settings.orgCode  || orgDetail.orgCode  || orgDetail.orgName || settings.orgName || '○○';
+    const execNum  = docNum  ? `${orgCode} ${docNum}` : `${orgCode} ${new Date().getFullYear()} - `;
+    const execDate = dateStr ? `(${dateStr})` : `(${new Date().getFullYear()}.　.　.)`;
+
+    return `
+      <div class="doc-exec-row">
+        <span class="doc-exec-label">시&nbsp;&nbsp;&nbsp;행</span>
+        <span class="doc-exec-value">${escapeHtml(execNum)}&nbsp;&nbsp;${escapeHtml(execDate)}</span>
+        <span class="doc-exec-spacer"></span>
+        <span class="doc-exec-label">접&nbsp;&nbsp;&nbsp;수</span>
+        <span class="doc-exec-recv">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+      </div>`;
+  }
+
+  /* ── ⑨ 하단 정보 ────────────────────────────────────── */
+  function renderFooterInfo(doc, settings, orgDetail) {
+    const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
     const homepage = orgDetail.homepage || settings.homepage || '';
     const tel      = orgDetail.tel      || settings.tel      || '';
     const fax      = orgDetail.fax      || settings.fax      || '';
+    const email    = orgDetail.email    || settings.email    || '';
+    const openness = orgDetail.openness || settings.openness || '공개';
 
-    let html = '<div class="doc-footer-info">';
-    if (addr)     html += `<span>${escapeHtml(addr)}</span>`;
-    if (homepage) html += `<span>${escapeHtml(homepage)}</span>`;
-    if (tel)      html += `<span>전화 ${escapeHtml(tel)}</span>`;
-    if (fax)      html += `<span>팩스 ${escapeHtml(fax)}</span>`;
-    html += '</div>';
-    return html;
+    let addrStr = '';
+    if (zip)  addrStr += `우 ${zip}&nbsp;&nbsp;`;
+    if (addr) addrStr += `주소 ${escapeHtml(addr)}`;
+    if (homepage) addrStr += `&nbsp;/&nbsp;${escapeHtml(homepage)}`;
+
+    let contactStr = '';
+    if (tel)   contactStr += `전화(${escapeHtml(tel)})`;
+    if (fax)   contactStr += `&nbsp;&nbsp;전송(${escapeHtml(fax)})`;
+    if (email) contactStr += `&nbsp;/&nbsp;${escapeHtml(email)}`;
+    if (openness) contactStr += `&nbsp;/&nbsp;${escapeHtml(openness)}`;
+
+    return `
+      <div class="doc-footer-wrap">
+        <hr class="doc-footer-divider">
+        <div class="doc-footer-addr">${addrStr}</div>
+        <div class="doc-footer-contact">${contactStr}</div>
+      </div>`;
   }
 
   /* ── 유틸 ───────────────────────────────────────────── */
