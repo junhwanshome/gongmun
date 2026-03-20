@@ -85,7 +85,6 @@
     /* ══════════════════════════════
        수신·경유·참조·제목
        글씨 크기 11pt 통일
-       제목만 font-weight:700 강조
     ══════════════════════════════ */
     .doc-meta-area { margin-bottom: 8px; }
     .doc-meta-row {
@@ -102,7 +101,7 @@
     .doc-colon { margin: 0 6px 0 0; flex-shrink: 0; }
     .doc-meta-value { flex: 1; font-size: 11pt; }
 
-    /* 제목 행 */
+    /* 제목 행: 크기 통일, 굵기만 강조 */
     .doc-title-area {
       display: flex; align-items: baseline;
       font-size: 11pt; font-weight: 700;
@@ -117,21 +116,21 @@
     /* ══════════════════════════════
        본문
        ★ white-space: normal
-         → padding-left 만으로 들여쓰기 제어
-         → 사용자 입력 공백이 렌더링에 영향 없음
+       ★ padding-left 로만 들여쓰기
     ══════════════════════════════ */
     .doc-body-area { font-size: 11pt; margin-bottom: 16px; }
     .doc-body-line {
       display: block;
       line-height: 1.8;
       word-break: keep-all;
-      white-space: normal;   /* ★ pre-wrap → normal 변경 */
+      white-space: normal;
     }
     .doc-body-empty { color: #aaa; }
 
     /* ══════════════════════════════
        붙임
-       ★ doc-attach-gap: 1em (두 칸)
+       ★ gap 요소 대신 &nbsp;&nbsp; 직접 삽입
+       ★ label 고정 너비 없음
     ══════════════════════════════ */
     .doc-attach-area {
       display: flex; align-items: flex-start;
@@ -144,7 +143,7 @@
     }
     .doc-attach-gap {
       display: inline-block;
-      width: 1em;            /* ★ 2em → 1em 축소 */
+      width: 1em;              /* ★ 붙임 레이블 뒤 한 글자 간격 */
       flex-shrink: 0;
     }
     .doc-attach-content {
@@ -163,7 +162,7 @@
       margin: 0 0 8px 0;
     }
 
-    /* ── 결재란 ── */
+    /* ── 결재란: 좌측 정렬, 한 줄 ── */
     .doc-approval-wrap { margin-bottom: 0; }
     .doc-approval-row {
       display: flex;
@@ -181,6 +180,7 @@
     .doc-approval-space {
       display: inline-block;
       width: 48px; height: 1.2em;
+      /* 서명 공간: 밑줄 없음 */
     }
 
     /* ── 협조자 ── */
@@ -202,10 +202,10 @@
       font-size: 10pt; line-height: 1.5;
       margin-bottom: 6px; gap: 6px;
     }
-    .doc-exec-label { font-weight: 600; white-space: nowrap; }
-    .doc-exec-value { flex: 1; }
+    .doc-exec-label  { font-weight: 600; white-space: nowrap; }
+    .doc-exec-value  { flex: 1; }
     .doc-exec-spacer { flex: 1; }
-    .doc-exec-recv  { white-space: nowrap; }
+    .doc-exec-recv   { white-space: nowrap; }
     .doc-exec-date-space {
       display: inline-block;
       width: 7em; height: 1em;
