@@ -28,10 +28,8 @@ function initEditor() {
   const templateId = getUrlParam('template');
 
   if (id) {
-    // 기존 문서 불러오기
     loadExistingDocument(id, type);
   } else {
-    // 새 문서
     currentDocId = generateId();
     if (templateId && TEMPLATES[templateId]) {
       selectTemplate(templateId);
@@ -40,7 +38,6 @@ function initEditor() {
     }
   }
 
-  // 기관 설정 불러오기
   loadOrgSettings();
 }
 
@@ -50,13 +47,14 @@ function initEditor() {
 function loadOrgSettings() {
   const settings = Storage.getSettings();
 
-  // 기관명 표시
-  const orgNameEl = document.getElementById('org-name-display');
+  const orgNameEl = document.getElementById(
+    'org-name-display'
+  );
   if (orgNameEl) {
-    orgNameEl.textContent = settings.orgName || '기관명 미설정';
+    orgNameEl.textContent =
+      settings.orgName || '기관명 미설정';
   }
 
-  // 수신처 목록 로드
   loadReceiverOptions();
 }
 
@@ -69,9 +67,10 @@ function loadReceiverOptions() {
   if (!select) return;
 
   select.innerHTML = `
-    <option value="">수신처 선택 (저장된 목록)</option>
+    <option value="">저장된 수신처 선택</option>
     ${settings.receivers.map(r => `
-      <option value="${escapeHtml(r.name)}" 
+      <option
+        value="${escapeHtml(r.name)}"
         data-dept="${escapeHtml(r.dept)}">
         ${escapeHtml(r.name)}
         ${r.dept ? `(${escapeHtml(r.dept)})` : ''}
@@ -82,11 +81,16 @@ function loadReceiverOptions() {
   select.addEventListener('change', () => {
     const selected = select.options[select.selectedIndex];
     if (selected.value) {
-      const receiverInput = document.getElementById('field-receiver');
-      const deptInput = document.getElementById('field-receiver-dept');
+      const receiverInput = document.getElementById(
+        'field-receiver'
+      );
+      const deptInput = document.getElementById(
+        'field-receiver-dept'
+      );
       if (receiverInput) receiverInput.value = selected.value;
-      if (deptInput) deptInput.dataset.dept = selected.dataset.dept;
-      if (deptInput) deptInput.value = selected.dataset.dept || '';
+      if (deptInput) {
+        deptInput.value = selected.dataset.dept || '';
+      }
       updatePreviewContent();
     }
   });
@@ -115,10 +119,8 @@ function loadExistingDocument(id, type) {
   currentDocId = doc.id;
   currentTemplateId = doc.templateId || 'internal';
 
-  // 템플릿 선택
   selectTemplate(currentTemplateId, false);
 
-  // 필드 채우기
   if (doc.fields) {
     Object.keys(doc.fields).forEach(key => {
       const input = document.getElementById(`field-${key}`);
@@ -128,7 +130,6 @@ function loadExistingDocument(id, type) {
     });
   }
 
-  // 본문 채우기
   const textarea = document.getElementById('editor-content');
   if (textarea && doc.content) {
     textarea.value = doc.content;
@@ -148,7 +149,6 @@ function selectTemplate(templateId, clearFields = true) {
 
   currentTemplateId = templateId;
 
-  // 버튼 활성화 상태 변경
   document.querySelectorAll('.template-btn').forEach(btn => {
     btn.classList.toggle(
       'active',
@@ -158,13 +158,8 @@ function selectTemplate(templateId, clearFields = true) {
 
   const template = TEMPLATES[templateId];
 
-  // 가이드 패널 업데이트
   renderGuidePanel(template);
-
-  // 폼 필드 렌더링
   renderFormFields(template, clearFields);
-
-  // 미리보기 업데이트
   updatePreviewContent();
 }
 
@@ -181,7 +176,9 @@ function renderGuidePanel(template) {
         💡 ${template.name} 작성 가이드
       </div>
       <ul class="guide-list">
-        ${template.guide.map(g => `<li>${g}</li>`).join('')}
+        ${template.guide.map(g => `
+          <li>${g}</li>
+        `).join('')}
       </ul>
     </div>
   `;
@@ -197,18 +194,23 @@ function renderFormFields(template, clearFields = true) {
   const settings = Storage.getSettings();
   let html = '';
 
+  // =====================
   // 공통 필드 - 수신
+  // =====================
   html += `
     <div class="form-group">
       <label class="form-label required">수신</label>
       <div style="display:flex;gap:8px;margin-bottom:4px">
-        <select class="form-control" id="receiver-select"
-          style="max-width:200px">
-          <option value="">저장된 수신처</option>
+        <select class="form-control"
+          id="receiver-select"
+          style="max-width:220px">
+          <option value="">저장된 수신처 선택</option>
           ${settings.receivers.map(r => `
-            <option value="${escapeHtml(r.name)}"
+            <option
+              value="${escapeHtml(r.name)}"
               data-dept="${escapeHtml(r.dept)}">
               ${escapeHtml(r.name)}
+              ${r.dept ? `(${escapeHtml(r.dept)})` : ''}
             </option>
           `).join('')}
         </select>
@@ -217,7 +219,8 @@ function renderFormFields(template, clearFields = true) {
 
   if (template.id === 'internal') {
     html += `
-      <input type="text" class="form-control"
+      <input type="text"
+        class="form-control"
         id="field-receiver"
         value="내부결재"
         readonly
@@ -227,15 +230,18 @@ function renderFormFields(template, clearFields = true) {
   } else if (template.id === 'sponsor') {
     html += `
       <div style="display:flex;gap:8px">
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-receiver"
           placeholder="후원자 성명 (예: 홍길동)"
           oninput="onFieldInput()"
         />
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-receiver-dept"
           placeholder="귀하"
           value="귀하"
+          style="max-width:80px"
           oninput="onFieldInput()"
         />
       </div>
@@ -246,12 +252,14 @@ function renderFormFields(template, clearFields = true) {
   } else {
     html += `
       <div style="display:flex;gap:8px">
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-receiver"
           placeholder="수신자 직위 (예: ○○시장)"
           oninput="onFieldInput()"
         />
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-receiver-dept"
           placeholder="담당부서 (예: 사회복지과장)"
           oninput="onFieldInput()"
@@ -264,12 +272,15 @@ function renderFormFields(template, clearFields = true) {
   }
   html += `</div>`;
 
+  // =====================
   // 경유 (내부결재 제외)
+  // =====================
   if (template.id !== 'internal') {
     html += `
       <div class="form-group">
         <label class="form-label">경유</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-via"
           placeholder="경유기관이 있는 경우만 입력"
           oninput="onFieldInput()"
@@ -281,11 +292,14 @@ function renderFormFields(template, clearFields = true) {
     `;
   }
 
+  // =====================
   // 제목
+  // =====================
   html += `
     <div class="form-group">
       <label class="form-label required">제목</label>
-      <input type="text" class="form-control"
+      <input type="text"
+        class="form-control"
         id="field-title"
         placeholder="문서 내용을 간단명확하게 표현해요"
         oninput="onFieldInput()"
@@ -293,14 +307,17 @@ function renderFormFields(template, clearFields = true) {
     </div>
   `;
 
-  // 관련 근거 (협조, 행사 안내)
+  // =====================
+  // 관련 근거
+  // =====================
   if (template.id === 'cooperation' ||
       template.id === 'event' ||
       template.id === 'government') {
     html += `
       <div class="form-group">
         <label class="form-label">관련 근거</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-related"
           placeholder="예: 관련: ○○복지관-123(2024. 1. 1.)"
           oninput="onFieldInput()"
@@ -312,12 +329,15 @@ function renderFormFields(template, clearFields = true) {
     `;
   }
 
+  // =====================
   // 행사 안내 전용 필드
+  // =====================
   if (template.id === 'event') {
     html += `
       <div class="form-group">
         <label class="form-label required">일시</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-datetime"
           placeholder="예: 2024. 2. 1.(목) 14:00~16:00"
           oninput="onFieldInput()"
@@ -325,7 +345,8 @@ function renderFormFields(template, clearFields = true) {
       </div>
       <div class="form-group">
         <label class="form-label required">장소</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-location"
           placeholder="예: ○○복지관 3층 대회의실"
           oninput="onFieldInput()"
@@ -333,7 +354,8 @@ function renderFormFields(template, clearFields = true) {
       </div>
       <div class="form-group">
         <label class="form-label">대상</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-target"
           placeholder="예: 지역 복지기관 담당자"
           oninput="onFieldInput()"
@@ -342,12 +364,15 @@ function renderFormFields(template, clearFields = true) {
     `;
   }
 
+  // =====================
   // 후원자 감사 전용 필드
+  // =====================
   if (template.id === 'sponsor') {
     html += `
       <div class="form-group">
         <label class="form-label">수신자 주소</label>
-        <input type="text" class="form-control"
+        <input type="text"
+          class="form-control"
           id="field-address"
           placeholder="예: 우12345 ○○시 ○○구 ○○로 123"
           oninput="onFieldInput()"
@@ -356,11 +381,16 @@ function renderFormFields(template, clearFields = true) {
     `;
   }
 
+  // =====================
   // 본문
+  // =====================
   html += `
     <div class="form-group">
-      <label class="form-label required">본문 내용</label>
-      <textarea class="form-control"
+      <label class="form-label required">
+        본문 내용
+      </label>
+      <textarea
+        class="form-control"
         id="field-body"
         rows="10"
         placeholder="본문 내용을 입력해요&#10;육하원칙(누가, 무엇을, 언제, 어디서, 왜, 어떻게)에 따라 작성해요"
@@ -369,14 +399,17 @@ function renderFormFields(template, clearFields = true) {
     </div>
   `;
 
+  // =====================
   // 붙임
+  // =====================
   html += `
     <div class="form-group">
       <label class="form-label">붙임</label>
-      <textarea class="form-control"
+      <textarea
+        class="form-control"
         id="field-attachments"
         rows="3"
-        placeholder="예: 1. ○○○ 계획서 1부.&#10;2. ○○○ 서류 1부."
+        placeholder="예: 1. ○○○ 계획서 1부.&#10;    2. ○○○ 서류 1부."
         oninput="onFieldInput()"
       ></textarea>
       <div class="form-hint">
@@ -385,19 +418,72 @@ function renderFormFields(template, clearFields = true) {
     </div>
   `;
 
+  // =====================
+  // 시행번호 / 접수번호
+  // =====================
+  html += `
+    <div class="card"
+      style="background:var(--gray-100);
+        padding:16px;
+        margin-top:8px">
+      <div style="font-size:13px;
+        font-weight:700;
+        color:var(--gray-700);
+        margin-bottom:12px">
+        📌 시행/접수 정보
+      </div>
+      <div style="display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px">
+        <div class="form-group"
+          style="margin-bottom:0">
+          <label class="form-label">시행번호</label>
+          <input type="text"
+            class="form-control"
+            id="field-docNumber"
+            placeholder="예: 임마누엘집 2024-001"
+            oninput="onFieldInput()"
+          />
+          <div class="form-hint">
+            문서 등록번호를 입력해요
+          </div>
+        </div>
+        <div class="form-group"
+          style="margin-bottom:0">
+          <label class="form-label">접수번호</label>
+          <input type="text"
+            class="form-control"
+            id="field-receiptNumber"
+            placeholder="접수 후 입력 (선택)"
+            oninput="onFieldInput()"
+          />
+          <div class="form-hint">
+            접수시 기재해요
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
   container.innerHTML = html;
 
-  // 수신처 선택 이벤트 바인딩
+  // =====================
+  // 수신처 선택 이벤트
+  // =====================
   const select = document.getElementById('receiver-select');
   if (select) {
     select.addEventListener('change', () => {
       const selected = select.options[select.selectedIndex];
       if (selected.value) {
-        const receiverInput =
-          document.getElementById('field-receiver');
-        const deptInput =
-          document.getElementById('field-receiver-dept');
-        if (receiverInput) receiverInput.value = selected.value;
+        const receiverInput = document.getElementById(
+          'field-receiver'
+        );
+        const deptInput = document.getElementById(
+          'field-receiver-dept'
+        );
+        if (receiverInput) {
+          receiverInput.value = selected.value;
+        }
         if (deptInput) {
           deptInput.value = selected.dataset.dept || '';
         }
@@ -406,7 +492,6 @@ function renderFormFields(template, clearFields = true) {
     });
   }
 
-  // 예시 채우기 버튼이 있으면 실행
   if (clearFields) {
     clearAllFields();
   }
@@ -419,11 +504,8 @@ function clearAllFields() {
   document.querySelectorAll(
     '#form-fields input, #form-fields textarea'
   ).forEach(el => {
-    if (el.id !== 'field-receiver' ||
-        currentTemplateId !== 'internal') {
-      if (el.readOnly) return;
-      el.value = '';
-    }
+    if (el.readOnly) return;
+    el.value = '';
   });
 
   const textarea = document.getElementById('editor-content');
@@ -441,7 +523,6 @@ function fillExample() {
 
   const example = template.example;
 
-  // 각 필드에 예시 값 채우기
   Object.keys(example).forEach(key => {
     const input = document.getElementById(`field-${key}`);
     if (input) {
@@ -460,7 +541,6 @@ function onFieldInput() {
   isModified = true;
   updatePreviewContent();
 
-  // 실시간 체크 (딜레이)
   if (realtimeCheckTimer) clearTimeout(realtimeCheckTimer);
   realtimeCheckTimer = setTimeout(() => {
     runRealtimeCheck();
@@ -486,9 +566,10 @@ function buildDocumentContent() {
   if (!template) return '';
 
   const settings = Storage.getSettings();
-  const orgName = settings.orgName || '○○사회복지관';
+  const detail = ExtendedStorage.getOrgDetail();
+  const orgName = settings.orgName || '○○기관';
+  const today = getTodayString();
 
-  // 필드 값 수집
   const getValue = (id) => {
     const el = document.getElementById(`field-${id}`);
     return el ? el.value.trim() : '';
@@ -505,8 +586,13 @@ function buildDocumentContent() {
   const location = getValue('location');
   const target = getValue('target');
   const address = getValue('address');
+  const docNumber = getValue('docNumber');
+  const receiptNumber = getValue('receiptNumber');
 
   let content = '';
+
+  // 기관명
+  content += `${orgName}\n\n`;
 
   // 수신
   if (currentTemplateId === 'internal') {
@@ -523,20 +609,15 @@ function buildDocumentContent() {
   }
 
   // 경유
-  if (via) {
-    content += `(경유) ${via}\n`;
-  } else {
-    content += `(경유)\n`;
+  if (currentTemplateId !== 'internal') {
+    content += `(경유) ${via || ''}\n`;
   }
 
   // 제목
-  content += `제목  ${title}\n`;
-  content += '\n';
+  content += `제목  ${title}\n\n`;
 
   // 관련 근거
-  if (related) {
-    content += `${related}\n\n`;
-  }
+  if (related) content += `${related}\n\n`;
 
   // 행사 안내 특수 구조
   if (currentTemplateId === 'event') {
@@ -546,29 +627,55 @@ function buildDocumentContent() {
     if (target) content += `3. 대상: ${target}\n`;
     content += '\n';
   } else {
-    // 일반 본문
     if (body) content += `${body}\n\n`;
   }
 
-  // 붙임
+  // 붙임 + 끝
   if (attachments) {
-    content += `붙임  ${attachments}  끝.\n`;
+    content += `붙임  ${attachments}  끝.\n\n`;
   } else {
-    content += `끝.\n`;
+    content += `끝.\n\n`;
+  }
+
+  // 발신명의 (내부결재 제외)
+  if (currentTemplateId !== 'internal') {
+    content += `\n${orgName}장\n\n`;
+  }
+
+  // 결재라인
+  const approvalLine = settings.approvalLevels
+    .map((l, idx) => {
+      return idx === 0
+        ? `★${l.title || '담당'}`
+        : (l.title || '');
+    })
+    .join('  ');
+  content += `${approvalLine}\n`;
+
+  // 협조자
+  if (settings.cooperators &&
+      settings.cooperators.length > 0) {
+    const coopLine = settings.cooperators
+      .map(c => c.title || '')
+      .join('  ');
+    content += `협조자  ${coopLine}\n`;
   }
 
   content += '\n';
 
-  // 발신명의 (내부결재 제외)
-  if (currentTemplateId !== 'internal') {
-    content += `${orgName}장\n\n`;
-  }
+  // 시행/접수
+  const docNum = docNumber || `${orgName}-`;
+  content += `시행  ${docNum} (${today})`;
+  content += `  접수 (\n\n`;
 
-  // 결재란
-  const approvalLine = settings.approvalLevels
-    .map(l => l.title)
-    .join('  ');
-  content += `${approvalLine}\n`;
+  // 주소 정보
+  content += `우 ${detail.zipCode || ''} `;
+  content += `${detail.address || ''} / `;
+  content += `${detail.homepage || ''}\n`;
+  content += `전화 ${detail.tel || ''} `;
+  content += `전송 ${detail.fax || ''} / `;
+  content += `${detail.email || ''} / `;
+  content += `${detail.disclosure || '공개'}\n`;
 
   return content;
 }
@@ -583,13 +690,11 @@ function runRealtimeCheck() {
   const text = textarea.value;
   checkResults = Checker.checkAll(text);
 
-  // 사이드 패널 업데이트
   CheckerUI.renderSidePanel(
     checkResults,
     'realtime-check-panel'
   );
 
-  // 체크 요약 업데이트
   updateCheckSummary(checkResults);
 }
 
@@ -614,9 +719,13 @@ function updateCheckSummary(results) {
   } else {
     summaryEl.innerHTML = `
       ${errors > 0 ?
-        `<span style="color:#dc3545">❌ ${errors}</span>` : ''}
+        `<span style="color:#dc3545">
+          ❌ ${errors}
+        </span>` : ''}
       ${warnings > 0 ?
-        `<span style="color:#856404">⚠️ ${warnings}</span>` : ''}
+        `<span style="color:#856404">
+          ⚠️ ${warnings}
+        </span>` : ''}
     `;
   }
 }
@@ -654,7 +763,6 @@ function applyAutoFix() {
   isModified = true;
   Modal.close('check-modal');
 
-  // 재검사
   setTimeout(() => {
     runRealtimeCheck();
     openCheckModal();
@@ -688,10 +796,7 @@ function openSpellCheckerPopup() {
     return;
   }
 
-  // 텍스트 클립보드에 복사
   copyToClipboard(textarea.value);
-
-  // 팝업 열기
   openSpellChecker();
 
   showToast(
@@ -711,8 +816,9 @@ function saveDraft() {
   const draft = {
     id: currentDocId,
     templateId: currentTemplateId,
-    title: titleInput ? titleInput.value.trim() || '제목 없음'
-                      : '제목 없음',
+    title: titleInput
+      ? titleInput.value.trim() || '제목 없음'
+      : '제목 없음',
     content: textarea ? textarea.value : '',
     fields: collectFields(),
     updatedAt: new Date().toISOString(),
@@ -722,10 +828,10 @@ function saveDraft() {
   Storage.saveDraft(draft);
   isModified = false;
 
-  // 저장 상태 표시
   const statusEl = document.getElementById('save-status');
   if (statusEl) {
-    statusEl.textContent = `저장됨 ${formatDate(draft.updatedAt)}`;
+    statusEl.textContent =
+      `저장됨 ${formatDate(draft.updatedAt)}`;
     statusEl.className = 'save-status saved';
   }
 
@@ -745,13 +851,16 @@ function autoSaveDocument() {
 // =====================
 function collectFields() {
   const fields = {};
-  document.querySelectorAll('#form-fields input, #form-fields textarea')
-    .forEach(el => {
-      if (el.id && el.id.startsWith('field-')) {
-        const key = el.id.replace('field-', '');
-        fields[key] = el.value;
-      }
-    });
+
+  document.querySelectorAll(
+    '#form-fields input, #form-fields textarea'
+  ).forEach(el => {
+    if (el.id && el.id.startsWith('field-')) {
+      const key = el.id.replace('field-', '');
+      fields[key] = el.value;
+    }
+  });
+
   return fields;
 }
 
@@ -765,10 +874,8 @@ function goToPreview() {
     return;
   }
 
-  // 미리보기 전 자동저장
   saveDraft();
 
-  // 미리보기 페이지로 이동
   window.location.href =
     `preview.html?id=${currentDocId}&type=draft`;
 }
@@ -791,7 +898,9 @@ function bindEditorEvents() {
   });
 
   // 임시저장 버튼
-  const saveDraftBtn = document.getElementById('save-draft-btn');
+  const saveDraftBtn = document.getElementById(
+    'save-draft-btn'
+  );
   if (saveDraftBtn) {
     saveDraftBtn.addEventListener('click', saveDraft);
   }
@@ -799,7 +908,9 @@ function bindEditorEvents() {
   // 맞춤법 검사 버튼
   const spellBtn = document.getElementById('spell-check-btn');
   if (spellBtn) {
-    spellBtn.addEventListener('click', openSpellCheckerPopup);
+    spellBtn.addEventListener(
+      'click', openSpellCheckerPopup
+    );
   }
 
   // 규칙 체크 버튼
@@ -821,7 +932,9 @@ function bindEditorEvents() {
   }
 
   // 예시 채우기 버튼
-  const exampleBtn = document.getElementById('fill-example-btn');
+  const exampleBtn = document.getElementById(
+    'fill-example-btn'
+  );
   if (exampleBtn) {
     exampleBtn.addEventListener('click', fillExample);
   }
@@ -844,7 +957,9 @@ function bindEditorEvents() {
   if (textarea) {
     textarea.addEventListener('input', () => {
       isModified = true;
-      if (realtimeCheckTimer) clearTimeout(realtimeCheckTimer);
+      if (realtimeCheckTimer) {
+        clearTimeout(realtimeCheckTimer);
+      }
       realtimeCheckTimer = setTimeout(() => {
         runRealtimeCheck();
       }, 800);
