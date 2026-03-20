@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>공문서 작성 도우미</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
+      <nav class="nav">
+        <a href="index.html" class="nav-link active">🏠 홈</a>
+        <a href="editor.html" class="nav-link">✍️ 새 문서</a>
+        <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+
+      <!-- 히어로 섹션 -->
+      <section class="hero-section">
+        <h1 class="hero-title">📄 공문서 작성 도우미</h1>
+        <p class="hero-desc">사회복지기관을 위한 공문서 작성 가이드 &amp; 규칙 검사 서비스</p>
+        <div id="org-name-hero" class="org-name-badge"></div>
+      </section>
+
+      <!-- 빠른 시작 -->
+      <section class="section">
+        <h2 class="section-title">✍️ 새 문서 작성</h2>
+        <div class="template-grid">
+          <a href="editor.html?template=internal" class="template-card">
+            <span class="template-icon">📋</span>
+            <strong>내부결재</strong>
+            <small>내부 승인용 문서</small>
+          </a>
+          <a href="editor.html?template=government" class="template-card">
+            <span class="template-icon">🏛️</span>
+            <strong>지자체 보고</strong>
+            <small>지방자치단체 제출용</small>
+          </a>
+          <a href="editor.html?template=cooperation" class="template-card">
+            <span class="template-icon">🤝</span>
+            <strong>타기관 협조</strong>
+            <small>외부기관 협조 요청</small>
+          </a>
+          <a href="editor.html?template=sponsor" class="template-card">
+            <span class="template-icon">💝</span>
+            <strong>후원자 감사</strong>
+            <small>후원자 감사 서한</small>
+          </a>
+          <a href="editor.html?template=event" class="template-card">
+            <span class="template-icon">📢</span>
+            <strong>행사 안내</strong>
+            <small>행사·회의 안내</small>
+          </a>
+        </div>
+      </section>
+
+      <!-- 임시저장 문서 -->
+      <section class="section">
+        <h2 class="section-title">
+          📝 임시저장 문서
+          <span class="badge" id="draft-count">0</span>
+        </h2>
+        <div id="draft-list">
+          <div class="empty-state">
+            <div class="empty-icon">📂</div>
+            <p>임시저장된 문서가 없습니다.</p>
+            <a href="editor.html" class="btn btn-primary">새 문서 작성하기</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 완성 문서 -->
+      <section class="section">
+        <h2 class="section-title">
+          ✅ 완성 문서
+          <span class="badge badge-success" id="doc-count">0</span>
+        </h2>
+        <div id="doc-list">
+          <div class="empty-state">
+            <div class="empty-icon">📁</div>
+            <p>완성된 문서가 없습니다.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 작성 팁 -->
+      <section class="section">
+        <h2 class="section-title">💡 공문서 작성 핵심 규칙</h2>
+        <div class="tip-grid">
+          <div class="tip-card">
+            <h4>📅 날짜 표기</h4>
+            <p>연. 월. 일. 형식 사용<br><code>2024. 1. 15.</code></p>
+          </div>
+          <div class="tip-card">
+            <h4>🕐 시간 표기</h4>
+            <p>24시간제 사용<br><code>14:00 ~ 16:00</code></p>
+          </div>
+          <div class="tip-card">
+            <h4>💰 금액 표기</h4>
+            <p>한글 병기 권장<br><code>금500,000원(금오십만원정)</code></p>
+          </div>
+          <div class="tip-card">
+            <h4>📋 항목 기호</h4>
+            <p>순서에 맞게 사용<br><code>1. → 가. → 1) → 가)</code></p>
+          </div>
+          <div class="tip-card">
+            <h4>✅ 문서 마무리</h4>
+            <p>반드시 "끝."으로 마침<br><code>…내용 끝.</code></p>
+          </div>
+          <div class="tip-card">
+            <h4>🗣️ 표현 개선</h4>
+            <p>권위적 표현 지양<br><code>제출할 것 → 제출하여 주시기 바랍니다</code></p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>공문서 작성 도우미 | 사회복지기관 맞춤형 | 공문서 규정 기반</p>
+    </div>
+  </footer>
+
+  <script src="data/rules.js"></script>
+  <script src="data/templates.js"></script>
+  <script src="js/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 기관명 표시
+      const settings = Storage.getSettings();
+      const hero = document.getElementById('org-name-hero');
+      if (hero) {
+        if (settings.orgName) {
+          hero.textContent = `🏢 ${settings.orgName}`;
+          hero.style.display = 'inline-block';
+        } else {
+          hero.innerHTML = '⚙️ <a href="settings.html">기관 설정을 먼저 해주세요</a>';
+          hero.style.display = 'inline-block';
+        }
+      }
+
+      // 임시저장 문서 목록
+      const drafts    = Storage.getAllDrafts();
+      const draftList = document.getElementById('draft-list');
+      const draftCount= document.getElementById('draft-count');
+      if (draftCount) draftCount.textContent = drafts.length;
+      if (draftList && drafts.length > 0) {
+        renderDocList(drafts, 'draft-list', 'draft');
+      }
+
+      // 완성 문서 목록
+      const docs    = Storage.getAllDocs();
+      const docList = document.getElementById('doc-list');
+      const docCount= document.getElementById('doc-count');
+      if (docCount) docCount.textContent = docs.length;
+      if (docList && docs.length > 0) {
+        renderDocList(docs, 'doc-list', 'doc');
+      }
+    });
+  </script>
+
+  <style>
+    .hero-section { text-align:center; padding:40px 0 20px; }
+    .hero-title   { font-size:2rem; font-weight:700; color:#2c3e50; margin-bottom:10px; }
+    .hero-desc    { font-size:1rem; color:#666; margin-bottom:15px; }
+    .org-name-badge {
+      display:inline-block; background:#eaf4fb; color:#2980b9;
+      padding:6px 16px; border-radius:20px; font-size:0.95rem; font-weight:500;
+    }
+    .template-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px;
+    }
+    .template-card {
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      padding:24px 16px; background:#fff; border:2px solid #e0e0e0; border-radius:12px;
+      text-decoration:none; color:#2c3e50; transition:all .2s; cursor:pointer;
+    }
+    .template-card:hover { border-color:#3498db; background:#eaf4fb; transform:translateY(-2px); }
+    .template-icon { font-size:2rem; }
+    .template-card strong { font-size:0.95rem; }
+    .template-card small  { font-size:0.8rem; color:#888; }
+    .tip-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px;
+    }
+    .tip-card {
+      background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:16px;
+    }
+    .tip-card h4  { font-size:0.95rem; margin-bottom:8px; color:#2c3e50; }
+    .tip-card p   { font-size:0.85rem; color:#555; line-height:1.6; }
+    .tip-card code { background:#f4f4f4; padding:2px 6px; border-radius:4px; font-size:0.82rem; }
+    .section      { margin-bottom:40px; }
+    .section-title{ font-size:1.2rem; font-weight:700; color:#2c3e50; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .empty-state  { text-align:center; padding:40px; color:#888; }
+    .empty-icon   { font-size:2.5rem; margin-bottom:10px; }
+    @media(max-width:768px) {
+      .hero-title { font-size:1.5rem; }
+      .template-grid { grid-template-columns:repeat(2,1fr); }
+      .tip-grid   { grid-template-columns:1fr; }
+    }
+  </style>
+</body>
+</html>
