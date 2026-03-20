@@ -80,7 +80,6 @@
 
     let html = '';
 
-    /* ── doc-paper-inner: flex column으로 본문↑ 기관정보↓ ── */
     html += `<div class="doc-paper-inner">`;
 
     /* ━━━ 상단 본문 영역 ━━━ */
@@ -146,7 +145,7 @@
     html += `</div>`;
     /* ━━━ 상단 본문 영역 끝 ━━━ */
 
-    /* ━━━ 하단 기관정보 블록 (항상 용지 하단 고정) ━━━ */
+    /* ━━━ 하단 기관정보 블록 ━━━ */
     html += `<div class="doc-org-footer">`;
 
     /* ⑥ 발신명의 */
@@ -172,7 +171,6 @@
     /* ━━━ 하단 기관정보 블록 끝 ━━━ */
 
     html += `</div>`;
-    /* ── doc-paper-inner 끝 ── */
 
     container.innerHTML = html;
   }
@@ -184,7 +182,7 @@
     return `<p>${escapeHtml(body).replace(/\n/g, '<br>')}</p>`;
   }
 
-  /* ── ⑦ 결재란 + 협조자 ──────────────────────────────── */
+  /* ── ⑦ 결재란 + 협조자: 공백 제거, 결재자 왼쪽 정렬 ────── */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
@@ -199,7 +197,7 @@
 
     let html = '<div class="doc-approval-wrap">';
 
-    /* 결재자: 한 줄 가로 나열 */
+    /* 결재자: 왼쪽 정렬, 한 줄 가로 나열 */
     html += '<div class="doc-approval-row">';
     approverList.forEach(ap => {
       html += `
@@ -211,7 +209,7 @@
     });
     html += '</div>';
 
-    /* 협조자 */
+    /* 협조자: 결재자 바로 아래, 공백 없음 */
     html += `
       <div class="doc-cooperator-row">
         <span class="doc-cooperator-label">협&nbsp;조&nbsp;자</span>
@@ -243,7 +241,7 @@
       </div>`;
   }
 
-  /* ── ⑨ 주소·연락처: hr 완전 없음 ───────────────────── */
+  /* ── ⑨ 주소·연락처: hr 없음 ─────────────────────────── */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
