@@ -6,486 +6,915 @@
   <title>미리보기 - 공문서 작성 도우미</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-
-  <header class="header no-print">
-    <div class="header-inner">
-      <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
-      <nav class="nav">
-        <a href="index.html"    class="nav-link">🏠 홈</a>
-        <a href="editor.html"   class="nav-link">✍️ 새 문서</a>
-        <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="main-content">
-    <div class="preview-wrap">
-
-      <!-- 도구 모음 -->
-      <div class="preview-toolbar no-print">
-        <div class="toolbar-left">
-          <button id="back-btn" class="btn btn-secondary btn-sm">← 목록</button>
-          <h2 id="preview-title" class="preview-doc-title">미리보기</h2>
-          <span id="doc-status"></span>
-        </div>
-        <div class="toolbar-right">
-          <button id="edit-btn"     class="btn btn-secondary btn-sm">✏️ 수정</button>
-          <button id="copy-btn"     class="btn btn-secondary btn-sm">📋 복사</button>
-          <button id="print-btn"    class="btn btn-secondary btn-sm">🖨️ 인쇄</button>
-          <button id="complete-btn" class="btn btn-primary    btn-sm">✅ 완성 저장</button>
-          <button id="delete-btn"   class="btn btn-danger     btn-sm">🗑️ 삭제</button>
-        </div>
-      </div>
-
-      <!-- 문서 미리보기 -->
-      <div id="doc-preview" class="doc-preview-area">
-        <p style="text-align:center;color:#888;padding:60px;">문서를 불러오는 중…</p>
-      </div>
-
-      <!-- 하단 버튼 -->
-      <div class="preview-bottom-actions no-print">
-        <button id="edit-btn-bottom"     class="btn btn-secondary">✏️ 수정</button>
-        <button id="copy-btn-bottom"     class="btn btn-secondary">📋 복사</button>
-        <button id="print-btn-bottom"    class="btn btn-secondary">🖨️ 인쇄</button>
-        <button id="complete-btn-bottom" class="btn btn-primary"  >✅ 완성 저장</button>
-      </div>
-
-    </div>
-  </main>
-
-  <!-- 완성 저장 확인 모달 -->
-  <div class="modal-overlay" id="complete-confirm-modal" style="display:none;">
-    <div class="modal-box" style="max-width:420px;">
-      <div class="modal-header">
-        <h3>✅ 완성 문서로 저장</h3>
-        <button class="modal-close-btn modal-cancel-btn" type="button">✕</button>
-      </div>
-      <div class="modal-body">
-        <p>이 문서를 <strong>완성 문서</strong>로 저장하시겠습니까?</p>
-        <p style="color:#666;font-size:0.88rem;margin-top:8px;">완성 저장된 문서는 홈 화면의 "완성 문서" 목록에 보관됩니다.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-cancel-btn btn btn-secondary" type="button">취소</button>
-        <button id="confirm-complete-btn" class="btn btn-primary" type="button">저장하기</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 삭제 확인 모달 -->
-  <div class="modal-overlay" id="delete-confirm-modal" style="display:none;">
-    <div class="modal-box" style="max-width:400px;">
-      <div class="modal-header">
-        <h3>🗑️ 문서 삭제</h3>
-        <button class="modal-close-btn modal-cancel-btn" type="button">✕</button>
-      </div>
-      <div class="modal-body">
-        <p>이 문서를 삭제하시겠습니까?</p>
-        <p style="color:#e74c3c;font-size:0.88rem;margin-top:8px;">⚠️ 삭제된 문서는 복구할 수 없습니다.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-cancel-btn btn btn-secondary" type="button">취소</button>
-        <button id="confirm-delete-btn" class="btn btn-danger" type="button">삭제</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="data/rules.js"></script>
-  <script src="data/templates.js"></script>
-  <script src="js/common.js"></script>
-
-  <!-- 안전장치 -->
-  <script>
-    if (typeof getUrlParams === 'undefined') {
-      function getUrlParams() {
-        var params = {};
-        var search = window.location.search;
-        if (!search) return params;
-        var pairs = search.substring(1).split('&');
-        for (var i = 0; i < pairs.length; i++) {
-          var pair = pairs[i].split('=');
-          if (pair.length === 2) {
-            try { params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]); } catch(e) {}
-          }
-        }
-        return params;
-      }
-    }
-    if (typeof escapeHtml === 'undefined') {
-      function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-      }
-    }
-    if (typeof getTodayString === 'undefined') {
-      function getTodayString() {
-        var d = new Date();
-        return d.getFullYear() + '. ' + (d.getMonth()+1) + '. ' + d.getDate() + '.';
-      }
-    }
-    if (typeof showToast === 'undefined') {
-      function showToast(msg, type) {
-        type = type||'info';
-        var c = document.getElementById('toast-container');
-        if (!c) { c=document.createElement('div'); c.id='toast-container'; c.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(c); }
-        var t = document.createElement('div');
-        t.textContent = msg;
-        var bg={success:'#27ae60',error:'#e74c3c',warning:'#f39c12',info:'#3498db'};
-        t.style.cssText='padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:500;color:#fff;background:'+(bg[type]||bg.info)+';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
-        c.appendChild(t);
-        setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3000);
-      }
-    }
-    if (typeof copyToClipboard === 'undefined') {
-      function copyToClipboard(text) {
-        if (!text) return;
-        function fb() { var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
-        if (navigator.clipboard&&navigator.clipboard.writeText) { navigator.clipboard.writeText(text).catch(fb); } else { fb(); }
-      }
-    }
-    if (typeof Modal === 'undefined') {
-      var Modal = {
-        open:  function(id){ var el=document.getElementById(id); if(el) el.style.display='flex'; },
-        close: function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; }
-      };
-    }
-    if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
-      var Storage = {
-        getSettings: function() { try { var s=localStorage.getItem('doc_settings'); return s?JSON.parse(s):{orgName:'',approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}],receivers:[]}; } catch(e){return{orgName:'',approvalLevels:[],receivers:[]};} },
-        getDraft:    function(id) { try { var i=localStorage.getItem('draft_'+id)||localStorage.getItem(id); return i?JSON.parse(i):null; } catch(e){return null;} },
-        getDoc:      function(id) { try { var i=localStorage.getItem('doc_'+id)||localStorage.getItem(id); return i?JSON.parse(i):null; } catch(e){return null;} },
-        saveDoc:     function(doc) { try { var k=doc.id.indexOf('doc_')===0?doc.id:'doc_'+doc.id; localStorage.setItem(k,JSON.stringify(doc)); return true; } catch(e){return false;} },
-        deleteDraft: function(id) { try { localStorage.removeItem('draft_'+id); localStorage.removeItem(id); return true; } catch(e){return false;} },
-        deleteDoc:   function(id) { try { localStorage.removeItem('doc_'+id); localStorage.removeItem(id); return true; } catch(e){return false;} }
-      };
-    }
-    if (typeof ExtendedStorage === 'undefined') {
-      var ExtendedStorage = {
-        getOrgDetail: function() { try { var s=localStorage.getItem('doc_org_detail'); return s?JSON.parse(s):{zipCode:'',address:'',homepage:'',tel:'',fax:'',email:'',disclosure:''}; } catch(e){return{zipCode:'',address:'',homepage:'',tel:'',fax:'',email:'',disclosure:''};} }
-      };
-    }
-    if (typeof LogoManager === 'undefined') {
-      var LogoManager = {
-        get: function() { try { return localStorage.getItem('doc_logo')||null; } catch(e){return null;} }
-      };
-    }
-  </script>
-
-  <script src="js/preview.js"></script>
-
   <style>
-    /* ════ 레이아웃 ════ */
-    .preview-wrap { max-width: 860px; margin: 0 auto; padding: 20px; }
+    /* ── 기본 리셋 ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; color: #1a1a1a; }
+
+    /* ── 헤더 ── */
+    .header { background: #fff; border-bottom: 1px solid #dde1e7; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 8px rgba(0,0,0,.07); }
+    .header-inner { max-width: 1100px; margin: 0 auto; padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 1.05rem; font-weight: 700; color: #1a3a5c; text-decoration: none; }
+    .nav { display: flex; gap: 4px; }
+    .nav-link { padding: 6px 12px; border-radius: 7px; font-size: 0.87rem; color: #555; text-decoration: none; transition: .15s; }
+    .nav-link:hover { background: #f0f4f8; color: #1a3a5c; }
+    .nav-link.active { background: #1a3a5c; color: #fff; }
+
+    /* ── 툴바 ── */
     .preview-toolbar {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
-      padding: 10px 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+      max-width: 860px; margin: 20px auto 0; padding: 12px 20px;
+      background: #fff; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.08);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
     }
-    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .preview-doc-title { font-size: 1rem; font-weight: 700; color: #2c3e50; margin: 0; }
-    .preview-bottom-actions {
-      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
-      margin-top: 20px; padding: 16px;
-      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
-    }
+    .toolbar-title { flex: 1; font-size: 1rem; font-weight: 600; color: #1a3a5c; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-draft { background: #fff3cd; color: #856404; }
+    .badge-complete { background: #d1edda; color: #155724; }
 
-    /* ════ 문서 용지 배경 ════ */
-    .doc-preview-area { background: #e8e8e8; padding: 30px 20px; border-radius: 4px; }
+    /* ── 문서 미리보기 래퍼 ── */
+    .preview-wrap { max-width: 860px; margin: 16px auto 40px; padding: 0 0 20px; }
 
-    /* ════ 문서 용지 ════ */
+    /* ── A4 문서 종이 ── */
     .doc-paper {
       background: #fff;
-      padding: 40px 50px 40px 50px;
-      max-width: 740px;
-      margin: 0 auto;
-      font-family: '맑은 고딕', 'Noto Sans KR', serif;
-      font-size: 10pt;
+      width: 100%;
+      padding: 60px 70px 80px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.12);
+      border-radius: 4px;
+      font-size: 11pt;
       line-height: 1.8;
-      color: #000;
-      box-shadow: 0 2px 16px rgba(0,0,0,.12);
-      min-height: 900px;
+      color: #111;
     }
 
-    /* ════ 1. 헤더 ════ */
-    .doc-header { margin-bottom: 10px; }
-
-    .doc-logo-wrap {
+    /* ── 문서 머리: 분류번호 + 기관명 + 로고 ── */
+    .doc-head {
       display: flex;
-      justify-content: center;
-      margin-bottom: 8px;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 3px solid #111;
+      margin-bottom: 0;
+    }
+    .doc-head-classification {
+      width: 100%;
+      font-size: 9pt;
+      color: #555;
+      margin-bottom: 6px;
+      letter-spacing: .02em;
     }
     .doc-logo-img {
-      max-height: 80px;
-      max-width: 280px;
+      max-height: 70px;
+      max-width: 260px;
       object-fit: contain;
+      margin-bottom: 4px;
     }
-    .doc-orgname-text {
+    .doc-org-name-big {
+      font-size: 22pt;
+      font-weight: 700;
+      letter-spacing: .12em;
+      color: #111;
       text-align: center;
-      font-size: 16pt;
+      margin: 6px 0 2px;
+    }
+    .doc-head-underline {
+      width: 100%;
+      border: none;
+      border-top: 1px solid #111;
+      margin-top: 10px;
+    }
+
+    /* ── 수신·참조·경유 ── */
+    .doc-meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0;
+      font-size: 10.5pt;
+    }
+    .doc-meta-table td {
+      padding: 4px 0;
+      vertical-align: top;
+    }
+    .doc-meta-label {
+      white-space: nowrap;
+      font-weight: 600;
+      padding-right: 10px;
+      width: 60px;
+      color: #111;
+    }
+    .doc-meta-value { color: #111; }
+
+    /* ── 제목 ── */
+    .doc-title-row {
+      margin: 18px 0 14px;
+      font-size: 13pt;
       font-weight: 700;
-      letter-spacing: 6px;
-      margin-bottom: 8px;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      letter-spacing: .03em;
+      color: #111;
+      padding-left: 2px;
     }
 
-    /* 이중 구분선 */
-    .doc-header-lines { margin: 6px 0 14px; }
-    .doc-line-thick   { border-top: 3px solid #000; margin-bottom: 2px; }
-    .doc-line-thin    { border-top: 1px solid #000; }
-
-    /* ════ 2. 수신/경유 ════ */
-    .doc-receiver-area { margin-bottom: 16px; }
-    .doc-field-row {
-      display: flex;
-      gap: 0;
-      margin-bottom: 2px;
-      font-size: 10pt;
+    /* ── 본문 ── */
+    .doc-body-section {
+      font-size: 10.5pt;
+      line-height: 1.9;
+      color: #111;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
-    .doc-label {
-      min-width: 56px;
-      font-weight: 400;
-      color: #000;
-      flex-shrink: 0;
-    }
-    .doc-value { flex: 1; color: #000; }
-
-    /* ════ 3. 제목 ════ */
-    .doc-title-area {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin: 10px 0 20px;
-      padding-bottom: 2px;
-      border-bottom: 1px solid #000;
-    }
-    .doc-title-label {
-      font-size: 10pt;
-      font-weight: 700;
-      min-width: 30px;
-      flex-shrink: 0;
-    }
-    .doc-title-text {
-      font-size: 11pt;
-      font-weight: 700;
-      color: #000;
-      flex: 1;
-    }
-
-    /* ════ 4. 본문 ════ */
-    .doc-body-area { margin-bottom: 16px; }
-    .doc-body-para {
-      margin: 0 0 6px;
+    .doc-body-item {
       display: flex;
       gap: 6px;
-      font-size: 10pt;
+      margin-bottom: 4px;
     }
-    .doc-para-num  { flex-shrink: 0; font-weight: 400; }
-    .doc-body-sub  { margin: 0 0 4px 20px; font-size: 10pt; }
+    .doc-body-item-num { min-width: 24px; font-weight: 600; flex-shrink: 0; }
 
-    /* 행사 박스 */
-    .doc-event-table {
-      border: 1px solid #aaa;
-      border-radius: 3px;
-      padding: 12px 16px;
-      margin: 8px 0 8px 20px;
-      background: #fafafa;
-    }
-    .doc-event-row   { display: flex; margin-bottom: 4px; font-size: 10pt; }
-    .doc-event-label { min-width: 90px; flex-shrink: 0; }
-    .doc-event-value { flex: 1; }
+    /* ── 붙임 ── */
+    .doc-attach-section { margin: 14px 0 20px; font-size: 10.5pt; }
+    .doc-attach-label { font-weight: 700; margin-bottom: 4px; }
+    .doc-attach-item { padding-left: 20px; line-height: 1.8; }
+    .doc-attach-end { font-weight: 700; margin-top: 4px; text-align: right; }
 
-    /* ════ 5. 붙임 ════ */
-    .doc-attach-area { margin: 16px 0 8px; }
-    .doc-attach-row  { display: flex; gap: 0; margin-bottom: 2px; font-size: 10pt; }
-    .doc-attach-label{
-      min-width: 40px; font-weight: 700; flex-shrink: 0;
-    }
-    .doc-attach-item { flex: 1; }
-
-    /* 끝. (붙임 없을 때) */
-    .doc-end-mark {
+    /* ── 발신자 / 끝 ── */
+    .doc-end-row {
+      font-size: 11pt;
+      font-weight: 700;
       text-align: right;
-      font-weight: 700;
-      font-size: 10pt;
-      margin: 12px 0 20px;
-      padding-right: 2px;
+      margin: 10px 0 24px;
     }
-
-    /* ════ 6. 발신명의 ════ */
-    .doc-sender-area {
+    .doc-sender-row {
       text-align: center;
-      margin: 24px 0 16px;
-    }
-    .doc-sender-name {
-      font-size: 14pt;
+      font-size: 13pt;
       font-weight: 700;
-      letter-spacing: 8px;
-      display: inline-block;
+      letter-spacing: .1em;
+      margin: 30px 0 10px;
     }
 
-    /* ════ 7. 결재란 ════ */
-    .doc-approval-area {
+    /* ── 결재란 영역 ── */
+    .doc-approval-wrap {
       display: flex;
+      justify-content: flex-end;
       align-items: flex-start;
-      gap: 10px;
-      margin: 12px 0 16px;
+      gap: 20px;
+      margin: 10px 0 30px;
     }
-    .doc-coop-label {
+    .doc-coop-block { text-align: center; }
+    .doc-coop-title {
       font-size: 9pt;
-      color: #333;
-      min-width: 60px;
-      padding-top: 4px;
-      line-height: 1.4;
+      color: #666;
+      font-weight: 600;
+      margin-bottom: 4px;
+      letter-spacing: .05em;
     }
-    .doc-approval-right {
-      display: flex;
-      gap: 0;
-      margin-left: auto;
-    }
-    .doc-approval-table {
+    .approval-table {
       border-collapse: collapse;
-      font-size: 9pt;
+      font-size: 9.5pt;
       text-align: center;
     }
-    .doc-approval-table th {
-      background: #f0f4f8;
+    .approval-table th {
+      background: #f4f4f4;
       border: 1px solid #888;
       padding: 4px 14px;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 9pt;
-      white-space: nowrap;
+      color: #333;
     }
-    .doc-approval-table td {
+    .approval-table td {
       border: 1px solid #888;
-      padding: 0;
-      min-width: 60px;
-      height: 52px;
-      vertical-align: middle;
-    }
-    .approval-cell-title {
-      padding: 6px 8px;
-      font-size: 8.5pt;
-      border-right: 1px solid #888;
-      white-space: pre-line;
-      min-width: 40px;
-    }
-    .approval-cell-sign {
-      padding: 6px 10px;
-      min-width: 60px;
-      height: 52px;
+      padding: 22px 14px 6px;
+      min-width: 64px;
+      vertical-align: bottom;
       font-size: 9pt;
-      vertical-align: middle;
+      color: #555;
     }
-    .doc-coop-table td,
-    .doc-coop-table th { border-right: none; }
 
-    /* ════ 8. 하단 정보 ════ */
-    .doc-footer-area { margin-top: 8px; }
-    .doc-footer-line {
-      border-top: 2px solid #000;
-      margin-bottom: 6px;
+    /* ── 하단 정보선 ── */
+    .doc-footer-divider {
+      border: none;
+      border-top: 2px solid #111;
+      margin: 20px 0 0;
     }
-    .doc-footer-row {
+    .doc-footer-thin {
+      border: none;
+      border-top: 1px solid #888;
+      margin: 0 0 8px;
+    }
+    .doc-footer-info {
       display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      font-size: 9pt;
+      color: #444;
+      gap: 12px;
       flex-wrap: wrap;
-      gap: 4px;
-      font-size: 8.5pt;
-      color: #222;
-      margin-bottom: 3px;
-      line-height: 1.5;
+      padding: 4px 0;
     }
-    .doc-footer-numbers { font-size: 9pt; margin-bottom: 4px; }
-    .doc-footer-receipt { margin-left: auto; }
+    .doc-footer-left { display: flex; flex-direction: column; gap: 3px; }
+    .doc-footer-right { text-align: right; display: flex; flex-direction: column; gap: 3px; }
+    .doc-num-row { display: flex; gap: 24px; font-size: 9pt; }
+    .doc-num-item { display: flex; gap: 4px; }
+    .doc-num-label { font-weight: 600; color: #222; }
 
-    /* ════ 모달 ════ */
-    .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000; padding: 16px;
+    /* ── 하단 액션 버튼 ── */
+    .preview-bottom-actions {
+      max-width: 860px; margin: 16px auto 0;
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
     }
-    .modal-box {
-      background: #fff; border-radius: 12px; padding: 24px;
-      width: 100%; max-width: 480px;
-      display: flex; flex-direction: column; gap: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #eee; }
-    .modal-header h3 { font-size: 1.05rem; font-weight: 700; margin: 0; }
-    .modal-close-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #888; }
-    .modal-body  { font-size: 0.92rem; line-height: 1.7; }
-    .modal-footer{ display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #eee; }
 
-    /* ════ 버튼 ════ */
+    /* ── 버튼 ── */
     .btn {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 8px 16px; border: none; border-radius: 7px;
-      font-size: 0.88rem; font-weight: 500; cursor: pointer;
-      transition: .15s; text-decoration: none;
+      padding: 8px 18px; border: none; border-radius: 7px;
+      font-size: 0.87rem; font-weight: 500; cursor: pointer;
+      transition: background .15s, transform .1s; text-decoration: none;
       white-space: nowrap; font-family: inherit; line-height: 1;
     }
     .btn:active { transform: scale(.97); }
-    .btn-primary         { background: #3498db; color: #fff; }
-    .btn-primary:hover   { background: #2980b9; color: #fff; }
-    .btn-secondary       { background: #ecf0f1; color: #2c3e50; border: 1px solid #ddd; }
-    .btn-secondary:hover { background: #dde4e6; }
-    .btn-danger          { background: #e74c3c; color: #fff; }
-    .btn-danger:hover    { background: #c0392b; }
-    .btn-sm { padding: 5px 11px; font-size: 0.82rem; }
+    .btn-primary { background: #1a3a5c; color: #fff; }
+    .btn-primary:hover { background: #14304f; }
+    .btn-success { background: #28a745; color: #fff; }
+    .btn-success:hover { background: #218838; }
+    .btn-secondary { background: #eef1f5; color: #2c3e50; border: 1px solid #d0d7df; }
+    .btn-secondary:hover { background: #dde3ea; }
+    .btn-danger { background: #e74c3c; color: #fff; }
+    .btn-danger:hover { background: #c0392b; }
+    .btn-sm { padding: 5px 12px; font-size: 0.82rem; }
 
-    .badge         { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.76rem; font-weight: 600; }
-    .badge-success { background: #e8f8f0; color: #27ae60; }
-    .badge-warning { background: #fef9e7; color: #f39c12; }
-
-    /* ════ 헤더 ════ */
-    .header {
-      background: #fff; border-bottom: 1px solid #e0e0e0;
-      position: sticky; top: 0; z-index: 100;
-      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    /* ── 모달 ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 9000;
+      align-items: center; justify-content: center;
     }
-    .header-inner {
-      max-width: 1200px; margin: 0 auto; padding: 0 20px; height: 56px;
-      display: flex; align-items: center; justify-content: space-between;
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 12px;
+      width: 90%; max-width: 420px; padding: 28px 28px 22px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.2);
     }
-    .logo { font-size: 1.1rem; font-weight: 700; color: #2c3e50; text-decoration: none; }
-    .logo:hover { color: #3498db; }
-    .nav { display: flex; gap: 4px; }
-    .nav-link { padding: 6px 12px; border-radius: 7px; font-size: 0.88rem; color: #666; text-decoration: none; transition: .15s; }
-    .nav-link:hover  { background: #ecf0f1; color: #2c3e50; }
-    .nav-link.active { background: #3498db; color: #fff; }
-    .main-content { padding: 24px 0 60px; }
+    .modal-box h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: #1a3a5c; }
+    .modal-box p { font-size: 0.9rem; color: #444; line-height: 1.6; margin-bottom: 20px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 
-    /* ════ 인쇄 ════ */
-    @media print {
-      .no-print, .preview-toolbar, .preview-bottom-actions,
-      header, nav, .modal-overlay { display: none !important; }
-      body { background: #fff; margin: 0; }
-      .main-content { padding: 0; }
-      .preview-wrap { padding: 0; max-width: 100%; }
-      .doc-preview-area { background: #fff; padding: 0; box-shadow: none; border: none; }
-      .doc-paper {
-        padding: 15mm 18mm; box-shadow: none; max-width: 100%;
-        font-size: 10pt; min-height: auto;
-      }
-      .doc-approval-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    /* ── 토스트 ── */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 8px;
     }
 
-    /* ════ 반응형 ════ */
-    @media (max-width: 768px) {
+    /* ── 반응형 ── */
+    @media (max-width: 900px) {
+      .doc-paper { padding: 40px 30px 60px; }
+    }
+    @media (max-width: 600px) {
+      .doc-paper { padding: 28px 16px 40px; font-size: 10pt; }
+      .doc-org-name-big { font-size: 16pt; }
+      .doc-title-row { font-size: 11pt; }
       .preview-toolbar { flex-direction: column; align-items: flex-start; }
-      .doc-paper { padding: 20px 16px; font-size: 9.5pt; }
-      .doc-orgname-text { font-size: 13pt; letter-spacing: 3px; }
-      .doc-sender-name  { font-size: 12pt; letter-spacing: 4px; }
-      .doc-approval-right { margin-left: 0; }
-      .preview-bottom-actions { flex-direction: column; align-items: center; }
+      .toolbar-title { white-space: normal; }
     }
-    @media (max-width: 480px) {
-      .doc-paper { padding: 14px 10px; }
-      .doc-approval-table th,
-      .doc-approval-table td { min-width: 44px; padding: 3px; }
+
+    /* ── 인쇄 ── */
+    @media print {
+      .no-print, .header, .preview-toolbar, .preview-bottom-actions { display: none !important; }
+      body { background: #fff; }
+      .preview-wrap { max-width: 100%; margin: 0; padding: 0; }
+      .doc-paper {
+        box-shadow: none; border-radius: 0;
+        padding: 25mm 20mm 20mm 25mm;
+        font-size: 10pt;
+        width: 100%;
+      }
+      @page { size: A4; margin: 0; }
     }
   </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="header no-print">
+  <div class="header-inner">
+    <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
+    <nav class="nav">
+      <a href="index.html" class="nav-link">🏠 홈</a>
+      <a href="editor.html" class="nav-link">✍️ 새 문서</a>
+      <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
+    </nav>
+  </div>
+</header>
+
+<!-- 툴바 -->
+<div class="preview-toolbar no-print">
+  <button id="back-btn" class="btn btn-secondary btn-sm">← 목록</button>
+  <span class="toolbar-title" id="preview-title">미리보기</span>
+  <span id="doc-status" class="doc-status-badge badge-draft">임시저장</span>
+  <button id="edit-btn" class="btn btn-secondary btn-sm">✏️ 수정</button>
+  <button id="copy-btn" class="btn btn-secondary btn-sm">📋 복사</button>
+  <button id="print-btn" class="btn btn-secondary btn-sm">🖨️ 인쇄</button>
+  <button id="complete-btn" class="btn btn-success btn-sm">✅ 완성 저장</button>
+  <button id="delete-btn" class="btn btn-danger btn-sm">🗑️ 삭제</button>
+</div>
+
+<!-- 문서 미리보기 -->
+<div class="preview-wrap">
+  <div id="doc-preview" class="doc-paper">
+    <p style="text-align:center;color:#888;padding:60px 0;">문서를 불러오는 중…</p>
+  </div>
+</div>
+
+<!-- 하단 버튼 -->
+<div class="preview-bottom-actions no-print">
+  <button id="edit-btn-b" class="btn btn-secondary">✏️ 수정하기</button>
+  <button id="copy-btn-b" class="btn btn-secondary">📋 본문 복사</button>
+  <button id="print-btn-b" class="btn btn-secondary">🖨️ 인쇄</button>
+  <button id="complete-btn-b" class="btn btn-success">✅ 완성 저장</button>
+  <button id="delete-btn-b" class="btn btn-danger">🗑️ 삭제</button>
+</div>
+
+<!-- 모달: 완성 저장 확인 -->
+<div class="modal-overlay" id="complete-modal">
+  <div class="modal-box">
+    <h3>✅ 완성 문서로 저장</h3>
+    <p>이 문서를 완성 문서함으로 이동하시겠습니까?<br>임시저장본은 삭제됩니다.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="complete-cancel-btn">취소</button>
+      <button class="btn btn-success" id="complete-confirm-btn">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모달: 삭제 확인 -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <h3>🗑️ 문서 삭제</h3>
+    <p>이 문서를 영구 삭제하시겠습니까?<br>삭제된 문서는 복구할 수 없습니다.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="delete-cancel-btn">취소</button>
+      <button class="btn btn-danger" id="delete-confirm-btn">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 컨테이너 -->
+<div id="toast-container"></div>
+
+<!-- 스크립트 로드 -->
+<script src="data/rules.js"></script>
+<script src="data/templates.js"></script>
+<script src="js/common.js"></script>
+
+<!-- 안전장치 폴백 -->
+<script>
+(function() {
+  'use strict';
+
+  if (typeof getUrlParams === 'undefined') {
+    window.getUrlParams = function() {
+      var p = {}, q = window.location.search.replace('?','');
+      if (!q) return p;
+      q.split('&').forEach(function(pair) {
+        var parts = pair.split('=');
+        if (parts[0]) p[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1] || '');
+      });
+      return p;
+    };
+  }
+
+  if (typeof escapeHtml === 'undefined') {
+    window.escapeHtml = function(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    };
+  }
+
+  if (typeof getTodayString === 'undefined') {
+    window.getTodayString = function() {
+      var d = new Date();
+      return d.getFullYear() + '. ' + (d.getMonth()+1) + '. ' + d.getDate() + '.';
+    };
+  }
+
+  if (typeof formatDateShort === 'undefined') {
+    window.formatDateShort = function(date) {
+      if (!date) date = new Date();
+      var m = String(date.getMonth()+1).padStart(2,'0');
+      var d = String(date.getDate()).padStart(2,'0');
+      var hh = String(date.getHours()).padStart(2,'0');
+      var mm = String(date.getMinutes()).padStart(2,'0');
+      return m + '/' + d + ' ' + hh + ':' + mm;
+    };
+  }
+
+  if (typeof showToast === 'undefined') {
+    window.showToast = function(message, type) {
+      type = type || 'info';
+      var container = document.getElementById('toast-container');
+      if (!container) { container = document.createElement('div'); container.id = 'toast-container'; document.body.appendChild(container); }
+      var toast = document.createElement('div');
+      toast.textContent = message;
+      var bg = { success:'#27ae60', error:'#e74c3c', warning:'#e67e22', info:'#2980b9' };
+      toast.style.cssText = 'padding:11px 20px;border-radius:8px;font-size:0.88rem;font-weight:500;color:#fff;background:'+(bg[type]||bg.info)+';box-shadow:0 4px 18px rgba(0,0,0,.18);min-width:180px;max-width:320px;font-family:inherit;animation:fadeIn .2s ease;';
+      container.appendChild(toast);
+      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+    };
+  }
+
+  if (typeof copyToClipboard === 'undefined') {
+    window.copyToClipboard = function(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function() { fallbackCopy(text); });
+      } else { fallbackCopy(text); }
+      function fallbackCopy(t) {
+        var ta = document.createElement('textarea');
+        ta.value = t; ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+      }
+    };
+  }
+
+  if (typeof Modal === 'undefined') {
+    window.Modal = {
+      open: function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.style.display = 'flex'; el.classList.add('active'); }
+      },
+      close: function(id) {
+        var el = document.getElementById(id);
+        if (el) { el.style.display = 'none'; el.classList.remove('active'); }
+      }
+    };
+  }
+
+  if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
+    window.Storage = {
+      getSettings: function() {
+        try { var s = localStorage.getItem('doc_settings'); return s ? JSON.parse(s) : { orgName:'', approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}], receivers:[] }; }
+        catch(e) { return { orgName:'', approvalLevels:[], receivers:[] }; }
+      },
+      saveSettings: function(s) { try { localStorage.setItem('doc_settings', JSON.stringify(s)); return true; } catch(e) { return false; } },
+      getAllDrafts: function() {
+        try {
+          var list = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf('draft_') === 0) { var item = JSON.parse(localStorage.getItem(key)); if (item) list.push(item); }
+          }
+          return list.sort(function(a,b) { return new Date(b.savedAt) - new Date(a.savedAt); });
+        } catch(e) { return []; }
+      },
+      getDraft: function(id) { try { return JSON.parse(localStorage.getItem('draft_'+id) || localStorage.getItem(id) || 'null'); } catch(e) { return null; } },
+      saveDraft: function(d) { try { localStorage.setItem('draft_'+d.id, JSON.stringify(d)); return true; } catch(e) { return false; } },
+      deleteDraft: function(id) { try { localStorage.removeItem('draft_'+id); localStorage.removeItem(id); return true; } catch(e) { return false; } },
+      getAllDocs: function() {
+        try {
+          var list = [], skip = ['doc_settings','doc_logo','doc_org_detail','doc_cooperators'];
+          for (var i = 0; i < localStorage.length; i++) {
+            var key = localStorage.key(i);
+            if (key && key.indexOf('doc_') === 0 && skip.indexOf(key) === -1) { var item = JSON.parse(localStorage.getItem(key)); if (item) list.push(item); }
+          }
+          return list.sort(function(a,b) { return new Date(b.completedAt||b.savedAt) - new Date(a.completedAt||a.savedAt); });
+        } catch(e) { return []; }
+      },
+      getDoc: function(id) { try { return JSON.parse(localStorage.getItem('doc_'+id) || localStorage.getItem(id) || 'null'); } catch(e) { return null; } },
+      saveDoc: function(d) { try { var k = d.id.indexOf('doc_')===0 ? d.id : 'doc_'+d.id; localStorage.setItem(k, JSON.stringify(d)); return true; } catch(e) { return false; } },
+      deleteDoc: function(id) { try { localStorage.removeItem('doc_'+id); localStorage.removeItem(id); return true; } catch(e) { return false; } }
+    };
+  }
+
+  if (typeof ExtendedStorage === 'undefined') {
+    window.ExtendedStorage = {
+      getOrgDetail: function() { try { return JSON.parse(localStorage.getItem('doc_org_detail') || '{}'); } catch(e) { return {}; } },
+      saveOrgDetail: function(d) { try { localStorage.setItem('doc_org_detail', JSON.stringify(d)); return true; } catch(e) { return false; } }
+    };
+  }
+
+  if (typeof LogoManager === 'undefined') {
+    window.LogoManager = {
+      get: function() { try { return localStorage.getItem('doc_logo') || ''; } catch(e) { return ''; } },
+      save: function(d) { try { localStorage.setItem('doc_logo', d); return true; } catch(e) { return false; } },
+      remove: function() { try { localStorage.removeItem('doc_logo'); return true; } catch(e) { return false; } }
+    };
+  }
+})();
+</script>
+
+<!-- 미리보기 스크립트 -->
+<script>
+(function() {
+  'use strict';
+
+  var currentDoc = null;
+  var currentType = 'draft';
+
+  /* ══════════════════════════════════════════
+     초기화
+  ══════════════════════════════════════════ */
+  function initPreview() {
+    var params = getUrlParams();
+    var id = params.id;
+    var type = params.type || 'draft';
+    if (!id) { showToast('문서 ID가 없습니다.', 'error'); return; }
+
+    currentType = type;
+    currentDoc = (type === 'doc') ? Storage.getDoc(id) : Storage.getDraft(id);
+    if (!currentDoc) { showToast('문서를 찾을 수 없습니다.', 'error'); document.getElementById('doc-preview').innerHTML = '<p style="text-align:center;color:#e74c3c;padding:60px 0;">문서를 찾을 수 없습니다. 이미 삭제되었거나 잘못된 링크입니다.</p>'; return; }
+
+    renderPreview(currentDoc);
+    updateStatus();
+  }
+
+  /* ══════════════════════════════════════════
+     상태 배지 업데이트
+  ══════════════════════════════════════════ */
+  function updateStatus() {
+    var badge = document.getElementById('doc-status');
+    var title = document.getElementById('preview-title');
+    if (!currentDoc) return;
+    if (title) title.textContent = currentDoc.title || '(제목 없음)';
+    if (badge) {
+      if (currentType === 'doc') { badge.textContent = '✅ 완성'; badge.className = 'doc-status-badge badge-complete'; }
+      else { badge.textContent = '📝 임시저장'; badge.className = 'doc-status-badge badge-draft'; }
+    }
+    var completeBtn = document.getElementById('complete-btn');
+    var completeBtnB = document.getElementById('complete-btn-b');
+    if (currentType === 'doc') {
+      if (completeBtn) { completeBtn.disabled = true; completeBtn.style.opacity = '.5'; }
+      if (completeBtnB) { completeBtnB.disabled = true; completeBtnB.style.opacity = '.5'; }
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     문서 렌더링 (표준 공문서 양식)
+  ══════════════════════════════════════════ */
+  function renderPreview(doc) {
+    var container = document.getElementById('doc-preview');
+    if (!container) return;
+
+    var settings = Storage.getSettings();
+    var detail = ExtendedStorage.getOrgDetail();
+    var logo = LogoManager.get();
+
+    var orgName    = settings.orgName || '○○기관';
+    var f          = doc.fields || {};
+    var tmpl       = doc.templateId || 'internal';
+
+    var docNo      = f.docNo   || f.문서번호 || '';
+    var rcptNo     = f.rcptNo  || f.접수번호 || '';
+    var classification = f.classification || f.분류번호 || '';
+    var dateStr    = f.date    || f.날짜 || getTodayString();
+    var receiver   = f.receiver || f.수신 || '';
+    var reference  = f.reference || f.참조 || '';
+    var via        = f.via     || f.경유 || '';
+    var title      = f.title   || f.제목 || doc.title || '';
+    var body       = f.body    || f.내용 || f.본문 || '';
+    var purpose    = f.purpose || f.목적 || '';
+    var attachments = f.attachments || f.붙임 || '';
+    var senderName  = f.senderName || f.발신명의 || orgName;
+    var contact    = f.contact || f.연락처 || detail.phone || '';
+    var address    = f.address || f.주소 || detail.address || '';
+    var faxNo      = f.fax    || f.팩스 || detail.fax || '';
+    var homepage   = f.homepage || f.홈페이지 || detail.homepage || '';
+    var eventDate  = f.eventDate  || f.행사일시 || '';
+    var eventPlace = f.eventPlace || f.행사장소 || '';
+    var eventTarget = f.eventTarget || f.대상 || '';
+    var grantAmount = f.grantAmount || f.후원금액 || '';
+    var grantDate  = f.grantDate  || f.후원일자 || '';
+    var sponsorName = f.sponsorName || f.후원자성명 || '';
+
+    /* ─ 협조자 ─ */
+    var cooperators = [];
+    try { cooperators = JSON.parse(localStorage.getItem('doc_cooperators') || '[]'); } catch(e) { cooperators = []; }
+    if (!Array.isArray(cooperators)) cooperators = [];
+
+    var html = '';
+
+    /* ── 1. 문서 머리 ── */
+    html += '<div class="doc-head">';
+    if (classification) {
+      html += '<div class="doc-head-classification">분류번호: ' + escapeHtml(classification) + '</div>';
+    }
+    if (logo) {
+      html += '<img class="doc-logo-img" src="' + logo + '" alt="기관로고">';
+    } else {
+      html += '<div class="doc-org-name-big">' + escapeHtml(orgName) + '</div>';
+    }
+    html += '<hr class="doc-head-underline">';
+    html += '</div>';
+
+    /* ── 2. 수신·참조·경유 ── */
+    html += '<table class="doc-meta-table">';
+    if (via) {
+      html += '<tr><td class="doc-meta-label">경  유</td><td class="doc-meta-value">' + escapeHtml(via) + '</td></tr>';
+    }
+    if (receiver) {
+      html += '<tr><td class="doc-meta-label">수  신</td><td class="doc-meta-value">' + escapeHtml(receiver) + '</td></tr>';
+    } else {
+      /* 기본 수신처 – 설정 내 receivers 배열 활용 */
+      var receivers = settings.receivers || [];
+      var recvStr = receivers.length > 0 ? receivers.map(function(r){ return typeof r === 'object' ? (r.name||'') : r; }).filter(Boolean).join(', ') : '(수신처 없음)';
+      html += '<tr><td class="doc-meta-label">수  신</td><td class="doc-meta-value">' + escapeHtml(recvStr) + '</td></tr>';
+    }
+    if (reference) {
+      html += '<tr><td class="doc-meta-label">참  조</td><td class="doc-meta-value">' + escapeHtml(reference) + '</td></tr>';
+    }
+    html += '</table>';
+
+    /* ── 3. 제목 ── */
+    html += '<div class="doc-title-row">제  목: ' + escapeHtml(title) + '</div>';
+
+    /* ── 4. 본문 ── */
+    html += buildBody(tmpl, f, body, purpose, eventDate, eventPlace, eventTarget, grantAmount, grantDate, sponsorName, orgName, dateStr);
+
+    /* ── 5. 붙임 ── */
+    if (attachments && attachments.trim()) {
+      var items = attachments.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+      html += '<div class="doc-attach-section">';
+      html += '<div class="doc-attach-label">붙  임</div>';
+      items.forEach(function(item, idx) {
+        html += '<div class="doc-attach-item">' + (idx+1) + '. ' + escapeHtml(item) + '  1부.</div>';
+      });
+      html += '<div class="doc-attach-end">끝.</div>';
+      html += '</div>';
+    } else {
+      html += '<div style="text-align:right;font-weight:700;margin:14px 0 24px;font-size:11pt;">끝.</div>';
+    }
+
+    /* ── 6. 발신명의 ── */
+    html += '<div class="doc-sender-row">' + escapeHtml(senderName) + '</div>';
+
+    /* ── 7. 결재란 ── */
+    html += renderApprovalBlock(settings, cooperators);
+
+    /* ── 8. 하단 정보선 ── */
+    html += renderFooterInfo(docNo, rcptNo, dateStr, orgName, address, contact, faxNo, homepage);
+
+    container.innerHTML = html;
+  }
+
+  /* ── 본문 빌더 ── */
+  function buildBody(tmpl, f, body, purpose, eventDate, eventPlace, eventTarget, grantAmount, grantDate, sponsorName, orgName, dateStr) {
+    var html = '<div class="doc-body-section">';
+
+    if (tmpl === 'event') {
+      /* 행사안내 */
+      html += '<div class="doc-body-item"><span class="doc-body-item-num">1.</span><span>귀 기관의 무궁한 발전을 기원합니다.</span></div>';
+      html += '<div class="doc-body-item"><span class="doc-body-item-num">2.</span><span>아래와 같이 행사를 안내드립니다.</span></div>';
+      html += '</div>';
+      html += '<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:10.5pt;">';
+      var rows = [
+        ['행사명', f.title || f.제목 || ''],
+        ['일  시', eventDate],
+        ['장  소', eventPlace],
+        ['대  상', eventTarget],
+        ['내  용', body || f.내용 || '']
+      ];
+      rows.forEach(function(r) {
+        if (r[1]) {
+          html += '<tr><th style="background:#f5f5f5;border:1px solid #ccc;padding:6px 12px;width:80px;text-align:center;font-weight:600;">' + r[0] + '</th>';
+          html += '<td style="border:1px solid #ccc;padding:6px 12px;">' + escapeHtml(r[1]) + '</td></tr>';
+        }
+      });
+      html += '</table>';
+      html += '<div class="doc-body-section">';
+      if (purpose) html += '<div class="doc-body-item"><span class="doc-body-item-num">3.</span><span>' + escapeHtml(purpose) + '</span></div>';
+      html += '</div>';
+    } else if (tmpl === 'sponsor') {
+      /* 후원자감사 */
+      html += '<div class="doc-body-item"><span class="doc-body-item-num">1.</span><span>귀하의 따뜻한 후원에 진심으로 감사드립니다.</span></div>';
+      if (sponsorName) html += '<div class="doc-body-item"><span class="doc-body-item-num">2.</span><span>후원자: ' + escapeHtml(sponsorName) + '</span></div>';
+      if (grantDate)   html += '<div class="doc-body-item"><span class="doc-body-item-num">3.</span><span>후원일자: ' + escapeHtml(grantDate) + '</span></div>';
+      if (grantAmount) html += '<div class="doc-body-item"><span class="doc-body-item-num">4.</span><span>후원금액: ' + escapeHtml(grantAmount) + '</span></div>';
+      if (body) html += '<div class="doc-body-item"><span class="doc-body-item-num">5.</span><span>' + escapeHtml(body) + '</span></div>';
+      html += '</div>';
+    } else {
+      /* 내부결재 / 지자체보고 / 타기관협조 */
+      var paras = [];
+      if (purpose) paras.push(purpose);
+      if (body) paras.push(body);
+      if (paras.length === 0) paras.push('');
+      paras.forEach(function(p, idx) {
+        html += '<div class="doc-body-item"><span class="doc-body-item-num">' + (idx+1) + '.</span><span>' + escapeHtml(p) + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  /* ── 결재란 ── */
+  function renderApprovalBlock(settings, cooperators) {
+    var levels = settings.approvalLevels;
+    if (!levels || levels.length === 0) {
+      levels = [{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}];
+    }
+
+    var html = '<div class="doc-approval-wrap">';
+
+    /* 협조자 테이블 */
+    if (cooperators.length > 0) {
+      html += '<div class="doc-coop-block">';
+      html += '<div class="doc-coop-title">협 조 자</div>';
+      html += '<table class="approval-table"><thead><tr>';
+      cooperators.forEach(function(c) {
+        html += '<th>' + escapeHtml(typeof c === 'object' ? (c.title||c.name||'') : c) + '</th>';
+      });
+      html += '</tr></thead><tbody><tr>';
+      cooperators.forEach(function(c) {
+        html += '<td>' + escapeHtml(typeof c === 'object' ? (c.sign||'') : '') + '</td>';
+      });
+      html += '</tr></tbody></table></div>';
+    }
+
+    /* 결재 테이블 */
+    html += '<table class="approval-table">';
+    html += '<thead><tr>';
+    levels.forEach(function(l) { html += '<th>' + escapeHtml(l.title || '') + '</th>'; });
+    html += '</tr></thead><tbody><tr>';
+    levels.forEach(function(l) { html += '<td>' + escapeHtml(l.name || '') + '</td>'; });
+    html += '</tr></tbody></table>';
+
+    html += '</div>';
+    return html;
+  }
+
+  /* ── 하단 정보선 ── */
+  function renderFooterInfo(docNo, rcptNo, dateStr, orgName, address, contact, faxNo, homepage) {
+    var html = '<hr class="doc-footer-divider"><hr class="doc-footer-thin">';
+    html += '<div class="doc-footer-info">';
+
+    /* 좌측: 시행 / 접수 번호 + 주소 */
+    html += '<div class="doc-footer-left">';
+    html += '<div class="doc-num-row">';
+    html += '<span class="doc-num-item"><span class="doc-num-label">시행</span> ' + escapeHtml(docNo || (orgName + '-')) + '&nbsp;&nbsp;&nbsp;(' + escapeHtml(dateStr) + ')</span>';
+    html += '<span class="doc-num-item"><span class="doc-num-label">접수</span> (' + escapeHtml(rcptNo || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') + ')</span>';
+    html += '</div>';
+    if (address) html += '<div>' + escapeHtml(address) + '</div>';
+    html += '</div>';
+
+    /* 우측: 연락처·팩스·홈페이지 */
+    html += '<div class="doc-footer-right">';
+    if (contact)  html += '<div>☎ ' + escapeHtml(contact) + '</div>';
+    if (faxNo)    html += '<div>📠 ' + escapeHtml(faxNo) + '</div>';
+    if (homepage) html += '<div>🌐 ' + escapeHtml(homepage) + '</div>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  /* ══════════════════════════════════════════
+     이벤트 바인딩
+  ══════════════════════════════════════════ */
+  function bindEvents() {
+
+    /* 목록 */
+    function goBack() { window.location.href = 'index.html'; }
+    el('back-btn', 'click', goBack);
+
+    /* 수정 */
+    function goEdit() {
+      if (!currentDoc) return;
+      window.location.href = 'editor.html?id=' + encodeURIComponent(currentDoc.id) + '&type=' + currentType;
+    }
+    el('edit-btn', 'click', goEdit);
+    el('edit-btn-b', 'click', goEdit);
+
+    /* 복사 */
+    function doCopy() {
+      if (!currentDoc) return;
+      var text = buildPlainText(currentDoc);
+      copyToClipboard(text);
+      showToast('📋 문서가 클립보드에 복사되었습니다.', 'success');
+    }
+    el('copy-btn', 'click', doCopy);
+    el('copy-btn-b', 'click', doCopy);
+
+    /* 인쇄 */
+    function doPrint() { window.print(); }
+    el('print-btn', 'click', doPrint);
+    el('print-btn-b', 'click', doPrint);
+
+    /* 완성 저장 모달 */
+    function openCompleteModal() { if (currentType !== 'doc') Modal.open('complete-modal'); }
+    el('complete-btn', 'click', openCompleteModal);
+    el('complete-btn-b', 'click', openCompleteModal);
+    el('complete-cancel-btn', 'click', function() { Modal.close('complete-modal'); });
+    el('complete-confirm-btn', 'click', function() {
+      Modal.close('complete-modal');
+      saveAsComplete();
+    });
+
+    /* 삭제 모달 */
+    function openDeleteModal() { Modal.open('delete-modal'); }
+    el('delete-btn', 'click', openDeleteModal);
+    el('delete-btn-b', 'click', openDeleteModal);
+    el('delete-cancel-btn', 'click', function() { Modal.close('delete-modal'); });
+    el('delete-confirm-btn', 'click', function() {
+      Modal.close('delete-modal');
+      doDelete();
+    });
+
+    /* 모달 오버레이 클릭 */
+    ['complete-modal', 'delete-modal'].forEach(function(id) {
+      var overlay = document.getElementById(id);
+      if (overlay) {
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) Modal.close(id);
+        });
+      }
+    });
+
+    /* 단축키 */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        Modal.close('complete-modal');
+        Modal.close('delete-modal');
+      }
+      if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        doPrint();
+      }
+    });
+  }
+
+  function el(id, event, fn) {
+    var elem = document.getElementById(id);
+    if (elem) elem.addEventListener(event, fn);
+  }
+
+  /* ── 완성 저장 ── */
+  function saveAsComplete() {
+    if (!currentDoc) return;
+    var doc = JSON.parse(JSON.stringify(currentDoc));
+    doc.completedAt = new Date().toISOString();
+    doc.status = 'complete';
+
+    /* doc_ 키로 저장 */
+    var saved = Storage.saveDoc(doc);
+    if (saved && currentType === 'draft') Storage.deleteDraft(currentDoc.id);
+
+    if (saved) {
+      showToast('✅ 완성 문서함에 저장되었습니다.', 'success');
+      currentType = 'doc';
+      currentDoc = doc;
+      updateStatus();
+    } else {
+      showToast('저장 중 오류가 발생했습니다.', 'error');
+    }
+  }
+
+  /* ── 삭제 ── */
+  function doDelete() {
+    if (!currentDoc) return;
+    if (currentType === 'doc') Storage.deleteDoc(currentDoc.id);
+    else Storage.deleteDraft(currentDoc.id);
+    showToast('🗑️ 문서가 삭제되었습니다.', 'info');
+    setTimeout(function() { window.location.href = 'index.html'; }, 800);
+  }
+
+  /* ── 일반 텍스트 변환 (복사용) ── */
+  function buildPlainText(doc) {
+    var f = doc.fields || {};
+    var settings = Storage.getSettings();
+    var lines = [];
+    lines.push(settings.orgName || '');
+    lines.push('');
+    lines.push('수신: ' + (f.receiver || f.수신 || ''));
+    if (f.reference || f.참조) lines.push('참조: ' + (f.reference || f.참조 || ''));
+    lines.push('');
+    lines.push('제목: ' + (f.title || f.제목 || doc.title || ''));
+    lines.push('');
+    lines.push(f.purpose || f.목적 || '');
+    lines.push(f.body || f.내용 || f.본문 || '');
+    lines.push('');
+    var attach = f.attachments || f.붙임 || '';
+    if (attach.trim()) {
+      lines.push('붙임');
+      attach.split('\n').forEach(function(a, i) { if (a.trim()) lines.push((i+1) + '. ' + a.trim() + '  1부.'); });
+    }
+    lines.push('끝.');
+    lines.push('');
+    lines.push(f.senderName || f.발신명의 || settings.orgName || '');
+    return lines.join('\n');
+  }
+
+  /* ══════════════════════════════════════════
+     DOMContentLoaded
+  ══════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', function() {
+    initPreview();
+    bindEvents();
+  });
+})();
+</script>
 
 </body>
 </html>
