@@ -200,7 +200,7 @@
     .doc-approval-row {
       display: flex;
       flex-direction: row;
-      justify-content: flex-start;  /* 왼쪽 정렬 */
+      justify-content: flex-start;
       align-items: center;
       gap: 24px;
       margin-bottom: 0;
@@ -209,7 +209,7 @@
     }
     .doc-approval-cell {
       display: flex;
-      flex-direction: row;          /* 직책 + 이름공간 가로 배치 */
+      flex-direction: row;
       align-items: center;
       gap: 0;
       font-size: 10pt;
@@ -218,15 +218,14 @@
       font-weight: 600;
       white-space: nowrap;
     }
-    /* ★★★ 이름 공간: 밑줄 없이 빈 공간만 확보 ★★★ */
+    /* ★★★ 이름 공간: 밑줄·테두리 없이 빈 공간만 확보 ★★★ */
     .doc-approval-sign {
       display: inline-block;
-      width: 60px;                  /* 이름 들어갈 너비 */
-      height: 1.4em;                /* 한 줄 높이만큼 */
+      width: 60px;
+      height: 1.4em;
       vertical-align: middle;
-      /* 테두리·밑줄 없음 */
     }
-    .doc-approval-name { display: none; } /* 이름은 sign 공간으로 대체 */
+    .doc-approval-name { display: none; }
 
     /* 협조자 */
     .doc-cooperator-row {
@@ -247,12 +246,21 @@
       font-size: 10pt;
       line-height: 1.4;
       margin-bottom: 4px;
-      gap: 6px;
+      gap: 4px;
     }
     .doc-exec-label  { font-weight: 600; white-space: nowrap; }
     .doc-exec-value  { flex: 1; }
     .doc-exec-spacer { flex: 1; }
     .doc-exec-recv   { white-space: nowrap; font-size: 10pt; }
+
+    /* ★★★ 접수 날짜 공간: 0000.00.00 입력 너비 확보 ★★★ */
+    .doc-exec-recv-space {
+      display: inline-block;
+      width: 6.5em;   /* "0000.00.00" 글자 너비에 맞춤 */
+      height: 1.2em;
+      vertical-align: baseline;
+      /* 테두리·밑줄 없음 */
+    }
 
     /* ⑨ 주소·연락처 – hr 없음 */
     .doc-footer-wrap    { margin-top: 4px; }
