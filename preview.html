@@ -10,12 +10,13 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
   <header class="header no-print">
     <div class="header-inner">
       <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
       <nav class="nav">
-        <a href="index.html" class="nav-link">🏠 홈</a>
-        <a href="editor.html" class="nav-link">✍️ 새 문서</a>
+        <a href="index.html"    class="nav-link">🏠 홈</a>
+        <a href="editor.html"   class="nav-link">✍️ 새 문서</a>
         <a href="settings.html" class="nav-link">⚙️ 기관설정</a>
       </nav>
     </div>
@@ -34,13 +35,13 @@
         <div class="toolbar-right">
           <button id="edit-btn"     class="btn btn-secondary btn-sm">✏️ 수정</button>
           <button id="copy-btn"     class="btn btn-secondary btn-sm">📋 복사</button>
-          <button id="print-btn"    class="btn btn-secondary btn-sm">🖨️ 인쇄 <kbd>Ctrl+P</kbd></button>
+          <button id="print-btn"    class="btn btn-secondary btn-sm">🖨️ 인쇄</button>
           <button id="complete-btn" class="btn btn-primary    btn-sm">✅ 완성 저장</button>
           <button id="delete-btn"   class="btn btn-danger     btn-sm">🗑️ 삭제</button>
         </div>
       </div>
 
-      <!-- 문서 미리보기 영역 -->
+      <!-- 문서 미리보기 -->
       <div id="doc-preview" class="doc-preview-area">
         <p style="text-align:center;color:#888;padding:60px;">문서를 불러오는 중…</p>
       </div>
@@ -56,59 +57,38 @@
     </div>
   </main>
 
-  <!-- ── 복사 완료 모달 ── -->
-  <div class="modal-overlay" id="copy-modal" style="display:none;">
-    <div class="modal-box" style="max-width:400px;">
-      <div class="modal-header">
-        <h3>📋 복사 완료</h3>
-        <button class="modal-close-btn modal-cancel-btn">✕</button>
-      </div>
-      <div class="modal-body">
-        <p>문서 내용이 클립보드에 복사되었습니다.<br>
-           한글(HWP) 또는 다른 편집기에 붙여넣기 하세요.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-cancel-btn btn btn-primary">확인</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── 완성 저장 확인 모달 ── -->
+  <!-- 완성 저장 확인 모달 -->
   <div class="modal-overlay" id="complete-confirm-modal" style="display:none;">
     <div class="modal-box" style="max-width:420px;">
       <div class="modal-header">
         <h3>✅ 완성 문서로 저장</h3>
-        <button class="modal-close-btn modal-cancel-btn">✕</button>
+        <button class="modal-close-btn modal-cancel-btn" type="button">✕</button>
       </div>
       <div class="modal-body">
         <p>이 문서를 <strong>완성 문서</strong>로 저장하시겠습니까?</p>
-        <p style="color:#666;font-size:0.88rem;margin-top:8px;">
-          완성 저장된 문서는 홈 화면의 "완성 문서" 목록에 보관됩니다.
-        </p>
+        <p style="color:#666;font-size:0.88rem;margin-top:8px;">완성 저장된 문서는 홈 화면의 "완성 문서" 목록에 보관됩니다.</p>
       </div>
       <div class="modal-footer">
-        <button class="modal-cancel-btn btn btn-secondary">취소</button>
-        <button id="confirm-complete-btn" class="btn btn-primary">저장하기</button>
+        <button class="modal-cancel-btn btn btn-secondary" type="button">취소</button>
+        <button id="confirm-complete-btn" class="btn btn-primary" type="button">저장하기</button>
       </div>
     </div>
   </div>
 
-  <!-- ── 삭제 확인 모달 ── -->
+  <!-- 삭제 확인 모달 -->
   <div class="modal-overlay" id="delete-confirm-modal" style="display:none;">
     <div class="modal-box" style="max-width:400px;">
       <div class="modal-header">
         <h3>🗑️ 문서 삭제</h3>
-        <button class="modal-close-btn modal-cancel-btn">✕</button>
+        <button class="modal-close-btn modal-cancel-btn" type="button">✕</button>
       </div>
       <div class="modal-body">
         <p>이 문서를 삭제하시겠습니까?</p>
-        <p style="color:#e74c3c;font-size:0.88rem;margin-top:8px;">
-          ⚠️ 삭제된 문서는 복구할 수 없습니다.
-        </p>
+        <p style="color:#e74c3c;font-size:0.88rem;margin-top:8px;">⚠️ 삭제된 문서는 복구할 수 없습니다.</p>
       </div>
       <div class="modal-footer">
-        <button class="modal-cancel-btn btn btn-secondary">취소</button>
-        <button id="confirm-delete-btn" class="btn btn-danger">삭제</button>
+        <button class="modal-cancel-btn btn btn-secondary" type="button">취소</button>
+        <button id="confirm-delete-btn" class="btn btn-danger" type="button">삭제</button>
       </div>
     </div>
   </div>
@@ -116,124 +96,147 @@
   <script src="data/rules.js"></script>
   <script src="data/templates.js"></script>
   <script src="js/common.js"></script>
+
+  <!-- 안전장치 -->
+  <script>
+    if (typeof getUrlParams === 'undefined') {
+      function getUrlParams() {
+        var params = {};
+        var search = window.location.search;
+        if (!search) return params;
+        var pairs = search.substring(1).split('&');
+        for (var i = 0; i < pairs.length; i++) {
+          var pair = pairs[i].split('=');
+          if (pair.length === 2) {
+            try { params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]); } catch(e) {}
+          }
+        }
+        return params;
+      }
+    }
+    if (typeof escapeHtml === 'undefined') {
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      }
+    }
+    if (typeof getTodayString === 'undefined') {
+      function getTodayString() {
+        var d = new Date();
+        return d.getFullYear() + '. ' + (d.getMonth()+1) + '. ' + d.getDate() + '.';
+      }
+    }
+    if (typeof showToast === 'undefined') {
+      function showToast(msg, type) {
+        type = type||'info';
+        var c = document.getElementById('toast-container');
+        if (!c) { c=document.createElement('div'); c.id='toast-container'; c.style.cssText='position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;'; document.body.appendChild(c); }
+        var t = document.createElement('div');
+        t.textContent = msg;
+        var bg={success:'#27ae60',error:'#e74c3c',warning:'#f39c12',info:'#3498db'};
+        t.style.cssText='padding:10px 18px;border-radius:8px;font-size:0.88rem;font-weight:500;color:#fff;background:'+(bg[type]||bg.info)+';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
+        c.appendChild(t);
+        setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3000);
+      }
+    }
+    if (typeof copyToClipboard === 'undefined') {
+      function copyToClipboard(text) {
+        if (!text) return;
+        function fb() { var ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta); }
+        if (navigator.clipboard&&navigator.clipboard.writeText) { navigator.clipboard.writeText(text).catch(fb); } else { fb(); }
+      }
+    }
+    if (typeof Modal === 'undefined') {
+      var Modal = {
+        open:  function(id){ var el=document.getElementById(id); if(el) el.style.display='flex'; },
+        close: function(id){ var el=document.getElementById(id); if(el) el.style.display='none'; }
+      };
+    }
+    if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
+      var Storage = {
+        getSettings: function() { try { var s=localStorage.getItem('doc_settings'); return s?JSON.parse(s):{orgName:'',approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}],receivers:[]}; } catch(e){return{orgName:'',approvalLevels:[],receivers:[]};} },
+        getDraft:    function(id) { try { var i=localStorage.getItem('draft_'+id)||localStorage.getItem(id); return i?JSON.parse(i):null; } catch(e){return null;} },
+        getDoc:      function(id) { try { var i=localStorage.getItem('doc_'+id)||localStorage.getItem(id); return i?JSON.parse(i):null; } catch(e){return null;} },
+        saveDoc:     function(doc) { try { var k=doc.id.indexOf('doc_')===0?doc.id:'doc_'+doc.id; localStorage.setItem(k,JSON.stringify(doc)); return true; } catch(e){return false;} },
+        deleteDraft: function(id) { try { localStorage.removeItem('draft_'+id); localStorage.removeItem(id); return true; } catch(e){return false;} },
+        deleteDoc:   function(id) { try { localStorage.removeItem('doc_'+id); localStorage.removeItem(id); return true; } catch(e){return false;} }
+      };
+    }
+    if (typeof ExtendedStorage === 'undefined') {
+      var ExtendedStorage = {
+        getOrgDetail: function() { try { var s=localStorage.getItem('doc_org_detail'); return s?JSON.parse(s):{zipCode:'',address:'',homepage:'',tel:'',fax:'',email:'',disclosure:''}; } catch(e){return{zipCode:'',address:'',homepage:'',tel:'',fax:'',email:'',disclosure:''};} }
+      };
+    }
+    if (typeof LogoManager === 'undefined') {
+      var LogoManager = {
+        get: function() { try { return localStorage.getItem('doc_logo')||null; } catch(e){return null;} }
+      };
+    }
+  </script>
+
   <script src="js/preview.js"></script>
 
   <style>
-    /* ════════════════════════════════════════════
-       미리보기 레이아웃
-    ════════════════════════════════════════════ */
-    .preview-wrap {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+    /* ════ 레이아웃 ════ */
+    .preview-wrap { max-width: 860px; margin: 0 auto; padding: 20px; }
     .preview-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
-      padding: 10px 16px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+      padding: 10px 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
     }
-    .toolbar-left,
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .preview-doc-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #2c3e50;
-      margin: 0;
-    }
+    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .preview-doc-title { font-size: 1rem; font-weight: 700; color: #2c3e50; margin: 0; }
     .preview-bottom-actions {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 20px;
-      padding: 16px;
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 10px;
+      display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
+      margin-top: 20px; padding: 16px;
+      background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
     }
 
-    /* ════════════════════════════════════════════
-       문서 용지 전체
-    ════════════════════════════════════════════ */
-    .doc-preview-area {
-      background: #f5f5f5;
-      padding: 30px 20px;
-      border-radius: 4px;
-    }
+    /* ════ 문서 용지 배경 ════ */
+    .doc-preview-area { background: #e8e8e8; padding: 30px 20px; border-radius: 4px; }
+
+    /* ════ 문서 용지 ════ */
     .doc-paper {
       background: #fff;
-      padding: 50px 60px;
+      padding: 40px 50px 40px 50px;
       max-width: 740px;
       margin: 0 auto;
-      font-family: 'Noto Sans KR', '맑은 고딕', serif;
-      font-size: 10.5pt;
-      line-height: 1.9;
+      font-family: '맑은 고딕', 'Noto Sans KR', serif;
+      font-size: 10pt;
+      line-height: 1.8;
       color: #000;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      box-shadow: 0 2px 16px rgba(0,0,0,.12);
+      min-height: 900px;
     }
 
-    /* ════════════════════════════════════════════
-       문서 헤더 (로고 + 기관명 + 구분선)
-    ════════════════════════════════════════════ */
-    .doc-header {
-      margin-bottom: 24px;
-    }
-    .doc-logo-area {
+    /* ════ 1. 헤더 ════ */
+    .doc-header { margin-bottom: 10px; }
+
+    .doc-logo-wrap {
       display: flex;
-      justify-content: flex-end;
+      justify-content: center;
       margin-bottom: 8px;
     }
-    .doc-logo {
-      max-height: 64px;
-      max-width: 220px;
+    .doc-logo-img {
+      max-height: 80px;
+      max-width: 280px;
       object-fit: contain;
     }
-    .doc-org-name {
-      font-size: 15pt;
-      font-weight: 700;
+    .doc-orgname-text {
       text-align: center;
+      font-size: 16pt;
+      font-weight: 700;
       letter-spacing: 6px;
-      margin-bottom: 10px;
-      color: #000;
-    }
-    .doc-header-line {
-      border-top: 2.5px solid #000;
-      border-bottom: 1px solid #000;
-      height: 5px;
-      margin-bottom: 0;
+      margin-bottom: 8px;
     }
 
-    /* ════════════════════════════════════════════
-       내부결재 표시
-    ════════════════════════════════════════════ */
-    .doc-type-label {
-      text-align: center;
-      font-size: 12pt;
-      font-weight: 700;
-      letter-spacing: 10px;
-      padding: 14px 0;
-      border-bottom: 1px solid #bbb;
-      margin-bottom: 20px;
-    }
+    /* 이중 구분선 */
+    .doc-header-lines { margin: 6px 0 14px; }
+    .doc-line-thick   { border-top: 3px solid #000; margin-bottom: 2px; }
+    .doc-line-thin    { border-top: 1px solid #000; }
 
-    /* ════════════════════════════════════════════
-       수신 / 경유 필드 행
-    ════════════════════════════════════════════ */
-    .doc-fields {
-      margin-bottom: 20px;
-    }
+    /* ════ 2. 수신/경유 ════ */
+    .doc-receiver-area { margin-bottom: 16px; }
     .doc-field-row {
       display: flex;
       gap: 0;
@@ -241,102 +244,105 @@
       font-size: 10pt;
     }
     .doc-label {
-      min-width: 52px;
-      font-weight: 600;
+      min-width: 56px;
+      font-weight: 400;
       color: #000;
+      flex-shrink: 0;
     }
-    .doc-label::after {
-      content: ':';
-      margin-right: 6px;
-    }
-    .doc-value {
-      flex: 1;
-      color: #000;
-    }
+    .doc-value { flex: 1; color: #000; }
 
-    /* ════════════════════════════════════════════
-       제목
-    ════════════════════════════════════════════ */
-    .doc-title {
-      font-size: 12pt;
+    /* ════ 3. 제목 ════ */
+    .doc-title-area {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 10px 0 20px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #000;
+    }
+    .doc-title-label {
+      font-size: 10pt;
       font-weight: 700;
-      text-decoration: underline;
-      text-align: center;
-      margin: 20px 0 24px;
-      letter-spacing: 1px;
+      min-width: 30px;
+      flex-shrink: 0;
+    }
+    .doc-title-text {
+      font-size: 11pt;
+      font-weight: 700;
       color: #000;
+      flex: 1;
     }
 
-    /* ════════════════════════════════════════════
-       본문
-    ════════════════════════════════════════════ */
-    .doc-body {
-      margin-bottom: 20px;
-      font-size: 10.5pt;
+    /* ════ 4. 본문 ════ */
+    .doc-body-area { margin-bottom: 16px; }
+    .doc-body-para {
+      margin: 0 0 6px;
+      display: flex;
+      gap: 6px;
+      font-size: 10pt;
     }
-    .doc-body-line {
-      margin: 0 0 8px;
-      text-indent: 0;
-    }
-    .doc-event-box {
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 14px 20px;
-      margin: 12px 0 12px 20px;
+    .doc-para-num  { flex-shrink: 0; font-weight: 400; }
+    .doc-body-sub  { margin: 0 0 4px 20px; font-size: 10pt; }
+
+    /* 행사 박스 */
+    .doc-event-table {
+      border: 1px solid #aaa;
+      border-radius: 3px;
+      padding: 12px 16px;
+      margin: 8px 0 8px 20px;
       background: #fafafa;
-      font-size: 10pt;
     }
-    .doc-event-box p {
-      margin: 4px 0;
-    }
+    .doc-event-row   { display: flex; margin-bottom: 4px; font-size: 10pt; }
+    .doc-event-label { min-width: 90px; flex-shrink: 0; }
+    .doc-event-value { flex: 1; }
 
-    /* ════════════════════════════════════════════
-       붙임
-    ════════════════════════════════════════════ */
-    .doc-attachments {
-      margin: 16px 0 8px;
-      font-size: 10pt;
+    /* ════ 5. 붙임 ════ */
+    .doc-attach-area { margin: 16px 0 8px; }
+    .doc-attach-row  { display: flex; gap: 0; margin-bottom: 2px; font-size: 10pt; }
+    .doc-attach-label{
+      min-width: 40px; font-weight: 700; flex-shrink: 0;
     }
-    .doc-attach-label {
-      font-weight: 600;
-      margin-right: 8px;
-    }
+    .doc-attach-item { flex: 1; }
 
-    /* ════════════════════════════════════════════
-       끝.
-    ════════════════════════════════════════════ */
-    .doc-end {
+    /* 끝. (붙임 없을 때) */
+    .doc-end-mark {
       text-align: right;
       font-weight: 700;
-      font-size: 10.5pt;
-      margin: 16px 0 24px;
-      padding-right: 4px;
+      font-size: 10pt;
+      margin: 12px 0 20px;
+      padding-right: 2px;
     }
 
-    /* ════════════════════════════════════════════
-       발신명의 + 결재란 영역
-    ════════════════════════════════════════════ */
-    .doc-footer-area {
-      margin-top: 30px;
-      border-top: 1px solid #ccc;
-      padding-top: 20px;
-    }
-    .doc-sender {
+    /* ════ 6. 발신명의 ════ */
+    .doc-sender-area {
       text-align: center;
-      font-size: 12pt;
+      margin: 24px 0 16px;
+    }
+    .doc-sender-name {
+      font-size: 14pt;
       font-weight: 700;
-      letter-spacing: 4px;
-      margin-bottom: 20px;
+      letter-spacing: 8px;
+      display: inline-block;
     }
 
-    /* ════════════════════════════════════════════
-       결재란 테이블
-    ════════════════════════════════════════════ */
-    .doc-approval-wrap {
+    /* ════ 7. 결재란 ════ */
+    .doc-approval-area {
       display: flex;
-      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .doc-coop-label {
+      font-size: 9pt;
+      color: #333;
+      min-width: 60px;
+      padding-top: 4px;
+      line-height: 1.4;
+    }
+    .doc-approval-right {
+      display: flex;
       gap: 0;
-      margin-bottom: 20px;
+      margin-left: auto;
     }
     .doc-approval-table {
       border-collapse: collapse;
@@ -345,183 +351,141 @@
     }
     .doc-approval-table th {
       background: #f0f4f8;
-      border: 1px solid #999;
-      padding: 5px 14px;
+      border: 1px solid #888;
+      padding: 4px 14px;
       font-weight: 700;
       font-size: 9pt;
-    }
-    .doc-approval-table td {
-      border: 1px solid #999;
-      padding: 0;
-      min-width: 64px;
-      height: 56px;
-      vertical-align: middle;
-    }
-    .approval-title-cell {
-      padding: 6px 10px;
-      font-size: 8.5pt;
-      border-right: 1px solid #999;
-      white-space: pre-line;
-    }
-    .approval-sign-cell {
-      padding: 6px 10px;
-      min-width: 64px;
-      height: 56px;
-      font-size: 9pt;
-    }
-    .doc-coop-table {
-      margin-right: 0;
-      border-right: none;
-    }
-    .doc-coop-table td,
-    .doc-coop-table th {
-      border-right: none;
-    }
-
-    /* ════════════════════════════════════════════
-       문서 하단 정보 (시행번호, 주소, 연락처)
-    ════════════════════════════════════════════ */
-    .doc-info-area {
-      margin-top: 16px;
-      border-top: 1.5px solid #000;
-      padding-top: 8px;
-      font-size: 8.5pt;
-      color: #333;
-    }
-    .doc-info-line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 4px;
-    }
-    .doc-info-line span {
       white-space: nowrap;
     }
+    .doc-approval-table td {
+      border: 1px solid #888;
+      padding: 0;
+      min-width: 60px;
+      height: 52px;
+      vertical-align: middle;
+    }
+    .approval-cell-title {
+      padding: 6px 8px;
+      font-size: 8.5pt;
+      border-right: 1px solid #888;
+      white-space: pre-line;
+      min-width: 40px;
+    }
+    .approval-cell-sign {
+      padding: 6px 10px;
+      min-width: 60px;
+      height: 52px;
+      font-size: 9pt;
+      vertical-align: middle;
+    }
+    .doc-coop-table td,
+    .doc-coop-table th { border-right: none; }
 
-    /* ════════════════════════════════════════════
-       모달
-    ════════════════════════════════════════════ */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
+    /* ════ 8. 하단 정보 ════ */
+    .doc-footer-area { margin-top: 8px; }
+    .doc-footer-line {
+      border-top: 2px solid #000;
+      margin-bottom: 6px;
+    }
+    .doc-footer-row {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+      flex-wrap: wrap;
+      gap: 4px;
+      font-size: 8.5pt;
+      color: #222;
+      margin-bottom: 3px;
+      line-height: 1.5;
+    }
+    .doc-footer-numbers { font-size: 9pt; margin-bottom: 4px; }
+    .doc-footer-receipt { margin-left: auto; }
+
+    /* ════ 모달 ════ */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 16px;
     }
     .modal-box {
-      background: #fff;
-      border-radius: 12px;
-      padding: 24px;
-      width: 90%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      background: #fff; border-radius: 12px; padding: 24px;
+      width: 100%; max-width: 480px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
     }
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .modal-header h3   { font-size: 1.05rem; font-weight: 700; margin: 0; }
-    .modal-close-btn   { background: none; border: none; font-size: 1.1rem; cursor: pointer; }
-    .modal-body        { font-size: 0.92rem; line-height: 1.7; }
-    .modal-footer      { display: flex; justify-content: flex-end; gap: 10px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+    .modal-header h3 { font-size: 1.05rem; font-weight: 700; margin: 0; }
+    .modal-close-btn { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #888; }
+    .modal-body  { font-size: 0.92rem; line-height: 1.7; }
+    .modal-footer{ display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #eee; }
 
-    /* ════════════════════════════════════════════
-       공통 버튼
-    ════════════════════════════════════════════ */
+    /* ════ 버튼 ════ */
     .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 7px;
-      font-size: 0.88rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background .15s, transform .1s;
-      text-decoration: none;
-      font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 8px 16px; border: none; border-radius: 7px;
+      font-size: 0.88rem; font-weight: 500; cursor: pointer;
+      transition: .15s; text-decoration: none;
+      white-space: nowrap; font-family: inherit; line-height: 1;
     }
-    .btn:active        { transform: scale(.97); }
-    .btn-primary       { background: #3498db; color: #fff; }
-    .btn-primary:hover { background: #2980b9; }
-    .btn-secondary       { background: #ecf0f1; color: #2c3e50; }
+    .btn:active { transform: scale(.97); }
+    .btn-primary         { background: #3498db; color: #fff; }
+    .btn-primary:hover   { background: #2980b9; color: #fff; }
+    .btn-secondary       { background: #ecf0f1; color: #2c3e50; border: 1px solid #ddd; }
     .btn-secondary:hover { background: #dde4e6; }
-    .btn-danger       { background: #e74c3c; color: #fff; }
-    .btn-danger:hover { background: #c0392b; }
+    .btn-danger          { background: #e74c3c; color: #fff; }
+    .btn-danger:hover    { background: #c0392b; }
     .btn-sm { padding: 5px 11px; font-size: 0.82rem; }
-    .badge  {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
+
+    .badge         { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.76rem; font-weight: 600; }
     .badge-success { background: #e8f8f0; color: #27ae60; }
     .badge-warning { background: #fef9e7; color: #f39c12; }
-    kbd {
-      font-size: 0.74rem;
-      background: #eee;
-      padding: 1px 5px;
-      border-radius: 3px;
-      font-family: monospace;
-    }
 
-    /* ════════════════════════════════════════════
-       인쇄 전용 스타일
-    ════════════════════════════════════════════ */
+    /* ════ 헤더 ════ */
+    .header {
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .header-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 20px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { font-size: 1.1rem; font-weight: 700; color: #2c3e50; text-decoration: none; }
+    .logo:hover { color: #3498db; }
+    .nav { display: flex; gap: 4px; }
+    .nav-link { padding: 6px 12px; border-radius: 7px; font-size: 0.88rem; color: #666; text-decoration: none; transition: .15s; }
+    .nav-link:hover  { background: #ecf0f1; color: #2c3e50; }
+    .nav-link.active { background: #3498db; color: #fff; }
+    .main-content { padding: 24px 0 60px; }
+
+    /* ════ 인쇄 ════ */
     @media print {
-      .no-print,
-      .preview-toolbar,
-      .preview-bottom-actions,
-      header, nav  { display: none !important; }
-
-      body         { background: #fff; margin: 0; }
-      .main-content{ padding: 0; }
-      .preview-wrap{ padding: 0; max-width: 100%; }
-      .doc-preview-area {
-        background: #fff;
-        padding: 0;
-        box-shadow: none;
-        border: none;
+      .no-print, .preview-toolbar, .preview-bottom-actions,
+      header, nav, .modal-overlay { display: none !important; }
+      body { background: #fff; margin: 0; }
+      .main-content { padding: 0; }
+      .preview-wrap { padding: 0; max-width: 100%; }
+      .doc-preview-area { background: #fff; padding: 0; box-shadow: none; border: none; }
+      .doc-paper {
+        padding: 15mm 18mm; box-shadow: none; max-width: 100%;
+        font-size: 10pt; min-height: auto;
       }
-      .doc-paper   {
-        padding: 15mm 20mm;
-        box-shadow: none;
-        max-width: 100%;
-        font-size: 10pt;
-      }
-      .modal-overlay { display: none !important; }
-
-      /* 인쇄 시 색상 강제 적용 */
       .doc-approval-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .doc-event-box         { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 
-    /* ════════════════════════════════════════════
-       반응형
-    ════════════════════════════════════════════ */
+    /* ════ 반응형 ════ */
     @media (max-width: 768px) {
-      .preview-toolbar   { flex-direction: column; align-items: flex-start; }
-      .toolbar-right     { flex-wrap: wrap; }
-      .doc-paper         { padding: 24px 16px; font-size: 9.5pt; }
-      .doc-org-name      { font-size: 13pt; letter-spacing: 3px; }
-      .doc-approval-wrap { justify-content: center; }
+      .preview-toolbar { flex-direction: column; align-items: flex-start; }
+      .doc-paper { padding: 20px 16px; font-size: 9.5pt; }
+      .doc-orgname-text { font-size: 13pt; letter-spacing: 3px; }
+      .doc-sender-name  { font-size: 12pt; letter-spacing: 4px; }
+      .doc-approval-right { margin-left: 0; }
       .preview-bottom-actions { flex-direction: column; align-items: center; }
     }
-
     @media (max-width: 480px) {
-      .doc-paper    { padding: 16px 10px; }
-      .doc-title    { font-size: 11pt; }
-      .doc-sender   { font-size: 11pt; }
+      .doc-paper { padding: 14px 10px; }
       .doc-approval-table th,
-      .doc-approval-table td { min-width: 48px; padding: 4px; }
+      .doc-approval-table td { min-width: 44px; padding: 3px; }
     }
   </style>
+
 </body>
 </html>
