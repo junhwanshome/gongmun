@@ -1,6 +1,6 @@
 /**
  * js/preview.js
- * 공문서 미리보기 - 전체 수정사항 반영 + rich(HTML) 본문 지원
+ * 공문서 미리보기 - 정렬 + 금액 천단위 콤마 지원
  */
 (function () {
   'use strict';
@@ -143,7 +143,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     본문이 HTML인지 판별
+     HTML 본문 여부 판별
   ══════════════════════════════════════════════ */
   function isHtmlContent(str) {
     return str && /<[a-z][\s\S]*>/i.test(str);
@@ -151,43 +151,66 @@
 
   /* ══════════════════════════════════════════════
      HTML 본문 정리
-     ★ 표는 그대로 유지
-     ★ contenteditable 속성 제거
-     ★ 인쇄용 표 스타일 클래스 추가
+     ★ contenteditable 제거
+     ★ selected 클래스 제거
+     ★ 표에 doc-table 클래스 추가
+     ★ 셀 text-align 인라인 스타일 유지
+     ★ 금액 천단위 콤마 적용
   ══════════════════════════════════════════════ */
   function sanitizeRichBody(html) {
-    var tmp = document.createElement('div');
+    const tmp = document.createElement('div');
     tmp.innerHTML = html;
 
     /* contenteditable 제거 */
-    tmp.querySelectorAll('[contenteditable]').forEach(function (el) {
+    tmp.querySelectorAll('[contenteditable]').forEach(el => {
       el.removeAttribute('contenteditable');
     });
 
     /* selected 클래스 제거 */
-    tmp.querySelectorAll('.selected').forEach(function (el) {
+    tmp.querySelectorAll('.selected').forEach(el => {
       el.classList.remove('selected');
     });
 
     /* 표에 doc-table 클래스 추가 */
-    tmp.querySelectorAll('table').forEach(function (t) {
+    tmp.querySelectorAll('table').forEach(t => {
       t.classList.add('doc-table');
     });
 
-    /* 빈 <br> 으로만 이루어진 <p> 제거 */
-    tmp.querySelectorAll('p').forEach(function (p) {
+    /* 빈 p 제거 */
+    tmp.querySelectorAll('p').forEach(p => {
       if (p.innerHTML.trim() === '<br>' || p.innerHTML.trim() === '') {
         p.remove();
       }
+    });
+
+    /* ★ 셀 안의 텍스트에 금액 천단위 콤마 적용 */
+    tmp.querySelectorAll('td, th').forEach(cell => {
+      cell.innerHTML = convertAmount(cell.innerHTML);
     });
 
     return tmp.innerHTML;
   }
 
   /* ══════════════════════════════════════════════
+     ★ 금액 천단위 콤마 변환
+     - 숫자 4자리 이상이고 앞뒤가 단어 문자가 아닌 경우 적용
+     - 이미 콤마가 있거나 소수점이 있는 숫자는 제외
+     예) 1500000 → 1,500,000
+         50000원 → 50,000원
+  ══════════════════════════════════════════════ */
+  function convertAmount(text) {
+    if (!text) return text;
+    return text.replace(/\b(\d{4,})\b/g, function (match, num) {
+      /* 이미 콤마가 포함된 경우 건너뜀 */
+      if (match.indexOf(',') !== -1) return match;
+      return parseInt(num, 10).toLocaleString('ko-KR');
+    });
+  }
+
+  /* ══════════════════════════════════════════════
      본문 빌더
      ★ HTML(rich) 본문 → sanitize 후 그대로 렌더링
-     ★ 일반 텍스트 본문 → 기존 들여쓰기 로직 적용
+     ★ 일반 텍스트 → 기존 들여쓰기 + 금액 변환 적용
      ★ purpose: 번호 없이 단독 출력
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
@@ -197,21 +220,20 @@
     if (isHtmlContent(bodyRaw)) {
       let html = '';
 
-      /* purpose 출력 (번호 없이) */
       if (f.purpose && tmpl !== 'event' && tmpl !== 'sponsor') {
         f.purpose.split('\n').forEach(line => {
-          const trimmed = line.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
+          const trimmed = line
+            .replace(/^[\s\u00A0]+/, '')
+            .replace(/[\s\u00A0]+$/, '');
           if (trimmed) {
-            html += `<div class="doc-body-line">${esc(trimmed)}</div>`;
+            html += `<div class="doc-body-line">${esc(convertAmount(trimmed))}</div>`;
           }
         });
         html += `<div class="doc-body-line">&nbsp;</div>`;
       }
 
-      /* rich body 렌더링 */
       html += `<div class="doc-body-rich">${sanitizeRichBody(bodyRaw)}</div>`;
 
-      /* 끝. 표시 */
       if (appendEnd) {
         html += `<div class="doc-body-line">&nbsp;&nbsp;끝.</div>`;
       }
@@ -269,7 +291,7 @@
     let html = '';
 
     lines.forEach((line, idx) => {
-      const isLast = idx === lines.length - 1;
+      const isLast  = idx === lines.length - 1;
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -293,9 +315,12 @@
         }
       }
 
-      const displayContent = convertTerms(applyColonSpace(convertDate(content)));
-      const displaySymbol  = symbol ? `${esc(symbol)}&nbsp;` : '';
-      const endMark        = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
+      /* ★ 텍스트 본문에도 금액 천단위 적용 */
+      const displayContent = convertAmount(
+        convertTerms(applyColonSpace(convertDate(content)))
+      );
+      const displaySymbol = symbol ? `${esc(symbol)}&nbsp;` : '';
+      const endMark       = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
       html += `<div class="doc-body-line" style="padding-left:${indentEm * 0.5}em;">`
             + displaySymbol
