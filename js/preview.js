@@ -1,443 +1,284 @@
-/**
- * js/preview.js
- * 공문서 미리보기 — 구분선을 기관명 텍스트 border-bottom으로 바로 아래 붙임
- */
 (function () {
   'use strict';
 
-  var currentDoc  = null;
-  var currentType = 'draft';
+  let currentDoc = null;
+  let currentType = 'draft';
 
-  /* ══════════════════════════════════════════
-     초기화
-  ══════════════════════════════════════════ */
+  /* ── 초기화 ─────────────────────────────────────────── */
   function initPreview() {
-    var params = getUrlParams();
-    var id     = params.id;
-    var type   = params.type || 'draft';
+    const params = new URLSearchParams(location.search);
+    const id     = params.get('id');
+    currentType  = params.get('type') || 'draft';
 
-    if (!id) { showToast('문서 ID가 없습니다.', 'error'); return; }
+    if (!id) { showError('문서 ID가 없습니다.'); return; }
 
-    currentType = type;
-    currentDoc  = (type === 'doc') ? Storage.getDoc(id) : Storage.getDraft(id);
+    // 1) 완성 문서 우선
+    try {
+      const docs = JSON.parse(localStorage.getItem('doc_completed') || '[]');
+      currentDoc = docs.find(d => d.id === id) || null;
+      if (currentDoc) { currentType = 'completed'; }
+    } catch (e) {}
 
+    // 2) 임시저장 배열
     if (!currentDoc) {
-      showToast('문서를 찾을 수 없습니다.', 'error');
-      var c = document.getElementById('doc-preview');
-      if (c) c.innerHTML = '<p style="text-align:center;color:#e74c3c;padding:60px 0;">문서를 찾을 수 없습니다.</p>';
-      return;
+      try {
+        const drafts = JSON.parse(localStorage.getItem('doc_drafts') || '[]');
+        currentDoc = drafts.find(d => d.id === id) || null;
+        if (currentDoc) { currentType = 'draft'; }
+      } catch (e) {}
     }
+
+    // 3) 개별 draft_ 키
+    if (!currentDoc) {
+      const raw = localStorage.getItem('draft_' + id);
+      if (raw) { try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {} }
+    }
+
+    if (!currentDoc) { showError('문서를 찾을 수 없습니다.'); return; }
 
     renderPreview(currentDoc);
     updateStatus();
   }
 
-  /* ══════════════════════════════════════════
-     상태 배지
-  ══════════════════════════════════════════ */
+  /* ── 상태 배지 ──────────────────────────────────────── */
   function updateStatus() {
-    if (!currentDoc) return;
-    var badge   = document.getElementById('doc-status');
-    var titleEl = document.getElementById('preview-title');
-    if (titleEl) titleEl.textContent = currentDoc.title || '(제목 없음)';
-    if (badge) {
-      if (currentType === 'doc') {
-        badge.textContent = '✅ 완성';
-        badge.className   = 'doc-status-badge badge-complete';
-      } else {
-        badge.textContent = '📝 임시저장';
-        badge.className   = 'doc-status-badge badge-draft';
-      }
-    }
-    if (currentType === 'doc') {
-      ['complete-btn','complete-btn-b'].forEach(function (id) {
-        var b = document.getElementById(id);
-        if (b) { b.disabled=true; b.style.opacity='.5'; b.style.cursor='not-allowed'; }
-      });
+    const badge = document.getElementById('status-badge');
+    if (!badge) return;
+    if (currentType === 'completed') {
+      badge.textContent = '완성';
+      badge.className = 'badge badge-completed';
+      const btn = document.getElementById('btn-complete');
+      if (btn) btn.disabled = true;
+    } else {
+      badge.textContent = '임시저장';
+      badge.className = 'badge badge-draft';
     }
   }
 
-  /* ══════════════════════════════════════════
-     문서 렌더링
-  ══════════════════════════════════════════ */
+  /* ── 문서 렌더링 ─────────────────────────────────────── */
   function renderPreview(doc) {
-    var container = document.getElementById('doc-preview');
+    const container = document.getElementById('doc-preview');
     if (!container) return;
 
-    var settings = Storage.getSettings();
-    var detail   = ExtendedStorage.getOrgDetail();
-    var logo     = LogoManager.get();
-    var orgName  = settings.orgName || '○○기관';
-    var f        = doc.fields || {};
-    var tmpl     = doc.templateId || 'internal';
+    const settings = (() => {
+      try { return JSON.parse(localStorage.getItem('doc_settings') || '{}'); } catch (e) { return {}; }
+    })();
+    const orgDetail = (() => {
+      try { return JSON.parse(localStorage.getItem('doc_org_detail') || '{}'); } catch (e) { return {}; }
+    })();
 
-    var docNo       = f.docNo       || f['문서번호']   || '';
-    var rcptNo      = f.rcptNo      || f['접수번호']   || '';
-    var classNo     = f.classNo     || f['분류번호']   || '';
-    var dateStr     = f.date        || f['날짜']       || getTodayString();
-    var receiver    = f.receiver    || f['수신']       || '';
-    var reference   = f.reference   || f['참조']       || '';
-    var via         = f.via         || f['경유']       || '';
-    var title       = f.title       || f['제목']       || doc.title || '';
-    var body        = f.body        || f['내용']       || f['본문'] || '';
-    var purpose     = f.purpose     || f['목적']       || '';
-    var attachments = f.attachments || f['붙임']       || '';
-    var senderName  = f.senderName  || f['발신명의']   || orgName;
-    var address     = f.address     || detail.address  || '';
-    var contact     = f.contact     || detail.phone    || '';
-    var faxNo       = f.fax         || detail.fax      || '';
-    var homepage    = f.homepage    || detail.homepage || '';
-    var eventDate   = f.eventDate   || f['행사일시']   || '';
-    var eventPlace  = f.eventPlace  || f['행사장소']   || '';
-    var eventTarget = f.eventTarget || f['대상']       || '';
-    var grantAmount = f.grantAmount || f['후원금액']   || '';
-    var grantDate   = f.grantDate   || f['후원일자']   || '';
-    var sponsorName = f.sponsorName || f['후원자성명'] || '';
+    const orgName  = settings.orgName || orgDetail.orgName || '○○기관';
+    const f        = doc.fields || {};
+    const tmpl     = doc.templateId || 'internal';
 
-    var cooperators = [];
-    try { cooperators = JSON.parse(localStorage.getItem('doc_cooperators') || '[]'); }
-    catch (e) { cooperators = []; }
-    if (!Array.isArray(cooperators)) cooperators = [];
+    const title    = f.title || doc.title || '(제목 없음)';
+    const receiver = f.receiver || '';
+    const via      = f.via || '';
+    const ref      = f.reference || f.ref || '';
+    const docNum   = f.docNumber || f.docNum || '';
+    const dateStr  = f.date || doc.date || '';
 
-    var html = '';
+    let html = '';
 
-    /* ══════════════════════════════
-       1. 기관명 블록
-          — border-bottom 으로 구분선을
-            기관명 텍스트 바로 아래에 붙임
-    ══════════════════════════════ */
-    html += '<div class="doc-header-block">';
+    /* ① 기관명 ─────────────────── 구분선 없음 */
+    html += `
+      <div class="doc-header-area">
+        <div class="doc-org-name">${escapeHtml(orgName)}</div>
+      </div>`;
 
-    if (classNo) {
-      html += '<div class="doc-classno">분류번호: ' + escapeHtml(classNo) + '</div>';
-    }
-
-    if (logo) {
-      /*
-       * 로고가 있을 때는 img 아래에 border-bottom 구분선을
-       * 별도 div로 표현 (img에 직접 border 주면 이미지 테두리처럼 보임)
-       */
-      html += '<div class="doc-logo-wrap">'
-            + '<img class="doc-logo-img" src="' + logo + '" alt="기관로고">'
-            + '</div>'
-            + '<div style="border-top:2px solid #111;width:100%;margin-top:8px;"></div>';
-    } else {
-      /*
-       * 로고 없음 → 기관명 텍스트에 border-bottom 직접 적용
-       * .doc-org-name { border-bottom: 2px solid #111; padding-bottom: 6px; }
-       */
-      html += '<div class="doc-org-name">' + escapeHtml(orgName) + '</div>';
-    }
-
-    html += '</div>'; /* /doc-header-block */
-
-    /* ══════════════════════════════
-       2. 수신·경유·참조
-    ══════════════════════════════ */
-    html += '<div class="doc-meta-area">';
-
+    /* ② 수신·경유·참조 ──────────── 구분선 없음 */
+    html += `<div class="doc-meta-area">`;
+    html += `
+        <div class="doc-meta-row">
+          <span class="doc-meta-label">수&nbsp;&nbsp;&nbsp;&nbsp;신</span>
+          <span class="doc-meta-colon">:</span>
+          <span class="doc-meta-value">${escapeHtml(receiver)}</span>
+        </div>`;
     if (via) {
-      html += '<div class="doc-meta-row">'
-            + '<span class="doc-meta-label">경&nbsp;&nbsp;유</span>'
-            + '<span class="doc-meta-value">' + escapeHtml(via) + '</span>'
-            + '</div>';
+      html += `
+        <div class="doc-meta-row">
+          <span class="doc-meta-label">경&nbsp;&nbsp;&nbsp;&nbsp;유</span>
+          <span class="doc-meta-colon">:</span>
+          <span class="doc-meta-value">${escapeHtml(via)}</span>
+        </div>`;
+    }
+    if (ref) {
+      html += `
+        <div class="doc-meta-row">
+          <span class="doc-meta-label">참&nbsp;&nbsp;&nbsp;&nbsp;조</span>
+          <span class="doc-meta-colon">:</span>
+          <span class="doc-meta-value">${escapeHtml(ref)}</span>
+        </div>`;
+    }
+    html += `</div>`;
+
+    /* ③ 제목 ───────────────────── 구분선 없음 */
+    html += `
+      <div class="doc-title-area">
+        <span class="doc-title-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
+        <span class="doc-title-colon">:</span>
+        <span class="doc-title-text">${escapeHtml(title)}</span>
+      </div>`;
+
+    /* ★ 구분선: 제목 바로 아래에만 ★ */
+    html += `<hr class="doc-title-divider">`;
+
+    /* ④ 본문 */
+    html += `<div class="doc-body-area">${buildBody(f, tmpl)}</div>`;
+
+    /* ⑤ 붙임 */
+    const attachments = f.attachments || f.attach || '';
+    if (attachments) {
+      html += `
+        <div class="doc-attach-area">
+          <span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>
+          <span class="doc-attach-colon">:</span>
+          <span class="doc-attach-value">${escapeHtml(attachments)}</span>
+        </div>`;
     }
 
-    var recvDisplay = receiver;
-    if (!recvDisplay) {
-      var rcvs = (settings.receivers || [])
-        .map(function (r) { return typeof r === 'object' ? (r.name || '') : r; })
-        .filter(Boolean);
-      recvDisplay = rcvs.join(', ') || '';
-    }
-    html += '<div class="doc-meta-row">'
-          + '<span class="doc-meta-label">수&nbsp;&nbsp;신</span>'
-          + '<span class="doc-meta-value">' + escapeHtml(recvDisplay) + '</span>'
-          + '</div>';
+    /* ⑥ 발신명의 */
+    const senderName = f.senderName || orgName;
+    html += `
+      <div class="doc-sender-area">
+        <span class="doc-sender-value">${escapeHtml(senderName)}</span>
+      </div>`;
 
-    if (reference) {
-      html += '<div class="doc-meta-row">'
-            + '<span class="doc-meta-label">참&nbsp;&nbsp;조</span>'
-            + '<span class="doc-meta-value">' + escapeHtml(reference) + '</span>'
-            + '</div>';
-    }
+    /* ⑦ 결재란 */
+    html += renderApprovalBlock(doc, settings, orgDetail);
 
-    html += '</div>'; /* /doc-meta-area */
-
-    /* ══════════════════════════════
-       3. 제목
-    ══════════════════════════════ */
-    html += '<div class="doc-title-area">'
-          + '<span class="doc-title-label">제&nbsp;&nbsp;&nbsp;목:</span>'
-          + '<span class="doc-title-text">' + escapeHtml(title) + '</span>'
-          + '</div>';
-
-    /* ══════════════════════════════
-       4. 본문
-    ══════════════════════════════ */
-    html += buildBody(tmpl, f, body, purpose,
-              eventDate, eventPlace, eventTarget,
-              grantAmount, grantDate, sponsorName);
-
-    /* ══════════════════════════════
-       5. 붙임
-    ══════════════════════════════ */
-    if (attachments && attachments.trim()) {
-      var items = attachments.split('\n').map(function(s){return s.trim();}).filter(Boolean);
-      html += '<div class="doc-attach-area">';
-      html += '<div class="doc-attach-label">붙&nbsp;&nbsp;임</div>';
-      items.forEach(function (item, idx) {
-        html += '<div class="doc-attach-item">' + (idx+1) + '. ' + escapeHtml(item) + '&nbsp;&nbsp;1부.</div>';
-      });
-      html += '<div class="doc-end-mark">끝.</div>';
-      html += '</div>';
-    } else {
-      html += '<div class="doc-end-mark">끝.</div>';
-    }
-
-    /* ══════════════════════════════
-       6. 발신명의
-    ══════════════════════════════ */
-    html += '<div class="doc-sender-area">' + escapeHtml(senderName) + '</div>';
-
-    /* ══════════════════════════════
-       7. 결재란
-    ══════════════════════════════ */
-    html += renderApprovalBlock(settings, cooperators);
-
-    /* ══════════════════════════════
-       8. 하단 정보선
-    ══════════════════════════════ */
-    html += renderFooterInfo(docNo, rcptNo, dateStr, orgName, address, contact, faxNo, homepage);
+    /* ⑧ 하단 정보 */
+    html += renderFooterInfo(doc, settings, orgDetail, docNum, dateStr);
 
     container.innerHTML = html;
   }
 
-  /* ══════════════════════════════════════════
-     본문 빌더
-  ══════════════════════════════════════════ */
-  function buildBody(tmpl, f, body, purpose,
-      eventDate, eventPlace, eventTarget,
-      grantAmount, grantDate, sponsorName) {
-
-    var html = '<div class="doc-body-area">';
-
-    if (tmpl === 'event') {
-      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span><span>귀 기관의 무궁한 발전을 기원합니다.</span></div>';
-      html += '<div class="doc-body-item"><span class="doc-body-num">2.</span><span>아래와 같이 행사를 안내드립니다.</span></div>';
-      html += '</div>';
-      html += '<table class="doc-event-table">';
-      var eRows = [
-        ['행&nbsp;사&nbsp;명', f.title || f['제목'] || ''],
-        ['일&nbsp;&nbsp;&nbsp;시', eventDate],
-        ['장&nbsp;&nbsp;&nbsp;소', eventPlace],
-        ['대&nbsp;&nbsp;&nbsp;상', eventTarget],
-        ['내&nbsp;&nbsp;&nbsp;용', body]
-      ];
-      eRows.forEach(function (r) {
-        if (r[1]) html += '<tr><th>' + r[0] + '</th><td>' + escapeHtml(r[1]) + '</td></tr>';
-      });
-      html += '</table>';
-      if (purpose) {
-        html += '<div class="doc-body-area"><div class="doc-body-item"><span class="doc-body-num">3.</span><span>' + escapeHtml(purpose) + '</span></div></div>';
-      }
-
-    } else if (tmpl === 'sponsor') {
-      html += '<div class="doc-body-item"><span class="doc-body-num">1.</span><span>귀하의 따뜻한 후원에 진심으로 감사드립니다.</span></div>';
-      if (sponsorName) html += '<div class="doc-body-item"><span class="doc-body-num">2.</span><span>후원자: '   + escapeHtml(sponsorName) + '</span></div>';
-      if (grantDate)   html += '<div class="doc-body-item"><span class="doc-body-num">3.</span><span>후원일자: ' + escapeHtml(grantDate)   + '</span></div>';
-      if (grantAmount) html += '<div class="doc-body-item"><span class="doc-body-num">4.</span><span>후원금액: ' + escapeHtml(grantAmount) + '</span></div>';
-      if (body)        html += '<div class="doc-body-item"><span class="doc-body-num">5.</span><span>'          + escapeHtml(body)         + '</span></div>';
-      html += '</div>';
-
-    } else {
-      var paras = [purpose, body].filter(Boolean);
-      if (paras.length === 0) paras = [''];
-      paras.forEach(function (p, idx) {
-        html += '<div class="doc-body-item"><span class="doc-body-num">' + (idx+1) + '.</span><span>' + escapeHtml(p) + '</span></div>';
-      });
-      html += '</div>';
-    }
-
-    return html;
+  /* ── 본문 빌더 ──────────────────────────────────────── */
+  function buildBody(f, tmpl) {
+    const body = f.body || f.content || '';
+    if (!body) return '<p style="color:#aaa;">(본문 없음)</p>';
+    return `<p>${escapeHtml(body).replace(/\n/g, '<br>')}</p>`;
   }
 
-  /* ══════════════════════════════════════════
-     결재란 — 테두리(사각박스) 완전 제거
-  ══════════════════════════════════════════ */
-  function renderApprovalBlock(settings, cooperators) {
-    var levels = settings.approvalLevels;
-    if (!levels || levels.length === 0) {
-      levels = [{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}];
-    }
+  /* ── 결재란: 테두리/사각박스 완전 제거 ──────────────────── */
+  function renderApprovalBlock(doc, settings, orgDetail) {
+    const approvers = settings.approvers || orgDetail.approvers || [];
+    if (!approvers.length) return '';
 
-    var html = '<div class="doc-approval-area">';
-
-    if (cooperators.length) {
-      html += '<div class="doc-coop-block"><div class="doc-coop-title">협조자</div><div class="doc-approval-row">';
-      cooperators.forEach(function (c) {
-        var ctitle = typeof c==='object' ? (c.title||c.name||'') : c;
-        var cname  = typeof c==='object' ? (c.name||'') : '';
-        html += '<div class="doc-approval-cell">'
-              + '<span class="doc-approval-title">' + escapeHtml(ctitle) + '</span>'
-              + '<span class="doc-approval-sign"></span>'
-              + '<span class="doc-approval-name">'  + escapeHtml(cname)  + '</span>'
-              + '</div>';
-      });
-      html += '</div></div>';
-    }
-
-    html += '<div class="doc-approval-row">';
-    levels.forEach(function (l) {
-      html += '<div class="doc-approval-cell">'
-            + '<span class="doc-approval-title">' + escapeHtml(l.title||'') + '</span>'
-            + '<span class="doc-approval-sign"></span>'
-            + '<span class="doc-approval-name">'  + escapeHtml(l.name||'')  + '</span>'
-            + '</div>';
+    let html = '<div class="doc-approval-area">';
+    approvers.forEach(ap => {
+      html += `
+        <div class="doc-approval-cell">
+          <div class="doc-approval-title">${escapeHtml(ap.title || '')}</div>
+          <div class="doc-approval-sign"></div>
+          <div class="doc-approval-name">${escapeHtml(ap.name || '')}</div>
+        </div>`;
     });
     html += '</div>';
+    return html;
+  }
 
+  /* ── 하단 정보 ──────────────────────────────────────── */
+  function renderFooterInfo(doc, settings, orgDetail, docNum, dateStr) {
+    const addr     = orgDetail.address  || settings.address  || '';
+    const homepage = orgDetail.homepage || settings.homepage || '';
+    const tel      = orgDetail.tel      || settings.tel      || '';
+    const fax      = orgDetail.fax      || settings.fax      || '';
+
+    let html = '<div class="doc-footer-info">';
+    if (addr)     html += `<span>${escapeHtml(addr)}</span>`;
+    if (homepage) html += `<span>${escapeHtml(homepage)}</span>`;
+    if (tel)      html += `<span>전화 ${escapeHtml(tel)}</span>`;
+    if (fax)      html += `<span>팩스 ${escapeHtml(fax)}</span>`;
     html += '</div>';
     return html;
   }
 
-  /* ══════════════════════════════════════════
-     하단 정보선
-  ══════════════════════════════════════════ */
-  function renderFooterInfo(docNo, rcptNo, dateStr, orgName, address, contact, faxNo, homepage) {
-    var html = '<div class="doc-footer-area">';
-    html += '<hr class="doc-footer-thick">';
-    html += '<hr class="doc-footer-thin">';
-    html += '<div class="doc-footer-content">';
-    html += '<div class="doc-footer-left">';
-    html += '<div class="doc-footer-numrow">';
-    html += '<span><strong>시행</strong>&nbsp;' + escapeHtml(docNo||(orgName+'-')) + '&nbsp;&nbsp;(' + escapeHtml(dateStr) + ')</span>';
-    html += '<span><strong>접수</strong>&nbsp;(' + (rcptNo ? escapeHtml(rcptNo) : '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') + ')</span>';
-    html += '</div>';
-    if (address) html += '<div class="doc-footer-addr">' + escapeHtml(address) + '</div>';
-    html += '</div>';
-    html += '<div class="doc-footer-right">';
-    if (contact)  html += '<div>☎&nbsp;' + escapeHtml(contact)  + '</div>';
-    if (faxNo)    html += '<div>팩스&nbsp;' + escapeHtml(faxNo)  + '</div>';
-    if (homepage) html += '<div>' + escapeHtml(homepage) + '</div>';
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-    return html;
+  /* ── 유틸 ───────────────────────────────────────────── */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
-  /* ══════════════════════════════════════════
-     복사용 텍스트
-  ══════════════════════════════════════════ */
-  function buildPlainText(doc) {
-    var f = doc.fields || {};
-    var s = Storage.getSettings();
-    var lines = [];
-    lines.push(s.orgName || '');
-    lines.push('');
-    if (f.via||f['경유']) lines.push('경유: '+(f.via||f['경유']||''));
-    lines.push('수신: '+(f.receiver||f['수신']||''));
-    if (f.reference||f['참조']) lines.push('참조: '+(f.reference||f['참조']||''));
-    lines.push('');
-    lines.push('제 목: '+(f.title||f['제목']||doc.title||''));
-    lines.push('');
-    if (f.purpose||f['목적']) lines.push('1. '+(f.purpose||f['목적']||''));
-    if (f.body||f['내용'])    lines.push('2. '+(f.body||f['내용']||''));
-    lines.push('');
-    var attach = f.attachments||f['붙임']||'';
-    if (attach.trim()) {
-      lines.push('붙임');
-      attach.split('\n').forEach(function(a,i){ if(a.trim()) lines.push('  '+(i+1)+'. '+a.trim()+'  1부.'); });
-    }
-    lines.push('끝.');
-    lines.push('');
-    lines.push(f.senderName||f['발신명의']||s.orgName||'');
-    return lines.join('\n');
+  function showError(msg) {
+    const c = document.getElementById('doc-preview');
+    if (c) c.innerHTML = `<p style="color:red;padding:40px;">${escapeHtml(msg)}</p>`;
   }
 
-  /* ══════════════════════════════════════════
-     이벤트 바인딩
-  ══════════════════════════════════════════ */
+  /* ── 이벤트 바인딩 ──────────────────────────────────── */
   function bindEvents() {
-    function el(id, fn) { var e=document.getElementById(id); if(e) e.addEventListener('click',fn); }
+    const btnBack = document.getElementById('btn-back');
+    if (btnBack) btnBack.addEventListener('click', () => history.back());
 
-    el('back-btn', function(){ window.location.href='index.html'; });
-
-    function goEdit(){
-      if(!currentDoc) return;
-      window.location.href='editor.html?id='+encodeURIComponent(currentDoc.id)+'&type='+currentType;
-    }
-    el('edit-btn',   goEdit);
-    el('edit-btn-b', goEdit);
-
-    function doCopy(){
-      if(!currentDoc) return;
-      copyToClipboard(buildPlainText(currentDoc));
-      showToast('📋 클립보드에 복사되었습니다.','success');
-    }
-    el('copy-btn',   doCopy);
-    el('copy-btn-b', doCopy);
-
-    function doPrint(){ window.print(); }
-    el('print-btn',   doPrint);
-    el('print-btn-b', doPrint);
-
-    function openComplete(){ if(currentType!=='doc') Modal.open('complete-modal'); }
-    el('complete-btn',   openComplete);
-    el('complete-btn-b', openComplete);
-    el('complete-cancel-btn',  function(){ Modal.close('complete-modal'); });
-    el('complete-confirm-btn', function(){ Modal.close('complete-modal'); saveAsComplete(); });
-
-    function openDelete(){ Modal.open('delete-modal'); }
-    el('delete-btn',   openDelete);
-    el('delete-btn-b', openDelete);
-    el('delete-cancel-btn',  function(){ Modal.close('delete-modal'); });
-    el('delete-confirm-btn', function(){ Modal.close('delete-modal'); doDelete(); });
-
-    ['complete-modal','delete-modal'].forEach(function(id){
-      var overlay=document.getElementById(id);
-      if(overlay) overlay.addEventListener('click',function(e){ if(e.target===overlay) Modal.close(id); });
+    const btnEdit = document.getElementById('btn-edit');
+    if (btnEdit) btnEdit.addEventListener('click', () => {
+      if (!currentDoc) return;
+      location.href = `editor.html?id=${currentDoc.id}&type=${currentType}`;
     });
 
-    document.addEventListener('keydown',function(e){
-      if(e.key==='Escape'){ Modal.close('complete-modal'); Modal.close('delete-modal'); }
-      if(e.ctrlKey&&e.key==='p'){ e.preventDefault(); doPrint(); }
+    const btnCopy = document.getElementById('btn-copy');
+    if (btnCopy) btnCopy.addEventListener('click', () => {
+      const el = document.getElementById('doc-preview');
+      if (!el) return;
+      navigator.clipboard.writeText(el.innerText || '')
+        .then(() => alert('복사되었습니다.'))
+        .catch(() => alert('복사에 실패했습니다.'));
+    });
+
+    const btnPrint = document.getElementById('btn-print');
+    if (btnPrint) btnPrint.addEventListener('click', () => window.print());
+
+    const btnComplete = document.getElementById('btn-complete');
+    if (btnComplete) btnComplete.addEventListener('click', saveAsComplete);
+
+    const btnDelete = document.getElementById('btn-delete');
+    if (btnDelete) btnDelete.addEventListener('click', doDelete);
+
+    document.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 'p') { e.preventDefault(); window.print(); }
     });
   }
 
-  /* ══════════════════════════════════════════
-     완성 저장
-  ══════════════════════════════════════════ */
-  function saveAsComplete(){
-    if(!currentDoc) return;
-    var doc=JSON.parse(JSON.stringify(currentDoc));
-    doc.completedAt=new Date().toISOString();
-    doc.status='complete';
-    var saved=Storage.saveDoc(doc);
-    if(saved&&currentType==='draft') Storage.deleteDraft(currentDoc.id);
-    if(saved){
-      showToast('✅ 완성 문서함에 저장되었습니다.','success');
-      currentType='doc'; currentDoc=doc; updateStatus();
-    } else {
-      showToast('저장 중 오류가 발생했습니다.','error');
+  /* ── 완성 저장 ──────────────────────────────────────── */
+  function saveAsComplete() {
+    if (!currentDoc) return;
+    try {
+      const list = JSON.parse(localStorage.getItem('doc_completed') || '[]');
+      const idx  = list.findIndex(d => d.id === currentDoc.id);
+      const item = Object.assign({}, currentDoc, { completedAt: new Date().toISOString() });
+      if (idx >= 0) list[idx] = item; else list.push(item);
+      localStorage.setItem('doc_completed', JSON.stringify(list));
+      currentType = 'completed';
+      updateStatus();
+      alert('완성 문서함에 저장되었습니다.');
+    } catch (e) {
+      alert('저장에 실패했습니다.');
     }
   }
 
-  /* ══════════════════════════════════════════
-     삭제
-  ══════════════════════════════════════════ */
-  function doDelete(){
-    if(!currentDoc) return;
-    if(currentType==='doc') Storage.deleteDoc(currentDoc.id);
-    else Storage.deleteDraft(currentDoc.id);
-    showToast('🗑️ 삭제되었습니다.','info');
-    setTimeout(function(){ window.location.href='index.html'; },800);
+  /* ── 삭제 ───────────────────────────────────────────── */
+  function doDelete() {
+    if (!currentDoc) return;
+    if (!confirm('이 문서를 삭제하시겠습니까?')) return;
+    try {
+      ['doc_drafts', 'doc_completed'].forEach(key => {
+        const list = JSON.parse(localStorage.getItem(key) || '[]');
+        const next = list.filter(d => d.id !== currentDoc.id);
+        localStorage.setItem(key, JSON.stringify(next));
+      });
+      localStorage.removeItem('draft_' + currentDoc.id);
+      location.href = 'index.html';
+    } catch (e) {
+      alert('삭제에 실패했습니다.');
+    }
   }
 
-  /* ══════════════════════════════════════════
-     DOMContentLoaded
-  ══════════════════════════════════════════ */
-  document.addEventListener('DOMContentLoaded', function(){
+  /* ── 진입점 ─────────────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
     initPreview();
     bindEvents();
   });
