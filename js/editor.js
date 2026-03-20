@@ -1,6 +1,6 @@
 /**
  * js/editor.js
- * 공문서 에디터 - 셀 세로 높이 2배 확대
+ * 공문서 에디터 - 셀 크기 최소화 + 커서 정중앙
  */
 (function () {
   'use strict';
@@ -126,36 +126,38 @@
   };
 
   /* ══════════════════════════════════════════════
-     ★ 셀 스타일 상수 (세로 높이 2배)
-        padding 상하: 10px → 20px
-        min-height: 36px → 72px
-        line-height: 1.6 → 2.0
+     ★ 셀 스타일 상수
+        - padding: 글씨 크기에 맞게 최소한만
+        - min-height / line-height 고정값 제거
+        - height: auto (내용에 따라 자동)
+        - vertical-align: middle (커서 정중앙)
   ══════════════════════════════════════════════ */
   var CELL_STYLE_TH = [
     'border:1.5px solid #2c3e50',
-    'padding:20px 14px',       /* ★ 상하 패딩 2배 */
-    'min-width:80px',
-    'min-height:72px',         /* ★ 최소 높이 2배 */
+    'padding:6px 10px',        /* ★ 글씨 한 줄에 딱 맞는 최소 패딩 */
+    'min-width:60px',
+    'height:auto',             /* ★ 고정 높이 제거 → 내용에 맞게 자동 */
     'background:#eaf2fb',
     'font-weight:700',
+    'font-size:0.88rem',       /* ★ 본문 글씨 크기와 동일 */
     'text-align:center',
-    'vertical-align:middle',
+    'vertical-align:middle',   /* ★ 커서 정중앙 */
     'word-break:keep-all',
     'color:#1a252f',
-    'letter-spacing:0.02em',
-    'line-height:2.0'          /* ★ 행 높이 2배 */
+    'line-height:1.5'          /* ★ 브라우저 기본에 가까운 자연스러운 값 */
   ].join(';');
 
   var CELL_STYLE_TD = [
     'border:1px solid #aab7c4',
-    'padding:20px 14px',       /* ★ 상하 패딩 2배 */
-    'min-width:80px',
-    'min-height:72px',         /* ★ 최소 높이 2배 */
+    'padding:6px 10px',        /* ★ 글씨 한 줄에 딱 맞는 최소 패딩 */
+    'min-width:60px',
+    'height:auto',             /* ★ 고정 높이 제거 → 내용에 맞게 자동 */
     'background:#fff',
-    'vertical-align:middle',
+    'font-size:0.88rem',       /* ★ 본문 글씨 크기와 동일 */
+    'vertical-align:middle',   /* ★ 커서 정중앙 */
     'word-break:keep-all',
     'color:#2c3e50',
-    'line-height:2.0'          /* ★ 행 높이 2배 */
+    'line-height:1.5'          /* ★ 브라우저 기본에 가까운 자연스러운 값 */
   ].join(';');
 
   /* ══════════════════════════════════════════════
@@ -571,19 +573,19 @@
     return document.querySelectorAll('.body-editor .selected');
   }
 
-  /* ★ 표 삽입 - 세로 높이 2배 적용 */
+  /* ★ 표 삽입 */
   function insertTable(rows, cols, hasHeader) {
     var editor = document.querySelector('.body-editor');
     if (!editor) return;
     editor.focus();
 
     var editorWidth = editor.offsetWidth || 400;
-    var cellWidth   = Math.max(100, Math.floor((editorWidth - 20) / cols));
+    var cellWidth   = Math.max(80, Math.floor((editorWidth - 20) / cols));
 
     var tableStyle = [
       'border-collapse:collapse',
       'width:100%',
-      'margin:10px 0',
+      'margin:8px 0',
       'font-size:0.88rem',
       'table-layout:fixed'
     ].join(';');
@@ -594,9 +596,8 @@
       for (var c = 0; c < cols; c++) {
         var isHeader = hasHeader && r === 0;
         var tag      = isHeader ? 'th' : 'td';
-        /* ★ 셀 너비 + 공통 스타일 상수 사용 */
-        var extraStyle = ';width:' + cellWidth + 'px;';
-        var style = (isHeader ? CELL_STYLE_TH : CELL_STYLE_TD) + extraStyle;
+        var style    = (isHeader ? CELL_STYLE_TH : CELL_STYLE_TD)
+                     + ';width:' + cellWidth + 'px';
         html += '<' + tag
               + ' style="' + style + '"'
               + ' contenteditable="true">'
@@ -621,7 +622,7 @@
     updatePreview();
   }
 
-  /* ★ 행 추가 - 높이 스타일 상수 사용 */
+  /* 행 추가 */
   function addRow() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -630,9 +631,8 @@
     var newTr = document.createElement('tr');
     cells.forEach(function (refCell) {
       var td = document.createElement('td');
-      /* 기존 셀의 width만 유지하고 나머지는 TD 스타일 상수 적용 */
       var wMatch = refCell.style.cssText.match(/width:[^;]+/);
-      td.style.cssText = CELL_STYLE_TD + (wMatch ? ';' + wMatch[0] : '');
+      td.style.cssText   = CELL_STYLE_TD + (wMatch ? ';' + wMatch[0] : '');
       td.contentEditable = 'true';
       newTr.appendChild(td);
     });
@@ -641,7 +641,7 @@
     updatePreview();
   }
 
-  /* ★ 열 추가 - 높이 스타일 상수 사용 */
+  /* 열 추가 */
   function addCol() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -651,7 +651,7 @@
       var ref     = tr.children[cellIdx];
       var isFirst = ri === 0;
       var newCell = document.createElement(isFirst ? 'th' : 'td');
-      newCell.style.cssText = isFirst ? CELL_STYLE_TH : CELL_STYLE_TD;
+      newCell.style.cssText   = isFirst ? CELL_STYLE_TH : CELL_STYLE_TD;
       newCell.contentEditable = 'true';
       if (ref) ref.insertAdjacentElement('afterend', newCell);
       else tr.appendChild(newCell);
@@ -660,6 +660,7 @@
     updatePreview();
   }
 
+  /* 행 삭제 */
   function deleteRow() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -671,6 +672,7 @@
     updatePreview();
   }
 
+  /* 열 삭제 */
   function deleteCol() {
     var cell    = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
@@ -685,6 +687,7 @@
     updatePreview();
   }
 
+  /* 셀 병합 */
   function mergeCells() {
     var cells = Array.from(getSelectedCells());
     if (cells.length < 2) {
@@ -693,14 +696,14 @@
     }
     var combined = cells.map(function (c) { return c.textContent.trim(); }).filter(Boolean).join(' / ');
     var first    = cells[0];
-    var rows     = [...new Set(cells.map(function (c) { return c.parentNode; }))];
+    var rowNodes = [...new Set(cells.map(function (c) { return c.parentNode; }))];
     var minCol   = Infinity, maxCol = -Infinity;
     cells.forEach(function (c) {
       var idx = Array.from(c.parentNode.children).indexOf(c);
       if (idx < minCol) minCol = idx;
       if (idx > maxCol) maxCol = idx;
     });
-    first.rowSpan = rows.length;
+    first.rowSpan = rowNodes.length;
     first.colSpan = maxCol - minCol + 1;
     first.textContent = combined;
     first.classList.remove('selected');
@@ -709,6 +712,7 @@
     updatePreview();
   }
 
+  /* 셀 분리 */
   function unmergeCells() {
     var cell = getActiveCell();
     if (!cell) { if (typeof showToast === 'function') showToast('분리할 셀을 클릭하세요.', 'warning'); return; }
@@ -726,7 +730,7 @@
       for (var c = 0; c < cs; c++) {
         if (r === 0 && c === 0) continue;
         var newCell = document.createElement('td');
-        newCell.style.cssText  = CELL_STYLE_TD;
+        newCell.style.cssText   = CELL_STYLE_TD;
         newCell.contentEditable = 'true';
         var targetRow = allRows[rIdx + r];
         if (!targetRow) continue;
@@ -739,6 +743,7 @@
     updatePreview();
   }
 
+  /* 다음 셀 이동 (Tab) */
   function moveToNextCell(cell, reverse) {
     var table = cell.closest('table');
     var cells = Array.from(table.querySelectorAll('td, th'));
@@ -755,6 +760,7 @@
     }
   }
 
+  /* 셀 선택 (Shift+클릭) */
   function initCellSelection() {
     document.addEventListener('click', function (e) {
       var cell = e.target.closest('.body-editor td, .body-editor th');
