@@ -1,690 +1,471 @@
 /**
  * js/editor.js
- * 공문서 에디터 페이지 스크립트 (중복선언 수정본)
+ * 공문서 에디터 - 전체 재작성
  */
+(function () {
+  'use strict';
 
-// ── 전역 변수 (단 한 번만 선언) ───────────────────────────────────
-var currentDocId       = null;
-var currentTemplateId  = 'internal';
-var isModified         = false;
-var checkResults       = [];
-var realtimeCheckTimer = null;
-var editorAutoSaveTimer = null;   // ← 이름 변경으로 충돌 방지
+  /* ══════════════════════════════════════════
+     전역 변수 (단 한 번만 선언)
+  ══════════════════════════════════════════ */
+  var currentDocId      = null;
+  var currentTemplateId = 'internal';
+  var isModified        = false;
+  var editorAutoSave    = null;
+  var realtimeTimer     = null;
 
-// ── 초기화 ─────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function() {
-  initEditor();
-  bindEditorEvents();
-
-  // 30초마다 자동저장
-  editorAutoSaveTimer = setInterval(function() {
-    if (isModified) autoSaveDocument();
-  }, 30000);
-});
-
-// ── 에디터 초기화 ──────────────────────────────────────────────────
-function initEditor() {
-  var params     = getUrlParams();
-  var docId      = params.id;
-  var docType    = params.type || 'draft';
-  var templateId = params.template || 'internal';
-
-  if (docId) {
-    loadExistingDocument(docId, docType);
-  } else {
-    currentDocId = generateId('doc');
-    selectTemplate(templateId, true);
-  }
-  loadOrgSettings();
-}
-
-// ── 기관 설정 불러오기 ─────────────────────────────────────────────
-function loadOrgSettings() {
-  var settings = Storage.getSettings();
-  var orgNameEl = document.getElementById('org-name-display');
-  if (orgNameEl) orgNameEl.textContent = settings.orgName || '기관명 미설정';
-
-  if (!settings.orgName) {
-    var notice = document.getElementById('org-name-notice');
-    if (notice) notice.style.display = 'flex';
-  }
-  loadReceiverOptions();
-}
-
-// ── 수신처 옵션 로드 ───────────────────────────────────────────────
-function loadReceiverOptions() {
-  var settings  = Storage.getSettings();
-  var receivers = settings.receivers || [];
-  var select    = document.getElementById('receiver-select');
-  if (!select) return;
-
-  select.innerHTML = '<option value="">-- 자주 쓰는 수신처 선택 --</option>';
-  receivers.forEach(function(r, idx) {
-    if (r.title || r.dept) {
-      var opt = document.createElement('option');
-      opt.value = idx;
-      opt.textContent = (r.title || '') + (r.dept ? ' (' + r.dept + ')' : '');
-      select.appendChild(opt);
+  /* ══════════════════════════════════════════
+     템플릿 정의
+  ══════════════════════════════════════════ */
+  var TEMPLATE_FIELDS = {
+    internal: {
+      label: '내부결재',
+      fields: [
+        { id:'title',       label:'제목',     type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
+        { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) 관장' },
+        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'문서 작성 목적을 입력하세요' },
+        { id:'body',        label:'내용',     type:'textarea', placeholder:'주요 내용을 입력하세요' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
+        { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
+      ]
+    },
+    government: {
+      label: '지자체보고',
+      fields: [
+        { id:'title',       label:'제목',     type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
+        { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) ○○시장' },
+        { id:'reference',   label:'참조',     type:'text',     placeholder:'예) ○○과장' },
+        { id:'docNo',       label:'문서번호', type:'text',     placeholder:'예) 복지-1234' },
+        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'보고 목적을 입력하세요' },
+        { id:'body',        label:'내용',     type:'textarea', placeholder:'보고 내용을 입력하세요' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
+        { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
+      ]
+    },
+    cooperation: {
+      label: '타기관협조',
+      fields: [
+        { id:'title',       label:'제목',     type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
+        { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) ○○기관장' },
+        { id:'reference',   label:'참조',     type:'text',     placeholder:'예) ○○담당자' },
+        { id:'docNo',       label:'문서번호', type:'text',     placeholder:'예) 복지-1234' },
+        { id:'purpose',     label:'협조 요청 목적', type:'textarea', placeholder:'협조 요청 목적을 입력하세요' },
+        { id:'body',        label:'협조 내용',      type:'textarea', placeholder:'협조 요청 내용을 입력하세요' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
+        { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
+      ]
+    },
+    sponsor: {
+      label: '후원자감사',
+      fields: [
+        { id:'title',       label:'제목',       type:'text',     placeholder:'예) 후원금 감사 인사', required:true },
+        { id:'date',        label:'날짜',       type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'sponsorName', label:'후원자 성명', type:'text',     placeholder:'후원자 이름' },
+        { id:'grantDate',   label:'후원일자',   type:'text',     placeholder:'예) 2024. 3. 1.' },
+        { id:'grantAmount', label:'후원금액',   type:'text',     placeholder:'예) 금500,000원(금오십만원정)' },
+        { id:'body',        label:'감사 내용',  type:'textarea', placeholder:'감사 내용을 입력하세요' },
+        { id:'senderName',  label:'발신명의',   type:'text',     placeholder:'예) 임마누엘집' }
+      ]
+    },
+    event: {
+      label: '행사안내',
+      fields: [
+        { id:'title',       label:'행사명',   type:'text',     placeholder:'행사명을 입력하세요', required:true },
+        { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) 관계자 귀중' },
+        { id:'eventDate',   label:'행사일시', type:'text',     placeholder:'예) 2024. 4. 5. 14:00' },
+        { id:'eventPlace',  label:'행사장소', type:'text',     placeholder:'행사 장소를 입력하세요' },
+        { id:'eventTarget', label:'대상',     type:'text',     placeholder:'행사 대상을 입력하세요' },
+        { id:'body',        label:'행사내용', type:'textarea', placeholder:'행사 내용을 입력하세요' },
+        { id:'purpose',     label:'기타사항', type:'textarea', placeholder:'기타 안내 사항' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
+        { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
+      ]
     }
-  });
-
-  select.onchange = function() {
-    var idx = parseInt(select.value);
-    if (isNaN(idx)) return;
-    var r = receivers[idx];
-    if (!r) return;
-    var receiverInput = document.getElementById('field-receiver');
-    var deptInput     = document.getElementById('field-receiver-dept');
-    if (receiverInput) receiverInput.value = r.title || '';
-    if (deptInput)     deptInput.value     = r.dept  || '';
-    onFieldInput();
   };
-}
 
-// ── 기존 문서 불러오기 ─────────────────────────────────────────────
-function loadExistingDocument(id, type) {
-  var doc = (type === 'doc') ? Storage.getDoc(id) : Storage.getDraft(id);
-  if (!doc) {
-    showToast('문서를 찾을 수 없습니다.', 'error');
-    return;
+  /* ══════════════════════════════════════════
+     예시 데이터
+  ══════════════════════════════════════════ */
+  var EXAMPLES = {
+    internal: {
+      title:'2024년 사회복지시설 운영현황 보고', date:'2024. 3. 20.', receiver:'관장',
+      purpose:'2024년도 1분기 운영현황을 보고하고자 합니다.',
+      body:'1. 이용자 현황: 총 45명\n2. 프로그램 운영: 12개 프로그램\n3. 예산 집행률: 23.5%',
+      attachments:'2024년 1분기 운영현황 보고서', senderName:'복지팀장'
+    },
+    government: {
+      title:'2024년 사회복지시설 운영현황 보고', date:'2024. 3. 20.',
+      receiver:'○○시장', reference:'사회복지과장', docNo:'복지-2024-0001',
+      purpose:'「사회복지사업법」 제6조에 따라 2024년도 1분기 운영현황을 보고합니다.',
+      body:'1. 시설 현황\n   가. 시설명: 임마누엘집\n   나. 정원: 50명\n2. 이용자 현황: 45명',
+      attachments:'운영현황 보고서 1부', senderName:'임마누엘집'
+    },
+    cooperation: {
+      title:'자원봉사자 파견 협조 요청', date:'2024. 3. 20.',
+      receiver:'○○대학교 사회복지학과장', reference:'봉사활동 담당교수', docNo:'복지-2024-0002',
+      purpose:'당 시설 이용자 여가활동 지원을 위한 자원봉사자 파견을 요청합니다.',
+      body:'1. 봉사 일시: 2024. 4. 1.(월) ~ 4. 30.(화)\n2. 봉사 내용: 여가활동 보조\n3. 필요 인원: 5명',
+      attachments:'봉사활동 계획서 1부', senderName:'임마누엘집'
+    },
+    sponsor: {
+      title:'후원금 접수 감사 인사', date:'2024. 3. 20.',
+      sponsorName:'홍길동', grantDate:'2024. 3. 15.', grantAmount:'금500,000원(금오십만원정)',
+      body:'귀하의 따뜻한 마음과 정성 어린 후원에 깊이 감사드립니다. 보내주신 후원금은 이용자들의 생활 향상과 복지서비스 제공에 소중히 사용하겠습니다.',
+      senderName:'임마누엘집'
+    },
+    event: {
+      title:'2024년 봄 나들이 행사 안내', date:'2024. 3. 20.',
+      receiver:'관계자 귀중', eventDate:'2024. 4. 5.(금) 10:00 ~ 17:00',
+      eventPlace:'○○공원', eventTarget:'시설 이용자 및 가족',
+      body:'봄을 맞이하여 이용자와 가족이 함께하는 나들이 행사를 개최합니다.',
+      purpose:'참가 신청: 3. 29.(금)까지 전화 또는 방문 접수',
+      attachments:'행사 세부 일정표 1부', senderName:'임마누엘집'
+    }
+  };
+
+  /* ══════════════════════════════════════════
+     초기화
+  ══════════════════════════════════════════ */
+  function initEditor() {
+    var params   = getUrlParams();
+    var tmplId   = params.template || 'internal';
+    var docId    = params.id;
+    var docType  = params.type || 'draft';
+
+    /* 기존 문서 불러오기 */
+    if (docId) {
+      var existing = (docType === 'doc') ? Storage.getDoc(docId) : Storage.getDraft(docId);
+      if (existing) {
+        currentDocId      = existing.id;
+        currentTemplateId = existing.templateId || tmplId;
+        selectTemplate(currentTemplateId);
+        fillFields(existing.fields || {});
+        setSaveStatus('불러옴');
+        return;
+      }
+    }
+
+    /* 새 문서 */
+    currentDocId = generateId('draft');
+    selectTemplate(tmplId);
+    prefillOrgDefaults();
   }
 
-  currentDocId      = id;
-  currentTemplateId = doc.templateId || 'internal';
-  selectTemplate(currentTemplateId, true);
+  /* ══════════════════════════════════════════
+     기관 기본값 채우기
+  ══════════════════════════════════════════ */
+  function prefillOrgDefaults() {
+    var settings = Storage.getSettings();
+    var detail   = (typeof ExtendedStorage !== 'undefined') ? ExtendedStorage.getOrgDetail() : {};
+    setFieldValue('senderName', settings.orgName || '');
+    setFieldValue('date', getTodayString());
+  }
 
-  if (doc.fields) {
-    Object.keys(doc.fields).forEach(function(key) {
-      var el = document.getElementById('field-' + key);
-      if (el) el.value = doc.fields[key] || '';
+  /* ══════════════════════════════════════════
+     템플릿 선택
+  ══════════════════════════════════════════ */
+  function selectTemplate(tmplId) {
+    if (!TEMPLATE_FIELDS[tmplId]) tmplId = 'internal';
+    currentTemplateId = tmplId;
+
+    /* 버튼 활성화 */
+    document.querySelectorAll('.template-btn').forEach(function (btn) {
+      btn.classList.remove('active');
+      if (btn.dataset.template === tmplId) btn.classList.add('active');
+    });
+
+    /* 가이드 패널 */
+    var guide = document.getElementById('guide-panel');
+    if (guide) {
+      guide.innerHTML = '<strong>' + TEMPLATE_FIELDS[tmplId].label + '</strong> 작성 가이드: '
+        + '제목은 간결하게, 본문은 육하원칙에 따라 작성하세요.';
+    }
+
+    /* 폼 렌더링 */
+    renderFormFields(tmplId);
+    prefillOrgDefaults();
+    updatePreview();
+  }
+
+  /* ══════════════════════════════════════════
+     폼 필드 렌더링
+  ══════════════════════════════════════════ */
+  function renderFormFields(tmplId) {
+    var container = document.getElementById('form-fields');
+    if (!container) return;
+
+    var tpl = TEMPLATE_FIELDS[tmplId];
+    if (!tpl) return;
+
+    var html = '';
+    tpl.fields.forEach(function (f) {
+      html += '<div class="form-group">';
+      html += '<label class="form-label" for="field-' + f.id + '">'
+            + f.label
+            + (f.required ? ' <span style="color:#e74c3c;">*</span>' : '')
+            + '</label>';
+      if (f.type === 'textarea') {
+        html += '<textarea id="field-' + f.id + '" name="' + f.id + '" '
+              + 'class="form-control form-textarea" rows="3" '
+              + 'placeholder="' + (f.placeholder||'') + '"></textarea>';
+      } else {
+        html += '<input id="field-' + f.id + '" name="' + f.id + '" type="text" '
+              + 'class="form-control" '
+              + 'placeholder="' + (f.placeholder||'') + '">';
+      }
+      html += '</div>';
+    });
+
+    container.innerHTML = html;
+
+    /* 실시간 미리보기 이벤트 */
+    container.querySelectorAll('input, textarea').forEach(function (el) {
+      el.addEventListener('input', function () {
+        isModified = true;
+        setSaveStatus('미저장');
+        clearTimeout(realtimeTimer);
+        realtimeTimer = setTimeout(updatePreview, 400);
+      });
     });
   }
 
-  if (doc.content) {
-    var editor = document.getElementById('editor-content');
-    if (editor) editor.value = doc.content;
+  /* ══════════════════════════════════════════
+     필드 값 설정 / 가져오기
+  ══════════════════════════════════════════ */
+  function setFieldValue(id, value) {
+    var el = document.getElementById('field-' + id);
+    if (el) el.value = value || '';
   }
 
-  updatePreviewContent();
-  runRealtimeCheck();
-  showToast('문서를 불러왔습니다.', 'success');
-}
-
-// ── 템플릿 선택 ────────────────────────────────────────────────────
-function selectTemplate(templateId, clearFields) {
-  if (clearFields === undefined) clearFields = true;
-  if (typeof TEMPLATES === 'undefined') return;
-
-  currentTemplateId = templateId;
-
-  document.querySelectorAll('.template-btn').forEach(function(btn) {
-    if (btn.dataset.template === templateId) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-
-  var template = TEMPLATES[templateId];
-  if (!template) return;
-
-  renderGuidePanel(template);
-  renderFormFields(template, clearFields);
-  updatePreviewContent();
-}
-
-// ── 가이드 패널 렌더링 ─────────────────────────────────────────────
-function renderGuidePanel(template) {
-  var panel = document.getElementById('guide-panel');
-  if (!panel) return;
-
-  var items = (template.guide || []).map(function(g) {
-    return '<li>' + escapeHtml(g) + '</li>';
-  }).join('');
-
-  panel.innerHTML =
-    '<div class="guide-card">' +
-      '<h4>📌 ' + escapeHtml(template.name) + ' 작성 가이드</h4>' +
-      '<ul class="guide-list">' + items + '</ul>' +
-    '</div>';
-}
-
-// ── 폼 필드 렌더링 ─────────────────────────────────────────────────
-function renderFormFields(template, clearFields) {
-  if (clearFields === undefined) clearFields = true;
-  var container = document.getElementById('form-fields');
-  if (!container) return;
-
-  var settings  = Storage.getSettings();
-  var receivers = settings.receivers || [];
-
-  var receiverOptions = receivers.map(function(r, i) {
-    return '<option value="' + i + '">' +
-      escapeHtml(r.title || '') +
-      (r.dept ? ' (' + escapeHtml(r.dept) + ')' : '') +
-      '</option>';
-  }).join('');
-
-  var html = '';
-
-  // 수신처 선택
-  html += '<div class="field-row">' +
-    '<label>자주 쓰는 수신처</label>' +
-    '<select id="receiver-select" class="form-select">' +
-      '<option value="">-- 선택 --</option>' +
-      receiverOptions +
-    '</select>' +
-  '</div>';
-
-  // 수신
-  if (template.id === 'internal') {
-    html += '<div class="field-row">' +
-      '<label class="required">수신</label>' +
-      '<input type="text" id="field-receiver" class="form-input" value="내부결재">' +
-    '</div>';
-  } else if (template.id === 'sponsor') {
-    html += '<div class="field-row">' +
-      '<label class="required">수신</label>' +
-      '<input type="text" id="field-receiver" class="form-input" placeholder="홍길동 귀하">' +
-      '<input type="text" id="field-receiver-dept" class="form-input mt-1" placeholder="주소">' +
-    '</div>';
-  } else {
-    html += '<div class="field-row">' +
-      '<label class="required">수신</label>' +
-      '<input type="text" id="field-receiver" class="form-input" placeholder="예: ○○시장">' +
-      '<input type="text" id="field-receiver-dept" class="form-input mt-1" placeholder="참조 부서 (예: 사회복지과장)">' +
-    '</div>';
-  }
-
-  // 경유 (내부결재 제외)
-  if (template.id !== 'internal') {
-    html += '<div class="field-row">' +
-      '<label>경유</label>' +
-      '<input type="text" id="field-via" class="form-input" placeholder="경유 기관 (없으면 비워두세요)">' +
-    '</div>';
-  }
-
-  // 제목
-  html += '<div class="field-row">' +
-    '<label class="required">제목</label>' +
-    '<input type="text" id="field-title" class="form-input" placeholder="문서 제목을 입력하세요">' +
-  '</div>';
-
-  // 관련 근거
-  if (template.id === 'government' || template.id === 'cooperation' || template.id === 'event') {
-    html += '<div class="field-row">' +
-      '<label>관련 근거</label>' +
-      '<input type="text" id="field-related" class="form-input" placeholder="예: 사회복지사업법 제○조">' +
-    '</div>';
-  }
-
-  // 행사 전용
-  if (template.id === 'event') {
-    html += '<div class="field-row">' +
-      '<label class="required">행사 일시</label>' +
-      '<input type="text" id="field-datetime" class="form-input" placeholder="예: 2024. 5. 15. 14:00">' +
-    '</div>' +
-    '<div class="field-row">' +
-      '<label class="required">장소</label>' +
-      '<input type="text" id="field-location" class="form-input" placeholder="예: ○○복지관 대강당">' +
-    '</div>' +
-    '<div class="field-row">' +
-      '<label>대상</label>' +
-      '<input type="text" id="field-target" class="form-input" placeholder="예: 지역 내 사회복지기관 종사자">' +
-    '</div>';
-  }
-
-  // 후원자 전용
-  if (template.id === 'sponsor') {
-    html += '<div class="field-row">' +
-      '<label>후원자 성명</label>' +
-      '<input type="text" id="field-sponsor-name" class="form-input" placeholder="예: 홍길동">' +
-    '</div>' +
-    '<div class="field-row">' +
-      '<label>후원 내용</label>' +
-      '<input type="text" id="field-sponsor-detail" class="form-input" placeholder="예: 후원금 500,000원 (2024. 1. 15.)">' +
-    '</div>';
-  }
-
-  // 본문
-  html += '<div class="field-row">' +
-    '<label class="required">본문</label>' +
-    '<textarea id="field-body" class="form-textarea" rows="6" placeholder="문서 본문을 입력하세요."></textarea>' +
-  '</div>';
-
-  // 붙임
-  html += '<div class="field-row">' +
-    '<label>붙임</label>' +
-    '<input type="text" id="field-attachments" class="form-input" placeholder="예: 사업계획서 1부.">' +
-  '</div>';
-
-  // 시행번호 / 접수번호
-  html += '<div class="field-row field-row-half">' +
-    '<div>' +
-      '<label>시행번호</label>' +
-      '<input type="text" id="field-docNumber" class="form-input" placeholder="예: 사회복지과-123">' +
-    '</div>' +
-    '<div>' +
-      '<label>접수번호</label>' +
-      '<input type="text" id="field-receiptNumber" class="form-input" placeholder="예: 사회복지과-456">' +
-    '</div>' +
-  '</div>';
-
-  container.innerHTML = html;
-
-  if (clearFields) clearAllFields();
-
-  // 수신처 이벤트 재바인딩
-  loadReceiverOptions();
-
-  // 입력 이벤트
-  container.querySelectorAll('input, textarea, select').forEach(function(el) {
-    el.addEventListener('input',  onFieldInput);
-    el.addEventListener('change', onFieldInput);
-  });
-}
-
-// ── 필드 초기화 ────────────────────────────────────────────────────
-function clearAllFields() {
-  document.querySelectorAll('#form-fields input, #form-fields textarea').forEach(function(el) {
-    if (el.id === 'field-receiver' && currentTemplateId === 'internal') {
-      el.value = '내부결재';
-    } else {
-      el.value = '';
-    }
-  });
-  updatePreviewContent();
-}
-
-// ── 예시 채우기 ────────────────────────────────────────────────────
-function fillExample() {
-  if (typeof TEMPLATES === 'undefined') return;
-  var template = TEMPLATES[currentTemplateId];
-  if (!template || !template.example) return;
-
-  var ex = template.example;
-  Object.keys(ex).forEach(function(key) {
-    var el = document.getElementById('field-' + key);
-    if (el) el.value = ex[key] || '';
-  });
-
-  updatePreviewContent();
-  runRealtimeCheck();
-  showToast('예시가 채워졌습니다.', 'info');
-}
-
-// ── 필드 입력 이벤트 ───────────────────────────────────────────────
-function onFieldInput() {
-  isModified = true;
-  updatePreviewContent();
-
-  clearTimeout(realtimeCheckTimer);
-  realtimeCheckTimer = setTimeout(runRealtimeCheck, 800);
-}
-
-// ── 미리보기 업데이트 ──────────────────────────────────────────────
-function updatePreviewContent() {
-  var editor = document.getElementById('editor-content');
-  if (!editor) return;
-  editor.value = buildDocumentContent();
-}
-
-// ── 문서 내용 생성 ─────────────────────────────────────────────────
-function buildDocumentContent() {
-  var settings = Storage.getSettings();
-  var detail   = (typeof ExtendedStorage !== 'undefined')
-                   ? ExtendedStorage.getOrgDetail()
-                   : {};
-  var orgName  = settings.orgName || '○○기관';
-  var today    = getTodayString();
-
-  function f(key) {
-    var el = document.getElementById('field-' + key);
+  function getFieldValue(id) {
+    var el = document.getElementById('field-' + id);
     return el ? el.value.trim() : '';
   }
 
-  var receiver       = f('receiver');
-  var receiverDept   = f('receiver-dept');
-  var via            = f('via');
-  var title          = f('title');
-  var related        = f('related');
-  var body           = f('body');
-  var attachments    = f('attachments');
-  var datetime       = f('datetime');
-  var location       = f('location');
-  var target         = f('target');
-  var sponsorName    = f('sponsor-name');
-  var sponsorDetail  = f('sponsor-detail');
-  var docNumber      = f('docNumber');
-  var receiptNumber  = f('receiptNumber');
-
-  var lines = [];
-
-  // 수신
-  if (currentTemplateId === 'internal') {
-    lines.push('수신: 내부결재');
-  } else if (currentTemplateId === 'sponsor') {
-    if (receiver) {
-      lines.push('수신: ' + receiver + ' 귀하');
-      if (receiverDept) lines.push('      ' + receiverDept);
-    }
-  } else {
-    if (receiver) {
-      lines.push('수신: ' + receiver + (receiverDept ? ' (' + receiverDept + ')' : ''));
-    }
+  function fillFields(fields) {
+    Object.keys(fields).forEach(function (key) {
+      setFieldValue(key, fields[key]);
+    });
+    updatePreview();
   }
 
-  // 경유
-  if (via && currentTemplateId !== 'internal') {
-    lines.push('경유: ' + via);
+  /* ══════════════════════════════════════════
+     모든 필드 수집
+  ══════════════════════════════════════════ */
+  function collectFields() {
+    var tpl    = TEMPLATE_FIELDS[currentTemplateId];
+    var fields = {};
+    if (!tpl) return fields;
+    tpl.fields.forEach(function (f) {
+      var val = getFieldValue(f.id);
+      if (val) fields[f.id] = val;
+    });
+    return fields;
   }
 
-  lines.push('');
-  lines.push('제목: ' + (title || '(제목을 입력하세요)'));
-  lines.push('');
-
-  // 관련
-  if (related) {
-    lines.push('1. 관련: ' + related);
+  /* ══════════════════════════════════════════
+     문서 제목 결정
+  ══════════════════════════════════════════ */
+  function getDocTitle() {
+    var title = getFieldValue('title');
+    if (!title) title = getFieldValue('sponsorName') ? '후원자 감사 서한' : '';
+    if (!title) title = TEMPLATE_FIELDS[currentTemplateId].label + ' 문서';
+    return title;
   }
 
-  // 행사
-  if (currentTemplateId === 'event') {
-    var num = related ? '2' : '1';
-    lines.push(num + '. 다음과 같이 행사를 개최하오니 참석하여 주시기 바랍니다.');
+  /* ══════════════════════════════════════════
+     저장 상태 표시
+  ══════════════════════════════════════════ */
+  function setSaveStatus(msg) {
+    var el = document.getElementById('save-status');
+    if (el) el.textContent = msg;
+  }
+
+  /* ══════════════════════════════════════════
+     미리보기 업데이트 (editor-content textarea)
+  ══════════════════════════════════════════ */
+  function updatePreview() {
+    var ta = document.getElementById('editor-content');
+    if (!ta) return;
+
+    var settings = Storage.getSettings();
+    var orgName  = settings.orgName || '○○기관';
+    var f        = collectFields();
+    var lines    = [];
+
+    lines.push(orgName);
     lines.push('');
-    lines.push('  - 다      음 -');
+    if (f.via)       lines.push('경  유: ' + f.via);
+    if (f.receiver)  lines.push('수  신: ' + f.receiver);
+    if (f.reference) lines.push('참  조: ' + f.reference);
     lines.push('');
-    if (datetime) lines.push('  가. 일  시: ' + datetime);
-    if (location) lines.push('  나. 장  소: ' + location);
-    if (target)   lines.push('  다. 대  상: ' + target);
-    if (body)     lines.push('  라. 내  용: ' + body);
+    lines.push('제  목: ' + (f.title || ''));
     lines.push('');
-  } else if (currentTemplateId === 'sponsor') {
-    if (body) {
-      lines.push(body);
+
+    if (currentTemplateId === 'event') {
+      lines.push('1. 귀 기관의 무궁한 발전을 기원합니다.');
+      lines.push('2. 아래와 같이 행사를 안내드립니다.');
+      lines.push('');
+      if (f.eventDate)   lines.push('   일  시: ' + f.eventDate);
+      if (f.eventPlace)  lines.push('   장  소: ' + f.eventPlace);
+      if (f.eventTarget) lines.push('   대  상: ' + f.eventTarget);
+      if (f.body)        lines.push('   내  용: ' + f.body);
+      if (f.purpose)     lines.push('3. ' + f.purpose);
+    } else if (currentTemplateId === 'sponsor') {
+      lines.push('1. 귀하의 따뜻한 후원에 진심으로 감사드립니다.');
+      if (f.sponsorName) lines.push('2. 후원자: '   + f.sponsorName);
+      if (f.grantDate)   lines.push('3. 후원일자: ' + f.grantDate);
+      if (f.grantAmount) lines.push('4. 후원금액: ' + f.grantAmount);
+      if (f.body)        lines.push('5. ' + f.body);
     } else {
-      lines.push('귀하의 따뜻한 후원에 깊이 감사드립니다.');
+      var idx = 1;
+      if (f.purpose) { lines.push(idx + '. ' + f.purpose); idx++; }
+      if (f.body)    { lines.push(idx + '. ' + f.body);    idx++; }
     }
-    if (sponsorName)   lines.push('후원자: ' + sponsorName);
-    if (sponsorDetail) lines.push('후원 내용: ' + sponsorDetail);
+
     lines.push('');
-  } else {
-    if (body) {
-      var bodyNum = related ? '2' : '1';
-      lines.push(bodyNum + '. ' + body);
-      lines.push('');
+    if (f.attachments) {
+      lines.push('붙  임');
+      f.attachments.split('\n').forEach(function (a, i) {
+        if (a.trim()) lines.push('  ' + (i+1) + '. ' + a.trim() + '  1부.');
+      });
     }
-  }
-
-  // 붙임
-  if (attachments) {
-    lines.push('붙임  ' + attachments);
+    lines.push('끝.');
     lines.push('');
+    lines.push(f.senderName || orgName);
+
+    ta.value = lines.join('\n');
   }
 
-  lines.push('끝.');
-  lines.push('');
-
-  // 발신명의
-  if (currentTemplateId !== 'internal') {
-    lines.push('발신명의: ' + orgName);
-    lines.push('');
+  /* ══════════════════════════════════════════
+     예시 채우기
+  ══════════════════════════════════════════ */
+  function fillExample() {
+    var ex = EXAMPLES[currentTemplateId];
+    if (!ex) return;
+    fillFields(ex);
+    isModified = true;
+    setSaveStatus('미저장');
+    if (typeof showToast === 'function') showToast('예시 데이터를 채웠습니다.', 'info');
   }
 
-  // 결재라인
-  var approvalLevels = settings.approvalLevels || [
-    { title: '담당' }, { title: '과장' }, { title: '관장' }
-  ];
-  var approvalStr = approvalLevels.map(function(lv) {
-    return lv.title + (lv.name ? '(' + lv.name + ')' : '');
-  }).join(' → ');
-  lines.push('결재: ' + approvalStr);
-  lines.push('');
+  /* ══════════════════════════════════════════
+     임시저장
+  ══════════════════════════════════════════ */
+  function saveDraft() {
+    var fields = collectFields();
+    var title  = getDocTitle();
 
-  // 협조자
-  try {
-    var cooperators = JSON.parse(localStorage.getItem('doc_cooperators') || '[]');
-    if (cooperators.length > 0) {
-      var coopStr = cooperators.map(function(c) {
-        return (c.title || '') + (c.name ? '(' + c.name + ')' : '');
-      }).join(', ');
-      lines.push('협조자: ' + coopStr);
-      lines.push('');
-    }
-  } catch(e) {}
+    if (!currentDocId) currentDocId = generateId('draft');
 
-  // 시행/접수 + 하단 정보
-  if (currentTemplateId !== 'internal') {
-    var numParts = [];
-    if (docNumber)     numParts.push('시행 ' + docNumber);
-    if (receiptNumber) numParts.push('접수 ' + receiptNumber);
-    if (numParts.length) lines.push(numParts.join('  '));
+    var draft = {
+      id:         currentDocId,
+      templateId: currentTemplateId,
+      title:      title,
+      fields:     fields,
+      content:    document.getElementById('editor-content') ? document.getElementById('editor-content').value : '',
+      savedAt:    new Date().toISOString(),
+      status:     'draft'
+    };
 
-    if (detail) {
-      var addrParts = [];
-      if (detail.zipCode)  addrParts.push('우 ' + detail.zipCode);
-      if (detail.address)  addrParts.push(detail.address);
-      if (detail.homepage) addrParts.push('/ ' + detail.homepage);
-      if (addrParts.length) lines.push(addrParts.join('  '));
-
-      var contactParts = [];
-      if (detail.tel)        contactParts.push('전화 ' + detail.tel);
-      if (detail.fax)        contactParts.push('팩스 ' + detail.fax);
-      if (detail.email)      contactParts.push('/ ' + detail.email);
-      if (detail.disclosure) contactParts.push('/ ' + detail.disclosure);
-      if (contactParts.length) lines.push(contactParts.join('  '));
-    }
-  }
-
-  return lines.join('\n');
-}
-
-// ── 실시간 규칙 검사 ───────────────────────────────────────────────
-function runRealtimeCheck() {
-  var editor = document.getElementById('editor-content');
-  if (!editor) return;
-  if (typeof Checker === 'undefined') return;
-
-  checkResults = Checker.checkAll(editor.value, currentTemplateId);
-
-  if (typeof CheckerUI !== 'undefined') {
-    CheckerUI.renderSidePanel(checkResults);
-  }
-  updateCheckSummary(checkResults);
-}
-
-function updateCheckSummary(results) {
-  var summaryEl = document.getElementById('check-summary');
-  if (!summaryEl) return;
-
-  var errors   = results.filter(function(r) { return r.level === 'error';   }).length;
-  var warnings = results.filter(function(r) { return r.level === 'warning'; }).length;
-  var infos    = results.filter(function(r) { return r.level === 'info';    }).length;
-
-  if (results.length === 0) {
-    summaryEl.innerHTML = '<span class="badge badge-success">✅ 이상 없음</span>';
-  } else {
-    var html = '';
-    if (errors)   html += '<span class="badge badge-error">오류 ' + errors + '</span> ';
-    if (warnings) html += '<span class="badge badge-warning">경고 ' + warnings + '</span> ';
-    if (infos)    html += '<span class="badge badge-info">안내 ' + infos + '</span>';
-    summaryEl.innerHTML = html;
-  }
-}
-
-// ── 규칙 검사 모달 ─────────────────────────────────────────────────
-function openCheckModal() {
-  runRealtimeCheck();
-  if (typeof CheckerUI !== 'undefined') {
-    CheckerUI.renderCheckModal(checkResults, 'check-modal-body');
-  }
-  Modal.open('check-modal');
-}
-
-// ── 자동 수정 ──────────────────────────────────────────────────────
-function applyAutoFix() {
-  var editor = document.getElementById('editor-content');
-  if (!editor) return;
-  if (typeof Checker === 'undefined') return;
-
-  var fixed = Checker.applyAllFixes(editor.value, checkResults);
-  editor.value = fixed;
-
-  runRealtimeCheck();
-  isModified = true;
-  showToast('오류가 자동 수정되었습니다.', 'success');
-  Modal.close('check-modal');
-}
-
-// ── 순화어 모달 ────────────────────────────────────────────────────
-function openPurifyModal() {
-  var editor = document.getElementById('editor-content');
-  if (!editor) return;
-  if (typeof CheckerUI !== 'undefined') {
-    CheckerUI.renderPurifyModal(editor.value, 'purify-modal-body');
-  }
-  Modal.open('purify-modal');
-}
-
-// ── 임시저장 ───────────────────────────────────────────────────────
-function saveDraft() {
-  var editor  = document.getElementById('editor-content');
-  var titleEl = document.getElementById('field-title');
-  if (!editor) return;
-
-  var title = titleEl ? titleEl.value.trim() : '';
-
-  if (!title && !editor.value.trim()) {
-    showToast('제목 또는 내용을 입력하세요.', 'warning');
-    return;
-  }
-
-  var draft = {
-    id:         currentDocId,
-    templateId: currentTemplateId,
-    title:      title || '(제목 없음)',
-    content:    editor.value,
-    fields:     collectFields(),
-    savedAt:    new Date().toISOString()
-  };
-
-  Storage.saveDraft(draft);
-  isModified = false;
-
-  var saveStatus = document.getElementById('save-status');
-  if (saveStatus) {
-    saveStatus.textContent = '임시저장 완료 (' + formatDateShort(new Date()) + ')';
-    saveStatus.className = 'save-status saved';
-  }
-  showToast('임시저장되었습니다. ✅', 'success');
-}
-
-function autoSaveDocument() {
-  if (!isModified) return;
-  saveDraft();
-  var saveStatus = document.getElementById('save-status');
-  if (saveStatus) {
-    saveStatus.textContent = '자동저장 (' + formatDateShort(new Date()) + ')';
-  }
-}
-
-// ── 필드 수집 ──────────────────────────────────────────────────────
-function collectFields() {
-  var fields = {};
-  document.querySelectorAll('#form-fields input, #form-fields textarea').forEach(function(el) {
-    if (el.id && el.id.indexOf('field-') === 0) {
-      var key = el.id.replace('field-', '');
-      fields[key] = el.value;
-    }
-  });
-  return fields;
-}
-
-// ── 미리보기 이동 ──────────────────────────────────────────────────
-function goToPreview() {
-  var editor = document.getElementById('editor-content');
-  if (!editor || !editor.value.trim()) {
-    showToast('내용을 입력해주세요.', 'warning');
-    return;
-  }
-  saveDraft();
-  window.location.href = 'preview.html?id=' + currentDocId + '&type=draft';
-}
-
-// ── 이벤트 바인딩 ──────────────────────────────────────────────────
-function bindEditorEvents() {
-
-  // 템플릿 버튼
-  document.querySelectorAll('.template-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      if (isModified) {
-        if (!confirm('변경 내용이 있습니다. 템플릿을 변경하면 내용이 초기화됩니다.\n계속하시겠습니까?')) return;
-      }
-      selectTemplate(btn.dataset.template, true);
+    var ok = Storage.saveDraft(draft);
+    if (ok) {
       isModified = false;
-    });
-  });
-
-  // 임시저장
-  var saveDraftBtn = document.getElementById('save-draft-btn');
-  if (saveDraftBtn) saveDraftBtn.addEventListener('click', saveDraft);
-
-  // 예시채우기
-  var fillExampleBtn = document.getElementById('fill-example-btn');
-  if (fillExampleBtn) fillExampleBtn.addEventListener('click', fillExample);
-
-  // 규칙검사
-  var ruleCheckBtn = document.getElementById('rule-check-btn');
-  if (ruleCheckBtn) ruleCheckBtn.addEventListener('click', openCheckModal);
-
-  // 자동수정
-  var autoFixBtn = document.getElementById('auto-fix-btn');
-  if (autoFixBtn) autoFixBtn.addEventListener('click', applyAutoFix);
-
-  // 순화어
-  var purifyBtn = document.getElementById('purify-btn');
-  if (purifyBtn) purifyBtn.addEventListener('click', openPurifyModal);
-
-  // 미리보기
-  var previewBtn = document.getElementById('preview-btn');
-  if (previewBtn) previewBtn.addEventListener('click', goToPreview);
-
-  // 에디터 직접 입력
-  var editorContent = document.getElementById('editor-content');
-  if (editorContent) {
-    editorContent.addEventListener('input', function() {
-      isModified = true;
-      clearTimeout(realtimeCheckTimer);
-      realtimeCheckTimer = setTimeout(runRealtimeCheck, 800);
-    });
+      setSaveStatus('저장됨 ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}));
+      if (typeof showToast === 'function') showToast('💾 임시저장되었습니다.', 'success');
+    } else {
+      if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'error');
+    }
+    return ok;
   }
 
-  // 모달 닫기
-  document.querySelectorAll('.modal-close-btn, .modal-cancel-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var modal = btn.closest('.modal-overlay');
-      if (modal) Modal.close(modal.id);
+  /* ══════════════════════════════════════════
+     미리보기 (preview.html 이동)
+  ══════════════════════════════════════════ */
+  function goPreview() {
+    saveDraft();
+    setTimeout(function () {
+      window.location.href = 'preview.html?id=' + encodeURIComponent(currentDocId) + '&type=draft';
+    }, 300);
+  }
+
+  /* ══════════════════════════════════════════
+     이벤트 바인딩
+  ══════════════════════════════════════════ */
+  function bindEvents() {
+
+    /* 템플릿 버튼 */
+    document.querySelectorAll('.template-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        selectTemplate(btn.dataset.template);
+      });
     });
+
+    /* 예시 채우기 */
+    var fillBtn = document.getElementById('fill-example-btn');
+    if (fillBtn) fillBtn.addEventListener('click', fillExample);
+
+    /* 임시저장 버튼 */
+    var saveBtn = document.getElementById('save-draft-btn');
+    if (saveBtn) saveBtn.addEventListener('click', saveDraft);
+
+    /* Ctrl+S */
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveDraft(); }
+    });
+
+    /* 미리보기 버튼 */
+    var previewBtn = document.getElementById('preview-btn');
+    if (previewBtn) previewBtn.addEventListener('click', goPreview);
+
+    /* Ctrl+Enter */
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); goPreview(); }
+    });
+
+    /* 규칙 검사 */
+    var ruleBtn = document.getElementById('rule-check-btn');
+    if (ruleBtn) ruleBtn.addEventListener('click', function () {
+      if (typeof Modal !== 'undefined') Modal.open('check-modal');
+    });
+
+    /* 순화어 */
+    var purifyBtn = document.getElementById('purify-btn');
+    if (purifyBtn) purifyBtn.addEventListener('click', function () {
+      if (typeof Modal !== 'undefined') Modal.open('purify-modal');
+    });
+
+    /* 모달 닫기 */
+    document.querySelectorAll('.modal-close-btn, .modal-overlay').forEach(function (el) {
+      el.addEventListener('click', function (e) {
+        if (e.target === el) {
+          var modal = el.closest('.modal-overlay') || document.getElementById(el.dataset.modal);
+          if (modal && typeof Modal !== 'undefined') Modal.close(modal.id);
+        }
+      });
+    });
+
+    /* 자동저장 30초 */
+    editorAutoSave = setInterval(function () {
+      if (isModified) saveDraft();
+    }, 30000);
+  }
+
+  /* ══════════════════════════════════════════
+     DOMContentLoaded
+  ══════════════════════════════════════════ */
+  document.addEventListener('DOMContentLoaded', function () {
+    initEditor();
+    bindEvents();
+
+    /* 기관명 미설정 경고 */
+    var settings = Storage.getSettings();
+    var notice   = document.getElementById('org-name-notice');
+    if (notice && !settings.orgName) notice.style.display = 'flex';
   });
 
-  // 키보드 단축키
-  document.addEventListener('keydown', function(e) {
-    if (e.ctrlKey && e.key === 's') {
-      e.preventDefault();
-      saveDraft();
-    }
-    if (e.ctrlKey && e.key === 'Enter') {
-      e.preventDefault();
-      goToPreview();
-    }
-  });
-
-  // 페이지 이탈 경고
-  window.addEventListener('beforeunload', function(e) {
-    if (isModified) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
-  });
-}
+})();
