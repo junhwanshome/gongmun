@@ -14,14 +14,12 @@
 
     if (!id) { showError('문서 ID가 없습니다.'); return; }
 
-    // 1) 완성 문서
     try {
       const docs = JSON.parse(localStorage.getItem('doc_completed') || '[]');
       currentDoc  = docs.find(d => d.id === id) || null;
       if (currentDoc) currentType = 'completed';
     } catch (e) {}
 
-    // 2) 임시저장 배열
     if (!currentDoc) {
       try {
         const drafts = JSON.parse(localStorage.getItem('doc_drafts') || '[]');
@@ -30,7 +28,6 @@
       } catch (e) {}
     }
 
-    // 3) 개별 draft_ 키
     if (!currentDoc) {
       const raw = localStorage.getItem('draft_' + id);
       if (raw) { try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {} }
@@ -80,10 +77,7 @@
     const dateStr  = f.date      || doc.date  || '';
 
     let html = '';
-
     html += `<div class="doc-paper-inner">`;
-
-    /* ──────────── 상단 본문 영역 ──────────── */
     html += `<div class="doc-main-area">`;
 
     /* ① 기관명 */
@@ -120,20 +114,14 @@
     /* ──────────── 하단 기관정보 블록 ──────────── */
     html += `<div class="doc-org-footer">`;
 
-    /* ⑥ 발신명의 */
     const senderName = f.senderName || orgName;
     html += `<div class="doc-sender-area">
                <span class="doc-sender-value">${esc(senderName)}</span>
              </div>`;
     html += `<hr class="doc-sender-divider">`;
 
-    /* ⑦ 결재·협조자 */
     html += renderApprovalBlock(doc, settings, orgDetail);
-
-    /* ⑧ 시행·접수 */
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
-
-    /* ⑨ 주소·연락처 */
     html += renderFooterInfo(doc, settings, orgDetail);
 
     html += `</div>`; /* end doc-org-footer */
@@ -155,27 +143,28 @@
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     - 기호 자동 감지로 들여쓰기 적용
-     - 사용자 입력 앞뒤 공백 무시
-     - 날짜 변환 / 콜론 규칙 / 용어 순화
+     ★ trimStart()로 앞 공백 완전 제거
+     ★ white-space: normal 사용 → padding-left만으로 들여쓰기 제어
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const raw = f.body || f.content || '';
     if (!raw.trim()) {
       const empty = `<div class="doc-body-line doc-body-empty">(본문 없음)</div>`;
-      return appendEnd ? empty + `<div class="doc-body-line">&nbsp;&nbsp;끝.</div>` : empty;
+      return appendEnd
+        ? empty + `<div class="doc-body-line">&nbsp;&nbsp;끝.</div>`
+        : empty;
     }
 
-    /* 들여쓰기 규칙 (기호 → padding-left em) */
+    /* 들여쓰기 규칙 */
     const INDENT_RULES = [
-      { re: /^(\d+)\.\s*/,       em: 0  },  // 1단계: 1.
-      { re: /^[가-힣]\.\s*/,     em: 2  },  // 2단계: 가.
-      { re: /^\d+\)\s*/,         em: 4  },  // 3단계: 1)
-      { re: /^[가-힣]\)\s*/,     em: 6  },  // 4단계: 가)
-      { re: /^\(\d+\)\s*/,       em: 8  },  // 5단계: (1)
-      { re: /^\([가-힣]\)\s*/,   em: 10 },  // 6단계: (가)
-      { re: /^[①-⑳]\s*/,       em: 12 },  // 7단계: ①
-      { re: /^[㉮-㉻]\s*/,      em: 14 },  // 8단계: ㉮
+      { re: /^(\d+)\.\s*/,      em: 0  },  // 1단계: 1.
+      { re: /^[가-힣]\.\s*/,    em: 2  },  // 2단계: 가.
+      { re: /^\d+\)\s*/,        em: 4  },  // 3단계: 1)
+      { re: /^[가-힣]\)\s*/,    em: 6  },  // 4단계: 가)
+      { re: /^\(\d+\)\s*/,      em: 8  },  // 5단계: (1)
+      { re: /^\([가-힣]\)\s*/,  em: 10 },  // 6단계: (가)
+      { re: /^[①-⑳]\s*/,      em: 12 },  // 7단계: ①
+      { re: /^[㉮-㉻]\s*/,     em: 14 },  // 8단계: ㉮
     ];
 
     const lines = raw.split('\n');
@@ -184,11 +173,11 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* 앞뒤 공백 제거 후 처리 */
+      /* ★ 앞 공백 완전 제거 */
       let trimmed = line.trimStart();
 
       /* 들여쓰기 감지 */
-      let indentEm = -1;
+      let indentEm = 0;
       for (const rule of INDENT_RULES) {
         if (rule.re.test(trimmed)) {
           indentEm = rule.em;
@@ -196,20 +185,15 @@
         }
       }
 
-      /* 텍스트 변환 적용 */
+      /* 텍스트 변환 */
       trimmed = convertDate(trimmed);
       trimmed = applyColonSpace(trimmed);
       trimmed = convertTerms(trimmed);
 
-      const styleAttr = indentEm >= 0
-        ? `style="padding-left:${indentEm}em;"`
-        : '';
+      const endMark = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
-      const endMark = (appendEnd && isLast)
-        ? '&nbsp;&nbsp;끝.'
-        : '';
-
-      html += `<div class="doc-body-line" ${styleAttr}>${esc(trimmed)}${endMark}</div>`;
+      /* ★ padding-left로만 들여쓰기, white-space는 CSS에서 normal로 처리 */
+      html += `<div class="doc-body-line" style="padding-left:${indentEm}em;">${esc(trimmed)}${endMark}</div>`;
     });
 
     return html;
@@ -217,8 +201,6 @@
 
   /* ══════════════════════════════════════════════
      날짜 변환
-     2024.09.06 → 2024. 9. 6.
-     2023.11.21(화) → 2023. 11. 21.(화)
   ══════════════════════════════════════════════ */
   function convertDate(text) {
     return text.replace(
@@ -232,8 +214,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     콜론 뒤 공백
-     시간(숫자:숫자) 패턴은 제외
+     콜론 뒤 공백 (시간 패턴 제외)
   ══════════════════════════════════════════════ */
   function applyColonSpace(text) {
     return text.replace(/:(?!\s)(?!\d{2})/g, ': ');
@@ -268,15 +249,12 @@
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
-     "붙임  내용" (두 칸 띄어)
-     1개 → 번호 없음 + 끝.
-     2개↑ → 자동 번호 + 마지막에 끝.
+     ★ doc-attach-gap: 2em → 1em 으로 축소
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
-    /* 붙임 레이블: 고정 너비 없이 인라인, 뒤에 두 칸 */
     html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`;
-    html += `<span class="doc-attach-gap"></span>`; /* 두 칸 간격 */
+    html += `<span class="doc-attach-gap"></span>`;
     html += `<span class="doc-attach-content">`;
 
     if (list.length === 1) {
@@ -295,8 +273,6 @@
 
   /* ══════════════════════════════════════════════
      결재·협조자 블록
-     결재란: 좌측 정렬, 한 줄 가로, 서명 공간(밑줄 없음)
-     협조자: 결재란 바로 아래, 공백 없음
   ══════════════════════════════════════════════ */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
@@ -311,8 +287,6 @@
         ];
 
     let html = `<div class="doc-approval-wrap">`;
-
-    /* 결재자 한 줄 좌측 정렬 */
     html += `<div class="doc-approval-row">`;
     list.forEach(ap => {
       html += `<div class="doc-approval-cell">
@@ -322,7 +296,6 @@
     });
     html += `</div>`;
 
-    /* 협조자 – 공백 없이 바로 */
     html += `<div class="doc-cooperator-row">
                <span class="doc-coop-label">협&nbsp;조&nbsp;자</span>
                <span class="doc-cooperator-value">${esc(cooperators)}</span>
@@ -355,7 +328,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     주소·연락처 (hr 없음)
+     주소·연락처
   ══════════════════════════════════════════════ */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
