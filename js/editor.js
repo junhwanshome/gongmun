@@ -278,11 +278,20 @@
       if (f.sponsorName) lines.push('2. 후원자: '   + f.sponsorName);
       if (f.grantDate)   lines.push('3. 후원일자: ' + f.grantDate);
       if (f.grantAmount) lines.push('4. 후원금액: ' + f.grantAmount);
-      if (f.body)        lines.push('5. ' + f.body);
+      if (f.body) {
+        f.body.split('\n').forEach(function (line) { lines.push(line); });
+      }
     } else {
-      var idx = 1;
-      if (f.purpose) { lines.push(idx + '. ' + f.purpose); idx++; }
-      if (f.body)    { lines.push(idx + '. ' + f.body);    idx++; }
+      /* internal / government / cooperation
+         purpose: 번호 없이 단독 출력
+         body: 사용자가 직접 번호 입력 → 그대로 출력 */
+      if (f.purpose) {
+        lines.push(f.purpose);
+        lines.push('');
+      }
+      if (f.body) {
+        f.body.split('\n').forEach(function (line) { lines.push(line); });
+      }
     }
 
     lines.push('');
