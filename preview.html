@@ -87,30 +87,25 @@
        글씨 크기 11pt 통일
        제목만 font-weight:700 강조
     ══════════════════════════════ */
-    .doc-meta-area  { margin-bottom: 8px; }
+    .doc-meta-area { margin-bottom: 8px; }
     .doc-meta-row {
       display: flex; align-items: baseline;
-      font-size: 11pt;        /* ★ 통일 */
-      font-weight: 400;
-      line-height: 1.7;
-      margin-bottom: 3px;
+      font-size: 11pt; font-weight: 400;
+      line-height: 1.7; margin-bottom: 3px;
     }
     .doc-meta-label {
       display: inline-block;
-      width: 5em;
-      font-weight: 600;
-      white-space: nowrap;
-      flex-shrink: 0;
-      font-size: 11pt;        /* ★ 통일 */
+      width: 5em; font-weight: 600;
+      white-space: nowrap; flex-shrink: 0;
+      font-size: 11pt;
     }
     .doc-colon { margin: 0 6px 0 0; flex-shrink: 0; }
-    .doc-meta-value { flex: 1; font-size: 11pt; } /* ★ 통일 */
+    .doc-meta-value { flex: 1; font-size: 11pt; }
 
-    /* 제목 행 – 크기는 동일, 굵기만 다름 */
+    /* 제목 행 */
     .doc-title-area {
       display: flex; align-items: baseline;
-      font-size: 11pt;        /* ★ 수신과 동일 */
-      font-weight: 700;       /* ★ 굵게만 */
+      font-size: 11pt; font-weight: 700;
       padding-bottom: 8px;
     }
     .doc-title-text { flex: 1; }
@@ -119,36 +114,37 @@
       margin: 0 0 20px 0;
     }
 
-    /* ── 본문 ── */
+    /* ══════════════════════════════
+       본문
+       ★ white-space: normal
+         → padding-left 만으로 들여쓰기 제어
+         → 사용자 입력 공백이 렌더링에 영향 없음
+    ══════════════════════════════ */
     .doc-body-area { font-size: 11pt; margin-bottom: 16px; }
     .doc-body-line {
       display: block;
       line-height: 1.8;
       word-break: keep-all;
-      white-space: pre-wrap;
+      white-space: normal;   /* ★ pre-wrap → normal 변경 */
     }
     .doc-body-empty { color: #aaa; }
 
     /* ══════════════════════════════
        붙임
-       레이블 고정 너비 제거
-       "붙임" + 두 칸 + 내용
+       ★ doc-attach-gap: 1em (두 칸)
     ══════════════════════════════ */
     .doc-attach-area {
-      display: flex;
-      align-items: flex-start;
-      font-size: 11pt;
-      margin-bottom: 10px;
+      display: flex; align-items: flex-start;
+      font-size: 11pt; margin-bottom: 10px;
     }
     .doc-attach-label {
       font-weight: 600;
       white-space: nowrap;
       flex-shrink: 0;
-      /* ★ 고정 너비 없음 – 글자 그대로 */
     }
     .doc-attach-gap {
       display: inline-block;
-      width: 2em;   /* ★ 두 칸 간격 */
+      width: 1em;            /* ★ 2em → 1em 축소 */
       flex-shrink: 0;
     }
     .doc-attach-content {
@@ -168,10 +164,10 @@
     }
 
     /* ── 결재란 ── */
-    .doc-approval-wrap  { margin-bottom: 0; }
+    .doc-approval-wrap { margin-bottom: 0; }
     .doc-approval-row {
       display: flex;
-      justify-content: flex-start;   /* ★ 좌측 정렬 */
+      justify-content: flex-start;
       align-items: center;
       gap: 24px;
       margin-bottom: 0; padding-bottom: 0;
@@ -185,7 +181,6 @@
     .doc-approval-space {
       display: inline-block;
       width: 48px; height: 1.2em;
-      /* ★ 서명 공간 – 밑줄 없음 */
     }
 
     /* ── 협조자 ── */
