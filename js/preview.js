@@ -143,8 +143,11 @@
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     ★ trimStart()로 앞 공백 완전 제거
-     ★ white-space: normal 사용 → padding-left만으로 들여쓰기 제어
+     ★ 핵심 수정:
+       1) line.trim() 으로 앞뒤 공백 완전 제거
+       2) 기호 감지 후 기호+공백 부분을 정규식으로 추출
+       3) 기호와 내용을 분리해서 렌더링
+       4) padding-left 로만 들여쓰기 제어
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const raw = f.body || f.content || '';
@@ -155,16 +158,16 @@
         : empty;
     }
 
-    /* 들여쓰기 규칙 */
+    /* 들여쓰기 규칙: 기호 정규식 + padding-left em */
     const INDENT_RULES = [
-      { re: /^(\d+)\.\s*/,      em: 0  },  // 1단계: 1.
-      { re: /^[가-힣]\.\s*/,    em: 2  },  // 2단계: 가.
-      { re: /^\d+\)\s*/,        em: 4  },  // 3단계: 1)
-      { re: /^[가-힣]\)\s*/,    em: 6  },  // 4단계: 가)
-      { re: /^\(\d+\)\s*/,      em: 8  },  // 5단계: (1)
-      { re: /^\([가-힣]\)\s*/,  em: 10 },  // 6단계: (가)
-      { re: /^[①-⑳]\s*/,      em: 12 },  // 7단계: ①
-      { re: /^[㉮-㉻]\s*/,     em: 14 },  // 8단계: ㉮
+      { re: /^(\d+\.)\s*/,       em: 0  },  // 1단계: 1.
+      { re: /^([가-힣]\.)\s*/,   em: 2  },  // 2단계: 가.
+      { re: /^(\d+\))\s*/,       em: 4  },  // 3단계: 1)
+      { re: /^([가-힣]\))\s*/,   em: 6  },  // 4단계: 가)
+      { re: /^(\(\d+\))\s*/,     em: 8  },  // 5단계: (1)
+      { re: /^(\([가-힣]\))\s*/, em: 10 },  // 6단계: (가)
+      { re: /^([①-⑳])\s*/,     em: 12 },  // 7단계: ①
+      { re: /^([㉮-㉻])\s*/,    em: 14 },  // 8단계: ㉮
     ];
 
     const lines = raw.split('\n');
@@ -173,27 +176,40 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* ★ 앞 공백 완전 제거 */
-      let trimmed = line.trimStart();
+      /* ★ 앞뒤 공백 완전 제거 */
+      const trimmed = line.trim();
+      if (trimmed === '') {
+        html += `<div class="doc-body-line">&nbsp;</div>`;
+        return;
+      }
 
-      /* 들여쓰기 감지 */
-      let indentEm = 0;
+      /* ★ 기호 감지 및 분리 */
+      let indentEm  = 0;
+      let symbol    = '';
+      let content   = trimmed;
+
       for (const rule of INDENT_RULES) {
-        if (rule.re.test(trimmed)) {
+        const m = trimmed.match(rule.re);
+        if (m) {
           indentEm = rule.em;
+          symbol   = m[0].trimEnd(); /* 기호만 (뒤 공백 제거) */
+          content  = trimmed.slice(m[0].length); /* 기호 이후 내용 */
           break;
         }
       }
 
       /* 텍스트 변환 */
-      trimmed = convertDate(trimmed);
-      trimmed = applyColonSpace(trimmed);
-      trimmed = convertTerms(trimmed);
+      const displayContent = convertTerms(applyColonSpace(convertDate(content)));
+      const displaySymbol  = symbol ? `${esc(symbol)}&nbsp;` : '';
 
       const endMark = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
-      /* ★ padding-left로만 들여쓰기, white-space는 CSS에서 normal로 처리 */
-      html += `<div class="doc-body-line" style="padding-left:${indentEm}em;">${esc(trimmed)}${endMark}</div>`;
+      /* ★ 기호 + 한 칸 + 내용, padding-left 로 들여쓰기 */
+      html += `<div class="doc-body-line" style="padding-left:${indentEm}em;">`
+            + displaySymbol
+            + esc(displayContent)
+            + endMark
+            + `</div>`;
     });
 
     return html;
@@ -206,9 +222,7 @@
     return text.replace(
       /(\d{4})\.(\d{1,2})\.(\d{1,2})(\.)?(\([월화수목금토일]\))?/g,
       (_, y, m, d, dot, day) => {
-        const trailing = dot || '.';
-        const dayStr   = day  || '';
-        return `${y}. ${parseInt(m, 10)}. ${parseInt(d, 10)}${trailing}${dayStr}`;
+        return `${y}. ${parseInt(m, 10)}. ${parseInt(d, 10)}${dot || '.'}${day || ''}`;
       }
     );
   }
@@ -249,25 +263,34 @@
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
-     ★ doc-attach-gap: 2em → 1em 으로 축소
+     ★ doc-attach-gap 제거
+     ★ "붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;" 로 직접 두 칸 삽입
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
-    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`;
-    html += `<span class="doc-attach-gap"></span>`;
-    html += `<span class="doc-attach-content">`;
 
     if (list.length === 1) {
-      html += `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`;
+      /* 붙임  내용  끝. */
+      html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`
+            + `<span class="doc-attach-gap"></span>`
+            + `<span class="doc-attach-content">`
+            + `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`
+            + `</span>`;
     } else {
+      /* 붙임  1. 내용
+               2. 내용  끝. */
+      html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임</span>`
+            + `<span class="doc-attach-gap"></span>`
+            + `<span class="doc-attach-content">`;
       list.forEach((item, i) => {
         const isLast  = i === list.length - 1;
         const endMark = isLast ? '&nbsp;&nbsp;끝.' : '';
         html += `<span class="doc-attach-line">${i + 1}.&nbsp;${esc(item)}${endMark}</span>`;
       });
+      html += `</span>`;
     }
 
-    html += `</span></div>`;
+    html += `</div>`;
     return html;
   }
 
@@ -309,8 +332,8 @@
      시행·접수 행
   ══════════════════════════════════════════════ */
   function renderExecRow(doc, settings, orgDetail, docNum, dateStr) {
-    const orgCode  = settings.orgCode  || orgDetail.orgCode
-                  || orgDetail.orgName || settings.orgName || '○○';
+    const orgCode = settings.orgCode  || orgDetail.orgCode
+                 || orgDetail.orgName || settings.orgName || '○○';
     const execNum  = docNum
       ? `${orgCode} ${docNum}`
       : `${orgCode} ${new Date().getFullYear()} - `;
