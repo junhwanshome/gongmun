@@ -1,6 +1,6 @@
 /**
  * js/editor.js
- * 공문서 에디터 - contenteditable 표 편집 + 정렬 지원
+ * 공문서 에디터 - 정렬 + 금액 천단위 + 표 텍스트 변환 지원
  */
 (function () {
   'use strict';
@@ -10,8 +10,7 @@
   var isModified        = false;
   var editorAutoSave    = null;
   var realtimeTimer     = null;
-  var selectedCells     = [];
-  var activeBodyEditor  = null;
+  var _savedRange       = null; /* 커서 위치 저장용 */
 
   /* ══════════════════════════════════════════════
      템플릿 정의
@@ -23,9 +22,9 @@
         { id:'title',       label:'제목',     type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
         { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
         { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) 관장' },
-        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'문서 작성 목적을 입력하세요', rows:4 },
-        { id:'body',        label:'내용',     type:'rich',     placeholder:'주요 내용을 입력하세요' },
-        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)', rows:4 },
+        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'문서 작성 목적을 입력하세요' },
+        { id:'body',        label:'내용',     type:'rich',     placeholder:'주요 내용을 입력하세요 (표·서식 지원)' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
         { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
       ]
     },
@@ -37,24 +36,24 @@
         { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) ○○시장' },
         { id:'reference',   label:'참조',     type:'text',     placeholder:'예) ○○과장' },
         { id:'docNo',       label:'문서번호', type:'text',     placeholder:'예) 복지-1234' },
-        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'보고 목적을 입력하세요', rows:4 },
-        { id:'body',        label:'내용',     type:'rich',     placeholder:'보고 내용을 입력하세요' },
-        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)', rows:4 },
+        { id:'purpose',     label:'목적',     type:'textarea', placeholder:'보고 목적을 입력하세요' },
+        { id:'body',        label:'내용',     type:'rich',     placeholder:'보고 내용을 입력하세요 (표·서식 지원)' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
         { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
       ]
     },
     cooperation: {
       label: '타기관협조',
       fields: [
-        { id:'title',       label:'제목',     type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
-        { id:'date',        label:'날짜',     type:'text',     placeholder:'예) 2024. 3. 20.' },
-        { id:'receiver',    label:'수신',     type:'text',     placeholder:'예) ○○기관장' },
-        { id:'reference',   label:'참조',     type:'text',     placeholder:'예) ○○담당자' },
-        { id:'docNo',       label:'문서번호', type:'text',     placeholder:'예) 복지-1234' },
-        { id:'purpose',     label:'협조 요청 목적', type:'textarea', placeholder:'협조 요청 목적을 입력하세요', rows:4 },
-        { id:'body',        label:'협조 내용',      type:'rich',     placeholder:'협조 요청 내용을 입력하세요' },
-        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)', rows:4 },
-        { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
+        { id:'title',       label:'제목',       type:'text',     placeholder:'문서 제목을 입력하세요', required:true },
+        { id:'date',        label:'날짜',       type:'text',     placeholder:'예) 2024. 3. 20.' },
+        { id:'receiver',    label:'수신',       type:'text',     placeholder:'예) ○○기관장' },
+        { id:'reference',   label:'참조',       type:'text',     placeholder:'예) ○○담당자' },
+        { id:'docNo',       label:'문서번호',   type:'text',     placeholder:'예) 복지-1234' },
+        { id:'purpose',     label:'협조 목적',  type:'textarea', placeholder:'협조 요청 목적을 입력하세요' },
+        { id:'body',        label:'협조 내용',  type:'rich',     placeholder:'협조 요청 내용을 입력하세요 (표·서식 지원)' },
+        { id:'attachments', label:'붙임',       type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
+        { id:'senderName',  label:'발신명의',   type:'text',     placeholder:'예) 임마누엘집' }
       ]
     },
     sponsor: {
@@ -62,7 +61,7 @@
       fields: [
         { id:'title',       label:'제목',       type:'text',     placeholder:'예) 후원금 감사 인사', required:true },
         { id:'date',        label:'날짜',       type:'text',     placeholder:'예) 2024. 3. 20.' },
-        { id:'sponsorName', label:'후원자 성명', type:'text',     placeholder:'후원자 이름' },
+        { id:'sponsorName', label:'후원자',     type:'text',     placeholder:'후원자 이름' },
         { id:'grantDate',   label:'후원일자',   type:'text',     placeholder:'예) 2024. 3. 1.' },
         { id:'grantAmount', label:'후원금액',   type:'text',     placeholder:'예) 금500,000원(금오십만원정)' },
         { id:'body',        label:'감사 내용',  type:'rich',     placeholder:'감사 내용을 입력하세요' },
@@ -78,9 +77,9 @@
         { id:'eventDate',   label:'행사일시', type:'text',     placeholder:'예) 2024. 4. 5. 14:00' },
         { id:'eventPlace',  label:'행사장소', type:'text',     placeholder:'행사 장소를 입력하세요' },
         { id:'eventTarget', label:'대상',     type:'text',     placeholder:'행사 대상을 입력하세요' },
-        { id:'body',        label:'행사내용', type:'rich',     placeholder:'행사 내용을 입력하세요' },
-        { id:'purpose',     label:'기타사항', type:'textarea', placeholder:'기타 안내 사항', rows:4 },
-        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)', rows:4 },
+        { id:'body',        label:'행사내용', type:'rich',     placeholder:'행사 내용을 입력하세요 (표·서식 지원)' },
+        { id:'purpose',     label:'기타사항', type:'textarea', placeholder:'기타 안내 사항' },
+        { id:'attachments', label:'붙임',     type:'textarea', placeholder:'붙임 파일명 (줄바꿈으로 구분)' },
         { id:'senderName',  label:'발신명의', type:'text',     placeholder:'예) 임마누엘집' }
       ]
     }
@@ -136,7 +135,9 @@
     var docType = params.type || 'draft';
 
     if (docId) {
-      var existing = (docType === 'doc') ? Storage.getDoc(docId) : Storage.getDraft(docId);
+      var existing = (docType === 'doc')
+        ? Storage.getDoc(docId)
+        : Storage.getDraft(docId);
       if (existing) {
         currentDocId      = existing.id;
         currentTemplateId = existing.templateId || tmplId;
@@ -158,19 +159,21 @@
     setFieldValue('date', getTodayString());
   }
 
+  /* ══════════════════════════════════════════════
+     템플릿 선택
+  ══════════════════════════════════════════════ */
   function selectTemplate(tmplId) {
     if (!TEMPLATE_FIELDS[tmplId]) tmplId = 'internal';
     currentTemplateId = tmplId;
 
     document.querySelectorAll('.tpl-btn').forEach(function (btn) {
-      btn.classList.remove('active');
-      if (btn.dataset.template === tmplId) btn.classList.add('active');
+      btn.classList.toggle('active', btn.dataset.template === tmplId);
     });
 
     var guide = document.getElementById('guide-panel');
     if (guide) {
-      guide.innerHTML = '<strong>' + TEMPLATE_FIELDS[tmplId].label + '</strong> 작성 가이드: '
-        + '제목은 간결하게, 본문은 육하원칙에 따라 작성하세요.';
+      guide.innerHTML = '<strong>' + TEMPLATE_FIELDS[tmplId].label + '</strong>'
+        + ' 작성 가이드: 제목은 간결하게, 본문은 육하원칙에 따라 작성하세요.';
     }
 
     renderFormFields(tmplId);
@@ -180,6 +183,9 @@
 
   /* ══════════════════════════════════════════════
      폼 필드 렌더링
+     - type:'rich'  → contenteditable div (body 전용)
+     - type:'textarea' → 일반 textarea
+     - type:'text'     → 일반 input
   ══════════════════════════════════════════════ */
   function renderFormFields(tmplId) {
     var container = document.getElementById('form-fields');
@@ -191,45 +197,44 @@
     var html = '';
     tpl.fields.forEach(function (f) {
       html += '<div class="form-group">';
-      html += '<label class="form-label" for="field-' + f.id + '">'
-            + f.label
-            + (f.required ? ' <span style="color:#e74c3c;">*</span>' : '')
-            + '</label>';
+      html += '<label class="form-label'
+            + (f.required ? ' required' : '')
+            + '" for="field-' + f.id + '">'
+            + f.label + '</label>';
 
       if (f.type === 'rich') {
+        /* contenteditable 본문 편집기 */
         html += '<div class="body-editor-wrap">'
-              + '<div'
-              + ' id="field-' + f.id + '"'
-              + ' class="body-editor"'
-              + ' contenteditable="true"'
-              + ' data-field="' + f.id + '"'
-              + ' data-placeholder="' + (f.placeholder || '') + '"'
-              + '></div>'
+              + '<div id="field-' + f.id + '" '
+              + 'class="body-editor form-control" '
+              + 'contenteditable="true" '
+              + 'data-placeholder="' + (f.placeholder || '') + '" '
+              + 'spellcheck="false">'
+              + '</div>'
               + '</div>';
-      } else if (f.type === 'textarea') {
-        var rows = f.rows || 3;
-        html += '<textarea id="field-' + f.id + '" name="' + f.id + '" '
-              + 'class="form-control form-textarea" rows="' + rows + '" '
-              + 'placeholder="' + (f.placeholder || '') + '"></textarea>';
       } else {
-        html += '<input id="field-' + f.id + '" name="' + f.id + '" type="text" '
-              + 'class="form-control" '
-              + 'placeholder="' + (f.placeholder || '') + '">';
+        var rows = 3;
+        if (f.id === 'purpose')     rows = 4;
+        if (f.id === 'attachments') rows = 4;
+
+        if (f.type === 'textarea') {
+          html += '<textarea id="field-' + f.id + '" '
+                + 'class="form-control form-textarea" '
+                + 'rows="' + rows + '" '
+                + 'placeholder="' + (f.placeholder || '') + '">'
+                + '</textarea>';
+        } else {
+          html += '<input id="field-' + f.id + '" type="text" '
+                + 'class="form-control" '
+                + 'placeholder="' + (f.placeholder || '') + '">';
+        }
       }
       html += '</div>';
     });
 
     container.innerHTML = html;
-    bindFieldEvents();
-  }
 
-  /* ══════════════════════════════════════════════
-     필드 이벤트 바인딩
-  ══════════════════════════════════════════════ */
-  function bindFieldEvents() {
-    var container = document.getElementById('form-fields');
-    if (!container) return;
-
+    /* ── 일반 입력 이벤트 ── */
     container.querySelectorAll('input, textarea').forEach(function (el) {
       el.addEventListener('input', function () {
         isModified = true;
@@ -239,76 +244,41 @@
       });
     });
 
-    container.querySelectorAll('.body-editor').forEach(function (el) {
-      el.addEventListener('focus', function () {
-        activeBodyEditor = el;
-        var toolbar = document.getElementById('format-toolbar');
-        if (toolbar) toolbar.classList.add('visible');
-        updateAlignButtons();
-      });
-
-      el.addEventListener('blur', function (e) {
-        var toolbar = document.getElementById('format-toolbar');
-        if (toolbar && toolbar.contains(e.relatedTarget)) return;
-        setTimeout(function () {
-          var focused = document.activeElement;
-          if (toolbar && !toolbar.contains(focused)) {
-            toolbar.classList.remove('visible');
-          }
-        }, 150);
-      });
-
-      el.addEventListener('input', function () {
+    /* ── rich 편집기 이벤트 ── */
+    var richEl = container.querySelector('.body-editor');
+    if (richEl) {
+      richEl.addEventListener('input', function () {
         isModified = true;
         setSaveStatus('미저장');
         clearTimeout(realtimeTimer);
         realtimeTimer = setTimeout(updatePreview, 400);
       });
-
-      el.addEventListener('keyup', updateAlignButtons);
-      el.addEventListener('mouseup', updateAlignButtons);
-
-      el.addEventListener('keydown', function (e) {
+      richEl.addEventListener('focus', function () {
+        var toolbar = document.getElementById('format-toolbar');
+        if (toolbar) toolbar.classList.add('visible');
+      });
+      richEl.addEventListener('blur', function () {
+        /* 툴바 버튼 클릭 시 blur가 먼저 발생하므로 약간 지연 */
+        setTimeout(function () {
+          if (!document.activeElement.closest('#format-toolbar')) {
+            var toolbar = document.getElementById('format-toolbar');
+            if (toolbar) toolbar.classList.remove('visible');
+          }
+        }, 200);
+      });
+      /* Tab 키 → 셀 이동 또는 들여쓰기 */
+      richEl.addEventListener('keydown', function (e) {
         if (e.key === 'Tab') {
           e.preventDefault();
-          var cell = getParentCell(e.target);
+          var cell = getActiveCell();
           if (cell) {
             moveToNextCell(cell, e.shiftKey);
           } else {
-            document.execCommand('insertText', false, '\u00a0\u00a0');
+            document.execCommand('insertText', false, '\u00A0\u00A0');
           }
         }
       });
-
-      el.addEventListener('click', function (e) {
-        var cell = getParentCell(e.target);
-        if (cell) {
-          handleCellClick(cell, e);
-        } else {
-          clearCellSelection();
-        }
-        updateAlignButtons();
-      });
-    });
-  }
-
-  /* ══════════════════════════════════════════════
-     정렬 버튼 상태 업데이트
-  ══════════════════════════════════════════════ */
-  function updateAlignButtons() {
-    var alignments = ['left', 'center', 'right'];
-    alignments.forEach(function (align) {
-      var btn = document.getElementById('fmt-align-' + align);
-      if (!btn) return;
-      btn.classList.remove('active');
-      if (document.queryCommandValue('justify' + capitalize(align)) === 'true') {
-        btn.classList.add('active');
-      }
-    });
-  }
-
-  function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+    }
   }
 
   /* ══════════════════════════════════════════════
@@ -317,15 +287,12 @@
   function setFieldValue(id, value) {
     var el = document.getElementById('field-' + id);
     if (!el) return;
-    if (el.classList.contains('body-editor')) {
-      if (value && value.indexOf('<') !== -1) {
-        el.innerHTML = value;
-      } else {
-        el.innerHTML = value
-          ? value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-                 .replace(/\n/g, '<br>')
-          : '';
-      }
+    if (el.contentEditable === 'true') {
+      /* rich 편집기: 줄바꿈을 <br>로 변환 */
+      el.innerHTML = value
+        ? value.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+               .replace(/\n/g, '<br>')
+        : '';
     } else {
       el.value = value || '';
     }
@@ -334,10 +301,17 @@
   function getFieldValue(id) {
     var el = document.getElementById('field-' + id);
     if (!el) return '';
-    if (el.classList.contains('body-editor')) {
-      return el.innerHTML.trim();
+    if (el.contentEditable === 'true') {
+      return el.innerHTML.trim(); /* HTML 그대로 반환 */
     }
     return el.value.trim();
+  }
+
+  function fillFields(fields) {
+    Object.keys(fields).forEach(function (key) {
+      setFieldValue(key, fields[key]);
+    });
+    updatePreview();
   }
 
   function collectFields() {
@@ -351,16 +325,9 @@
     return fields;
   }
 
-  function fillFields(fields) {
-    Object.keys(fields).forEach(function (key) {
-      setFieldValue(key, fields[key]);
-    });
-    updatePreview();
-  }
-
   function getDocTitle() {
     var title = getFieldValue('title');
-    if (!title) title = getFieldValue('sponsorName') ? '후원자 감사 서한' : '';
+    if (!title && getFieldValue('sponsorName')) title = '후원자 감사 서한';
     if (!title) title = TEMPLATE_FIELDS[currentTemplateId].label + ' 문서';
     return title;
   }
@@ -371,27 +338,108 @@
   }
 
   /* ══════════════════════════════════════════════
-     에디터 textarea 미리보기 업데이트
+     ★ HTML → 정렬된 텍스트 변환
+     표는 아스키 표 형태로, 나머지는 줄글로
   ══════════════════════════════════════════════ */
   function richToText(html) {
     if (!html) return '';
-    var tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    tmp.querySelectorAll('tr').forEach(function (tr) {
-      var cells   = tr.querySelectorAll('td, th');
-      var rowText = Array.from(cells).map(function (c) {
-        return (c.innerText || c.textContent || '').trim();
-      }).join('\t');
-      var p = document.createElement('p');
-      p.textContent = rowText;
-      tr.parentNode.replaceChild(p, tr);
+    var div = document.createElement('div');
+    div.innerHTML = html;
+
+    /* 정렬 속성 추출 헬퍼 */
+    function getAlign(el) {
+      var ta = (el.style && el.style.textAlign) || '';
+      if (!ta) {
+        ta = el.getAttribute('align') || '';
+      }
+      return ta.toLowerCase();
+    }
+
+    /* 표 → 텍스트 표 변환 */
+    div.querySelectorAll('table').forEach(function (table) {
+      var rows = table.querySelectorAll('tr');
+      var grid = [];
+      rows.forEach(function (tr) {
+        var cells = tr.querySelectorAll('td, th');
+        var row   = [];
+        cells.forEach(function (cell) { row.push(cell.innerText || cell.textContent || ''); });
+        grid.push(row);
+      });
+
+      /* 열 너비 계산 */
+      var cols = grid.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+      var widths = [];
+      for (var c = 0; c < cols; c++) {
+        var max = 4;
+        grid.forEach(function (r) {
+          var cell  = r[c] || '';
+          var bytes = [...cell].reduce(function (n, ch) {
+            return n + (ch.charCodeAt(0) > 127 ? 2 : 1);
+          }, 0);
+          if (bytes > max) max = bytes;
+        });
+        widths.push(max);
+      }
+
+      /* 구분선 */
+      function sep() {
+        return '+' + widths.map(function (w) {
+          return '-'.repeat(w + 2);
+        }).join('+') + '+';
+      }
+
+      function cellPad(text, width) {
+        var bytes = [...text].reduce(function (n, ch) {
+          return n + (ch.charCodeAt(0) > 127 ? 2 : 1);
+        }, 0);
+        return ' ' + text + ' '.repeat(Math.max(0, width - bytes + 1));
+      }
+
+      var lines = [sep()];
+      grid.forEach(function (row, ri) {
+        var line = '|' + widths.map(function (w, ci) {
+          return cellPad(row[ci] || '', w);
+        }).join('|') + '|';
+        lines.push(line);
+        if (ri === 0) lines.push(sep()); /* 헤더 아래 구분선 */
+      });
+      lines.push(sep());
+
+      var pre = document.createElement('pre');
+      pre.textContent = lines.join('\n');
+      table.replaceWith(pre);
     });
-    tmp.querySelectorAll('table').forEach(function (t) {
-      t.replaceWith(t.innerText || '');
+
+    /* br → 줄바꿈 */
+    div.querySelectorAll('br').forEach(function (br) {
+      br.replaceWith('\n');
     });
-    return tmp.innerText || tmp.textContent || '';
+
+    /* 블록 요소 → 줄바꿈 */
+    div.querySelectorAll('p, div, li').forEach(function (el) {
+      el.prepend('\n');
+    });
+
+    return (div.textContent || div.innerText || '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
   }
 
+  /* ══════════════════════════════════════════════
+     ★ 금액 천단위 콤마 변환
+  ══════════════════════════════════════════════ */
+  function convertAmount(text) {
+    if (!text) return text;
+    return text.replace(/\b(\d{4,})\b/g, function (match) {
+      if (match.indexOf(',') !== -1) return match;
+      return parseInt(match, 10).toLocaleString('ko-KR');
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+     ★ 실시간 미리보기 (우측 textarea)
+       - rich body → richToText() 로 변환 후 출력
+  ══════════════════════════════════════════════ */
   function updatePreview() {
     var ta = document.getElementById('editor-content');
     if (!ta) return;
@@ -400,55 +448,64 @@
     var orgName  = settings.orgName || '○○기관';
     var f        = collectFields();
     var lines    = [];
-    var bodyText = richToText(f.body || '');
 
-    lines.push(orgName);
-    lines.push('');
+    /* 기관명 */
+    lines.push(orgName, '');
+
+    /* 수신·경유·참조 */
     if (f.via)       lines.push('경  유: ' + f.via);
     if (f.receiver)  lines.push('수  신: ' + f.receiver);
     if (f.reference) lines.push('참  조: ' + f.reference);
     lines.push('');
-    lines.push('제  목: ' + (f.title || ''));
-    lines.push('');
+
+    /* 제목 */
+    lines.push('제  목: ' + (f.title || ''), '');
+
+    /* body HTML → 텍스트 변환 */
+    var bodyText = richToText(f.body || '');
 
     if (currentTemplateId === 'event') {
       lines.push('1. 귀 기관의 무궁한 발전을 기원합니다.');
-      lines.push('2. 아래와 같이 행사를 안내드립니다.');
-      lines.push('');
+      lines.push('2. 아래와 같이 행사를 안내드립니다.', '');
       if (f.eventDate)   lines.push('   일  시: ' + f.eventDate);
       if (f.eventPlace)  lines.push('   장  소: ' + f.eventPlace);
       if (f.eventTarget) lines.push('   대  상: ' + f.eventTarget);
-      if (bodyText)      lines.push('   내  용: ' + bodyText);
+      if (bodyText)      bodyText.split('\n').forEach(function (l) { lines.push('   ' + l); });
       if (f.purpose)     lines.push('3. ' + f.purpose);
+
     } else if (currentTemplateId === 'sponsor') {
       lines.push('1. 귀하의 따뜻한 후원에 진심으로 감사드립니다.');
       if (f.sponsorName) lines.push('2. 후원자: '   + f.sponsorName);
       if (f.grantDate)   lines.push('3. 후원일자: ' + f.grantDate);
-      if (f.grantAmount) lines.push('4. 후원금액: ' + f.grantAmount);
-      if (bodyText) bodyText.split('\n').forEach(function (l) { lines.push(l); });
+      if (f.grantAmount) lines.push('4. 후원금액: ' + convertAmount(f.grantAmount));
+      if (bodyText)      bodyText.split('\n').forEach(function (l) { lines.push(l); });
+
     } else {
+      /* 목적: 번호 없이 */
       if (f.purpose) {
-        lines.push(f.purpose);
+        f.purpose.split('\n').forEach(function (l) { lines.push(l); });
         lines.push('');
       }
-      if (bodyText) bodyText.split('\n').forEach(function (l) { lines.push(l); });
+      /* 내용: rich → text */
+      if (bodyText) {
+        bodyText.split('\n').forEach(function (l) { lines.push(l); });
+      }
     }
 
+    /* 붙임 */
     lines.push('');
     if (f.attachments) {
       lines.push('붙  임');
       f.attachments.split('\n').forEach(function (a, i) {
-        var trimmed = a.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
-        if (trimmed) {
-          var item = trimmed.endsWith('.') ? trimmed : trimmed + '.';
+        var t = a.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
+        if (t) {
+          var item = t.endsWith('.') ? t : t + '.';
           lines.push('  ' + (i + 1) + '. ' + item);
         }
       });
     }
-    lines.push('끝.');
-    lines.push('');
-    lines.push(f.senderName || orgName);
 
+    lines.push('끝.', '', f.senderName || orgName);
     ta.value = lines.join('\n');
   }
 
@@ -486,7 +543,8 @@
     var ok = Storage.saveDraft(draft);
     if (ok) {
       isModified = false;
-      setSaveStatus('저장됨 ' + new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' }));
+      setSaveStatus('저장됨 ' + new Date().toLocaleTimeString('ko-KR',
+        { hour: '2-digit', minute: '2-digit' }));
       if (typeof showToast === 'function') showToast('💾 임시저장되었습니다.', 'success');
     } else {
       if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'error');
@@ -494,210 +552,205 @@
     return ok;
   }
 
+  /* ══════════════════════════════════════════════
+     미리보기 이동
+  ══════════════════════════════════════════════ */
   function goPreview() {
     saveDraft();
     setTimeout(function () {
-      window.location.href = 'preview.html?id=' + encodeURIComponent(currentDocId) + '&type=draft';
+      window.location.href = 'preview.html?id='
+        + encodeURIComponent(currentDocId) + '&type=draft';
     }, 300);
   }
 
   /* ══════════════════════════════════════════════
-     표 삽입
+     ── 표 조작 유틸리티 ──
   ══════════════════════════════════════════════ */
+
+  /* 현재 커서가 위치한 셀(td/th) 반환 */
+  function getActiveCell() {
+    var sel = window.getSelection();
+    if (!sel || !sel.anchorNode) return null;
+    var node = sel.anchorNode;
+    while (node && node !== document.body) {
+      if (node.nodeName === 'TD' || node.nodeName === 'TH') return node;
+      node = node.parentNode;
+    }
+    return null;
+  }
+
+  /* 선택된 셀 목록 반환 (selected 클래스 기준) */
+  function getSelectedCells() {
+    return document.querySelectorAll('.body-editor .selected');
+  }
+
+  /* 표 삽입 */
   function insertTable(rows, cols, hasHeader) {
-    var editor = activeBodyEditor || document.querySelector('.body-editor');
+    var editor = document.querySelector('.body-editor');
     if (!editor) return;
     editor.focus();
 
-    var html = '<table>';
+    var html = '<table style="border-collapse:collapse;width:100%;">';
     for (var r = 0; r < rows; r++) {
       html += '<tr>';
       for (var c = 0; c < cols; c++) {
-        if (hasHeader && r === 0) {
-          html += '<th contenteditable="true"><br></th>';
-        } else {
-          html += '<td contenteditable="true"><br></td>';
-        }
+        var tag = (hasHeader && r === 0) ? 'th' : 'td';
+        html += '<' + tag
+              + ' style="border:1px solid #555;padding:5px 8px;min-width:60px;"'
+              + ' contenteditable="true">'
+              + '</' + tag + '>';
       }
       html += '</tr>';
     }
     html += '</table><p><br></p>';
 
-    document.execCommand('insertHTML', false, html);
+    var sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+      var range = sel.getRangeAt(0);
+      range.deleteContents();
+      var frag = document.createRange().createContextualFragment(html);
+      range.insertNode(frag);
+    } else {
+      editor.insertAdjacentHTML('beforeend', html);
+    }
+
+    isModified = true;
+    setSaveStatus('미저장');
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════════
-     셀 선택
-  ══════════════════════════════════════════════ */
-  function getParentCell(el) {
-    while (el) {
-      if (el.tagName === 'TD' || el.tagName === 'TH') return el;
-      el = el.parentElement;
-    }
-    return null;
-  }
-
-  function handleCellClick(cell, e) {
-    if (e.shiftKey || e.ctrlKey || e.metaKey) {
-      if (cell.classList.contains('selected')) {
-        cell.classList.remove('selected');
-        selectedCells = selectedCells.filter(function (c) { return c !== cell; });
-      } else {
-        cell.classList.add('selected');
-        selectedCells.push(cell);
-      }
-    } else {
-      clearCellSelection();
-      cell.classList.add('selected');
-      selectedCells = [cell];
-    }
-  }
-
-  function clearCellSelection() {
-    selectedCells.forEach(function (c) { c.classList.remove('selected'); });
-    selectedCells = [];
-  }
-
-  /* ══════════════════════════════════════════════
-     행 추가
-  ══════════════════════════════════════════════ */
+  /* 행 추가 */
   function addRow() {
-    var cell = selectedCells[0] || getActiveCellFromSelection();
-    if (!cell) { showToast('표 안의 셀을 먼저 클릭하세요.', 'warning'); return; }
-    var row   = cell.closest('tr');
-    if (!row) return;
-    var cols  = row.querySelectorAll('td, th').length;
-    var newRow = document.createElement('tr');
+    var cell = getActiveCell();
+    if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
+    var tr   = cell.closest('tr');
+    var cols = tr.querySelectorAll('td, th').length;
+    var newTr = document.createElement('tr');
     for (var i = 0; i < cols; i++) {
       var td = document.createElement('td');
+      td.style.cssText = 'border:1px solid #555;padding:5px 8px;min-width:60px;';
       td.contentEditable = 'true';
-      td.innerHTML = '<br>';
-      newRow.appendChild(td);
+      newTr.appendChild(td);
     }
-    row.parentNode.insertBefore(newRow, row.nextSibling);
+    tr.insertAdjacentElement('afterend', newTr);
+    isModified = true;
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════════
-     열 추가
-  ══════════════════════════════════════════════ */
+  /* 열 추가 */
   function addCol() {
-    var cell = selectedCells[0] || getActiveCellFromSelection();
-    if (!cell) { showToast('표 안의 셀을 먼저 클릭하세요.', 'warning'); return; }
+    var cell = getActiveCell();
+    if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
     var table = cell.closest('table');
-    if (!table) return;
-    var cellIndex = cell.cellIndex;
-    table.querySelectorAll('tr').forEach(function (row, ri) {
+    var cellIdx = Array.from(cell.parentNode.children).indexOf(cell);
+    table.querySelectorAll('tr').forEach(function (tr, ri) {
+      var ref = tr.children[cellIdx];
       var newCell = document.createElement(ri === 0 ? 'th' : 'td');
+      newCell.style.cssText = 'border:1px solid #555;padding:5px 8px;min-width:60px;';
       newCell.contentEditable = 'true';
-      newCell.innerHTML = '<br>';
-      var ref = row.cells[cellIndex + 1] || null;
-      row.insertBefore(newCell, ref);
+      if (ref) ref.insertAdjacentElement('afterend', newCell);
+      else tr.appendChild(newCell);
     });
+    isModified = true;
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════════
-     행 삭제
-  ══════════════════════════════════════════════ */
+  /* 행 삭제 */
   function deleteRow() {
-    var cell  = selectedCells[0] || getActiveCellFromSelection();
-    if (!cell) { showToast('표 안의 셀을 먼저 클릭하세요.', 'warning'); return; }
-    var row   = cell.closest('tr');
-    var table = row ? row.closest('table') : null;
-    if (!row || !table) return;
-    if (table.querySelectorAll('tr').length <= 1) {
-      table.parentNode.removeChild(table);
-    } else {
-      row.parentNode.removeChild(row);
-    }
-    clearCellSelection();
+    var cell = getActiveCell();
+    if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
+    var tr    = cell.closest('tr');
+    var table = tr.closest('table');
+    tr.remove();
+    if (!table.querySelector('tr')) table.remove();
+    isModified = true;
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════════
-     열 삭제
-  ══════════════════════════════════════════════ */
+  /* 열 삭제 */
   function deleteCol() {
-    var cell  = selectedCells[0] || getActiveCellFromSelection();
-    if (!cell) { showToast('표 안의 셀을 먼저 클릭하세요.', 'warning'); return; }
-    var table = cell.closest('table');
-    if (!table) return;
-    var colIdx  = cell.cellIndex;
-    var allRows = table.querySelectorAll('tr');
-    if (allRows[0] && allRows[0].cells.length <= 1) {
-      table.parentNode.removeChild(table);
-    } else {
-      allRows.forEach(function (row) {
-        if (row.cells[colIdx]) row.deleteCell(colIdx);
-      });
-    }
-    clearCellSelection();
+    var cell = getActiveCell();
+    if (!cell) { if (typeof showToast === 'function') showToast('표 안의 셀을 클릭하세요.', 'warning'); return; }
+    var table    = cell.closest('table');
+    var cellIdx  = Array.from(cell.parentNode.children).indexOf(cell);
+    var removed  = 0;
+    table.querySelectorAll('tr').forEach(function (tr) {
+      var c = tr.children[cellIdx];
+      if (c) { c.remove(); removed++; }
+    });
+    if (!table.querySelector('td, th')) table.remove();
+    isModified = true;
     updatePreview();
   }
 
-  /* ══════════════════════════════════════════════
-     셀 병합
-  ══════════════════════════════════════════════ */
+  /* 셀 병합 */
   function mergeCells() {
-    if (selectedCells.length < 2) {
-      showToast('Ctrl+클릭으로 병합할 셀을 2개 이상 선택하세요.', 'warning');
+    var cells = Array.from(getSelectedCells());
+    if (cells.length < 2) {
+      if (typeof showToast === 'function') showToast('병합할 셀을 2개 이상 선택하세요. (클릭 후 Shift+클릭)', 'warning');
       return;
     }
-    var rows = {};
-    selectedCells.forEach(function (c) {
-      var row = c.closest('tr');
-      if (!rows[row]) rows[row] = [];
-      rows[row].push(c);
+    var combined = cells.map(function (c) { return c.textContent.trim(); }).filter(Boolean).join(' / ');
+    var first    = cells[0];
+
+    /* rowspan/colspan 계산 */
+    var rows = [...new Set(cells.map(function (c) { return c.parentNode; }))];
+    var minCol = Infinity, maxCol = -Infinity;
+    cells.forEach(function (c) {
+      var idx = Array.from(c.parentNode.children).indexOf(c);
+      if (idx < minCol) minCol = idx;
+      if (idx > maxCol) maxCol = idx;
     });
-    Object.keys(rows).forEach(function (rowKey) {
-      var cells = rows[rowKey];
-      if (cells.length < 2) return;
-      var first = cells[0];
-      var combinedText = cells.map(function (c) {
-        return (c.innerText || c.textContent || '').trim();
-      }).filter(Boolean).join(' / ');
-      first.innerHTML = combinedText || '<br>';
-      first.colSpan   = (first.colSpan || 1) + cells.slice(1).reduce(function (acc, c) {
-        return acc + (parseInt(c.colSpan) || 1);
-      }, 0);
-      cells.slice(1).forEach(function (c) { c.parentNode.removeChild(c); });
-    });
-    clearCellSelection();
+
+    first.rowSpan = rows.length;
+    first.colSpan = maxCol - minCol + 1;
+    first.textContent = combined;
+    first.classList.remove('selected');
+
+    cells.slice(1).forEach(function (c) { c.remove(); });
+    isModified = true;
     updatePreview();
-    showToast('셀이 병합되었습니다.', 'success');
   }
 
-  /* ══════════════════════════════════════════════
-     셀 분리
-  ══════════════════════════════════════════════ */
+  /* 셀 분리 */
   function unmergeCells() {
-    var cell = selectedCells[0] || getActiveCellFromSelection();
-    if (!cell) { showToast('분리할 셀을 클릭하세요.', 'warning'); return; }
-    var span = parseInt(cell.colSpan) || 1;
-    if (span <= 1) { showToast('병합된 셀이 없습니다.', 'info'); return; }
-    var row = cell.closest('tr');
+    var cell = getActiveCell();
+    if (!cell) { if (typeof showToast === 'function') showToast('분리할 셀을 클릭하세요.', 'warning'); return; }
+    var rs = cell.rowSpan || 1;
+    var cs = cell.colSpan || 1;
+    if (rs <= 1 && cs <= 1) { if (typeof showToast === 'function') showToast('병합된 셀이 아닙니다.', 'warning'); return; }
+
+    var tr    = cell.closest('tr');
+    var table = cell.closest('table');
+    var rows  = Array.from(table.querySelectorAll('tr'));
+    var rIdx  = rows.indexOf(tr);
+    var cIdx  = Array.from(tr.children).indexOf(cell);
+
+    cell.rowSpan = 1;
     cell.colSpan = 1;
-    for (var i = 1; i < span; i++) {
-      var newTd = document.createElement('td');
-      newTd.contentEditable = 'true';
-      newTd.innerHTML = '<br>';
-      row.insertBefore(newTd, cell.nextSibling);
+
+    for (var r = 0; r < rs; r++) {
+      for (var c = 0; c < cs; c++) {
+        if (r === 0 && c === 0) continue;
+        var newCell = document.createElement('td');
+        newCell.style.cssText = 'border:1px solid #555;padding:5px 8px;min-width:60px;';
+        newCell.contentEditable = 'true';
+        var targetRow = rows[rIdx + r];
+        if (!targetRow) continue;
+        var ref = targetRow.children[cIdx + c];
+        if (ref) ref.insertAdjacentElement('beforebegin', newCell);
+        else targetRow.appendChild(newCell);
+      }
     }
-    clearCellSelection();
+    isModified = true;
     updatePreview();
-    showToast('셀이 분리되었습니다.', 'success');
   }
 
-  /* ══════════════════════════════════════════════
-     Tab 셀 이동
-  ══════════════════════════════════════════════ */
-  function moveToNextCell(currentCell, reverse) {
-    var table = currentCell.closest('table');
-    if (!table) return;
+  /* 다음 셀로 이동 (Tab) */
+  function moveToNextCell(cell, reverse) {
+    var table = cell.closest('table');
     var cells = Array.from(table.querySelectorAll('td, th'));
-    var idx   = cells.indexOf(currentCell);
+    var idx   = cells.indexOf(cell);
     var next  = reverse ? cells[idx - 1] : cells[idx + 1];
     if (next) {
       next.focus();
@@ -707,184 +760,76 @@
       range.collapse(false);
       sel.removeAllRanges();
       sel.addRange(range);
-    } else if (!reverse) {
-      addRow();
     }
   }
 
-  function getActiveCellFromSelection() {
-    var sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return null;
-    return getParentCell(sel.anchorNode);
-  }
-
-  /* ══════════════════════════════════════════════
-     서식 툴바 이벤트 바인딩
-  ══════════════════════════════════════════════ */
-  function bindToolbarEvents() {
-
-    /* 굵게 */
-    var btnBold = document.getElementById('fmt-bold');
-    if (btnBold) btnBold.addEventListener('mousedown', function (e) {
-      e.preventDefault(); document.execCommand('bold');
-    });
-
-    /* 기울기 */
-    var btnItalic = document.getElementById('fmt-italic');
-    if (btnItalic) btnItalic.addEventListener('mousedown', function (e) {
-      e.preventDefault(); document.execCommand('italic');
-    });
-
-    /* 밑줄 */
-    var btnUnderline = document.getElementById('fmt-underline');
-    if (btnUnderline) btnUnderline.addEventListener('mousedown', function (e) {
-      e.preventDefault(); document.execCommand('underline');
-    });
-
-    /* ★ 왼쪽 정렬 */
-    var btnAlignLeft = document.getElementById('fmt-align-left');
-    if (btnAlignLeft) btnAlignLeft.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      applyAlignment('left');
-    });
-
-    /* ★ 가운데 정렬 */
-    var btnAlignCenter = document.getElementById('fmt-align-center');
-    if (btnAlignCenter) btnAlignCenter.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      applyAlignment('center');
-    });
-
-    /* ★ 오른쪽 정렬 */
-    var btnAlignRight = document.getElementById('fmt-align-right');
-    if (btnAlignRight) btnAlignRight.addEventListener('mousedown', function (e) {
-      e.preventDefault();
-      applyAlignment('right');
-    });
-
-    /* 표 삽입 */
-    var btnTable = document.getElementById('fmt-table');
-    if (btnTable) btnTable.addEventListener('mousedown', function (e) {
-      e.preventDefault(); openTablePopup();
-    });
-
-    /* 행 추가 */
-    var btnAddRow = document.getElementById('fmt-add-row');
-    if (btnAddRow) btnAddRow.addEventListener('mousedown', function (e) {
-      e.preventDefault(); addRow();
-    });
-
-    /* 열 추가 */
-    var btnAddCol = document.getElementById('fmt-add-col');
-    if (btnAddCol) btnAddCol.addEventListener('mousedown', function (e) {
-      e.preventDefault(); addCol();
-    });
-
-    /* 행 삭제 */
-    var btnDelRow = document.getElementById('fmt-del-row');
-    if (btnDelRow) btnDelRow.addEventListener('mousedown', function (e) {
-      e.preventDefault(); deleteRow();
-    });
-
-    /* 열 삭제 */
-    var btnDelCol = document.getElementById('fmt-del-col');
-    if (btnDelCol) btnDelCol.addEventListener('mousedown', function (e) {
-      e.preventDefault(); deleteCol();
-    });
-
-    /* 셀 병합 */
-    var btnMerge = document.getElementById('fmt-merge');
-    if (btnMerge) btnMerge.addEventListener('mousedown', function (e) {
-      e.preventDefault(); mergeCells();
-    });
-
-    /* 셀 분리 */
-    var btnUnmerge = document.getElementById('fmt-unmerge');
-    if (btnUnmerge) btnUnmerge.addEventListener('mousedown', function (e) {
-      e.preventDefault(); unmergeCells();
-    });
-  }
-
-  /* ══════════════════════════════════════════════
-     정렬 적용
-     ★ 셀 안이면 해당 셀에 text-align 인라인 스타일 적용
-     ★ 일반 텍스트면 execCommand justifyXxx 사용
-  ══════════════════════════════════════════════ */
-  function applyAlignment(align) {
-    /* 현재 커서가 셀 안에 있는지 확인 */
-    var cell = getActiveCellFromSelection();
-    if (!cell) {
-      /* 선택된 셀 전체에 적용 */
-      if (selectedCells.length > 0) {
-        selectedCells.forEach(function (c) {
-          c.style.textAlign = align;
-        });
-        updatePreview();
-        updateAlignButtons();
+  /* ── 셀 선택 (Shift+클릭) ── */
+  function initCellSelection() {
+    document.addEventListener('click', function (e) {
+      var cell = e.target.closest('.body-editor td, .body-editor th');
+      if (!cell) {
+        /* 표 밖 클릭 → 선택 해제 */
+        if (!e.target.closest('#format-toolbar')) {
+          document.querySelectorAll('.body-editor .selected')
+            .forEach(function (c) { c.classList.remove('selected'); });
+        }
         return;
       }
-    }
-    if (cell) {
-      cell.style.textAlign = align;
+      if (e.shiftKey) {
+        cell.classList.toggle('selected');
+      } else {
+        document.querySelectorAll('.body-editor .selected')
+          .forEach(function (c) { c.classList.remove('selected'); });
+        cell.classList.add('selected');
+      }
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+     정렬 (좌·중앙·우)
+  ══════════════════════════════════════════════ */
+  function applyAlign(align) {
+    var editor = document.querySelector('.body-editor');
+    if (!editor) return;
+
+    /* 선택된 셀에 우선 적용 */
+    var selected = Array.from(getSelectedCells());
+    var activeCell = getActiveCell();
+    if (!selected.length && activeCell) selected = [activeCell];
+
+    if (selected.length) {
+      selected.forEach(function (cell) {
+        cell.style.textAlign = align;
+      });
+      isModified = true;
       updatePreview();
-      updateAlignButtons();
       return;
     }
-    /* 일반 텍스트 정렬 */
-    var cmd = 'justify' + capitalize(align);
-    document.execCommand(cmd);
-    updateAlignButtons();
-    updatePreview();
+
+    /* 일반 텍스트 선택 → execCommand */
+    var justifyMap = {
+      'left':   'justifyLeft',
+      'center': 'justifyCenter',
+      'right':  'justifyRight'
+    };
+    if (justifyMap[align]) {
+      editor.focus();
+      document.execCommand(justifyMap[align], false, null);
+      isModified = true;
+      updatePreview();
+    }
   }
 
   /* ══════════════════════════════════════════════
-     표 삽입 팝업
-  ══════════════════════════════════════════════ */
-  function openTablePopup() {
-    var popup   = document.getElementById('table-popup');
-    var overlay = document.getElementById('table-popup-overlay');
-    if (popup)   popup.classList.add('visible');
-    if (overlay) overlay.classList.add('visible');
-  }
-
-  function closeTablePopup() {
-    var popup   = document.getElementById('table-popup');
-    var overlay = document.getElementById('table-popup-overlay');
-    if (popup)   popup.classList.remove('visible');
-    if (overlay) overlay.classList.remove('visible');
-  }
-
-  function bindTablePopupEvents() {
-    var okBtn     = document.getElementById('table-popup-ok');
-    var cancelBtn = document.getElementById('table-popup-cancel');
-    var overlay   = document.getElementById('table-popup-overlay');
-
-    if (okBtn) okBtn.addEventListener('click', function () {
-      var rows   = parseInt(document.getElementById('table-rows').value)  || 3;
-      var cols   = parseInt(document.getElementById('table-cols').value)  || 3;
-      var header = document.getElementById('table-header').checked;
-      closeTablePopup();
-      insertTable(rows, cols, header);
-    });
-
-    if (cancelBtn) cancelBtn.addEventListener('click', closeTablePopup);
-    if (overlay)   overlay.addEventListener('click',   closeTablePopup);
-
-    var popup = document.getElementById('table-popup');
-    if (popup) popup.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter')  { e.preventDefault(); okBtn && okBtn.click(); }
-      if (e.key === 'Escape') closeTablePopup();
-    });
-  }
-
-  /* ══════════════════════════════════════════════
-     전체 이벤트 바인딩
+     이벤트 바인딩
   ══════════════════════════════════════════════ */
   function bindEvents() {
+    /* 템플릿 버튼 */
     document.querySelectorAll('.tpl-btn').forEach(function (btn) {
       btn.addEventListener('click', function () { selectTemplate(btn.dataset.template); });
     });
 
+    /* 예시 / 저장 */
     var fillBtn = document.getElementById('fill-example-btn');
     if (fillBtn) fillBtn.addEventListener('click', fillExample);
 
@@ -893,44 +838,111 @@
 
     document.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveDraft(); }
-    });
-
-    var previewBtn = document.getElementById('preview-btn');
-    if (previewBtn) previewBtn.addEventListener('click', goPreview);
-
-    document.addEventListener('keydown', function (e) {
       if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); goPreview(); }
     });
 
+    /* 미리보기 */
+    var previewBtn = document.getElementById('preview-btn');
+    if (previewBtn) previewBtn.addEventListener('click', goPreview);
+
+    /* ── 서식 툴바 ── */
+    function fmtOn(id, fn) {
+      var btn = document.getElementById(id);
+      if (btn) btn.addEventListener('mousedown', function (e) {
+        e.preventDefault(); /* blur 방지 */
+        fn();
+      });
+    }
+
+    fmtOn('fmt-bold',      function () { document.execCommand('bold',      false, null); updatePreview(); });
+    fmtOn('fmt-italic',    function () { document.execCommand('italic',    false, null); updatePreview(); });
+    fmtOn('fmt-underline', function () { document.execCommand('underline', false, null); updatePreview(); });
+    fmtOn('fmt-align-left',   function () { applyAlign('left'); });
+    fmtOn('fmt-align-center', function () { applyAlign('center'); });
+    fmtOn('fmt-align-right',  function () { applyAlign('right'); });
+    fmtOn('fmt-add-row',  addRow);
+    fmtOn('fmt-add-col',  addCol);
+    fmtOn('fmt-del-row',  deleteRow);
+    fmtOn('fmt-del-col',  deleteCol);
+    fmtOn('fmt-merge',    mergeCells);
+    fmtOn('fmt-unmerge',  unmergeCells);
+
+    /* 표 삽입 버튼 → 팝업 열기 */
+    fmtOn('fmt-table', function () {
+      var overlay = document.getElementById('table-popup-overlay');
+      var popup   = document.getElementById('table-popup');
+      if (overlay) overlay.classList.add('visible');
+      if (popup)   popup.classList.add('visible');
+      /* 커서 위치 저장 */
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) _savedRange = sel.getRangeAt(0).cloneRange();
+    });
+
+    /* 팝업 확인 */
+    var popupOk = document.getElementById('table-popup-ok');
+    if (popupOk) popupOk.addEventListener('click', function () {
+      var rows      = parseInt(document.getElementById('table-rows').value, 10)  || 3;
+      var cols      = parseInt(document.getElementById('table-cols').value, 10)  || 3;
+      var hasHeader = document.getElementById('table-header').checked;
+
+      /* 저장된 커서 위치 복원 */
+      var editor = document.querySelector('.body-editor');
+      if (editor && _savedRange) {
+        editor.focus();
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(_savedRange);
+        _savedRange = null;
+      }
+
+      insertTable(rows, cols, hasHeader);
+      closeTablePopup();
+    });
+
+    /* 팝업 취소 */
+    var popupCancel = document.getElementById('table-popup-cancel');
+    if (popupCancel) popupCancel.addEventListener('click', closeTablePopup);
+
+    var overlay = document.getElementById('table-popup-overlay');
+    if (overlay) overlay.addEventListener('click', closeTablePopup);
+
+    /* 규칙·순화어 모달 */
     var ruleBtn = document.getElementById('rule-check-btn');
     if (ruleBtn) ruleBtn.addEventListener('click', function () {
-      if (typeof Modal !== 'undefined') Modal.open('check-modal');
+      if (typeof openCheckModal === 'function') openCheckModal();
     });
 
     var purifyBtn = document.getElementById('purify-btn');
     if (purifyBtn) purifyBtn.addEventListener('click', function () {
-      if (typeof Modal !== 'undefined') Modal.open('purify-modal');
+      if (typeof openPurifyModal === 'function') openPurifyModal();
     });
 
-    document.querySelectorAll('.modal-close-btn, .modal-overlay').forEach(function (el) {
-      el.addEventListener('click', function (e) {
-        if (e.target === el) {
-          var modal = el.closest('.modal-overlay') || document.getElementById(el.dataset.modal);
-          if (modal && typeof Modal !== 'undefined') Modal.close(modal.id);
-        }
+    /* 모달 닫기 */
+    document.querySelectorAll('.modal-close-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var modal = btn.closest('.modal-overlay');
+        if (modal && typeof Modal !== 'undefined') Modal.close(modal.id);
       });
     });
 
+    /* 셀 선택 초기화 */
+    initCellSelection();
+
+    /* 자동저장 30초 */
     editorAutoSave = setInterval(function () {
       if (isModified) saveDraft();
     }, 30000);
+  }
 
-    bindToolbarEvents();
-    bindTablePopupEvents();
+  function closeTablePopup() {
+    var overlay = document.getElementById('table-popup-overlay');
+    var popup   = document.getElementById('table-popup');
+    if (overlay) overlay.classList.remove('visible');
+    if (popup)   popup.classList.remove('visible');
   }
 
   /* ══════════════════════════════════════════════
-     DOMContentLoaded
+     진입점
   ══════════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', function () {
     initEditor();
