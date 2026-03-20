@@ -171,7 +171,7 @@
 <script>
 (function () {
 
-  /* ── common.js 로드 실패 대비 폴백 ── */
+  /* ── 유틸 폴백 ── */
   if (typeof escapeHtml === 'undefined') {
     window.escapeHtml = function (s) {
       if (!s) return '';
@@ -179,96 +179,110 @@
     };
   }
   if (typeof truncate === 'undefined') {
-    window.truncate = function (s, n) { n=n||30; if(!s) return ''; return s.length>n?s.substr(0,n)+'…':s; };
+    window.truncate = function (s, n) {
+      n = n || 30;
+      if (!s) return '';
+      return s.length > n ? s.substr(0, n) + '…' : s;
+    };
   }
   if (typeof showToast === 'undefined') {
     window.showToast = function (msg, type) {
-      var c=document.getElementById('toast-container'); if(!c) return;
-      var t=document.createElement('div'); t.textContent=msg;
-      var bg={success:'#27ae60',error:'#e74c3c',warning:'#f39c12',info:'#3498db'};
-      t.style.cssText='padding:10px 18px;border-radius:8px;font-size:.88rem;font-weight:500;color:#fff;background:'+(bg[type||'info']||bg.info)+';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
-      c.appendChild(t); setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},3000);
+      var c = document.getElementById('toast-container');
+      if (!c) return;
+      var t = document.createElement('div');
+      t.textContent = msg;
+      var bg = { success:'#27ae60', error:'#e74c3c', warning:'#f39c12', info:'#3498db' };
+      t.style.cssText = 'padding:10px 18px;border-radius:8px;font-size:.88rem;font-weight:500;color:#fff;background:' + (bg[type||'info']||bg.info) + ';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
+      c.appendChild(t);
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3000);
     };
   }
 
-  /* ── Storage 폴백: doc_drafts 배열 방식 완전 지원 ── */
-  if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
-    window.Storage = {
-      getSettings: function () {
-        try { var s=localStorage.getItem('doc_settings'); return s?JSON.parse(s):{orgName:'',approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}],receivers:[]}; }
-        catch(e){return {orgName:'',approvalLevels:[],receivers:[]};}
-      },
-      _getDraftsArray: function () {
-        try {
-          var raw=localStorage.getItem('doc_drafts');
-          if (raw) {
-            var p=JSON.parse(raw);
-            if (Array.isArray(p)) return p;
-            if (typeof p==='object'&&p!==null) return Object.values(p);
+  /* ══════════════════════════════════════════
+     doc_drafts 읽기
+     - id 가 null 인 항목 → 임시 id 부여
+     - savedAt / updatedAt 모두 인식
+  ══════════════════════════════════════════ */
+  function readAllDrafts() {
+    var list = [];
+    var usedIds = {};
+
+    /* ① doc_drafts 배열 읽기 */
+    try {
+      var raw = localStorage.getItem('doc_drafts');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        var arr = Array.isArray(parsed) ? parsed : (typeof parsed === 'object' && parsed !== null ? Object.values(parsed) : []);
+        arr.forEach(function (d, idx) {
+          if (!d) return;
+          /* id 가 null 이면 임시 id 부여 */
+          if (!d.id) d.id = 'legacy_' + idx + '_' + Date.now();
+          if (!usedIds[d.id]) {
+            usedIds[d.id] = true;
+            list.push(d);
           }
-        } catch(e){}
-        return [];
-      },
-      getAllDrafts: function () {
-        var list=this._getDraftsArray();
-        var ids=list.map(function(d){return d.id;});
-        for (var i=0;i<localStorage.length;i++){
-          var k=localStorage.key(i);
-          if(k&&k.indexOf('draft_')===0){
-            try{var item=JSON.parse(localStorage.getItem(k));if(item&&ids.indexOf(item.id)===-1){list.push(item);ids.push(item.id);}}catch(e2){}
-          }
-        }
-        return list.sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
-      },
-      getDraft: function (id) {
-        var list=this._getDraftsArray();
-        for(var i=0;i<list.length;i++){if(list[i].id===id)return list[i];}
-        try{var r=localStorage.getItem('draft_'+id)||localStorage.getItem(id);return r?JSON.parse(r):null;}catch(e){return null;}
-      },
-      saveDraft: function (d) {
-        var list=this._getDraftsArray(),idx=-1;
-        for(var i=0;i<list.length;i++){if(list[i].id===d.id){idx=i;break;}}
-        if(idx>=0)list[idx]=d;else list.unshift(d);
-        try{localStorage.setItem('doc_drafts',JSON.stringify(list));return true;}catch(e){return false;}
-      },
-      deleteDraft: function (id) {
-        var list=this._getDraftsArray().filter(function(d){return d.id!==id;});
-        try{localStorage.setItem('doc_drafts',JSON.stringify(list));}catch(e){}
-        try{localStorage.removeItem('draft_'+id);}catch(e){}
-        return true;
-      },
-      getAllDocs: function () {
-        var list=[],skip=['doc_settings','doc_logo','doc_org_detail','doc_cooperators','doc_drafts'];
-        for(var i=0;i<localStorage.length;i++){
-          var k=localStorage.key(i);
-          if(k&&k.indexOf('doc_')===0&&skip.indexOf(k)===-1){
-            try{var item=JSON.parse(localStorage.getItem(k));if(item)list.push(item);}catch(e){}
-          }
-        }
-        return list.sort(function(a,b){return new Date(b.completedAt||b.savedAt||0)-new Date(a.completedAt||a.savedAt||0);});
-      },
-      getDoc: function (id) {
-        try{var r=localStorage.getItem('doc_'+id)||localStorage.getItem(id);return r?JSON.parse(r):null;}catch(e){return null;}
-      },
-      saveDoc: function (d) {
-        try{var k=d.id&&d.id.indexOf('doc_')===0?d.id:'doc_'+d.id;localStorage.setItem(k,JSON.stringify(d));return true;}catch(e){return false;}
-      },
-      deleteDoc: function (id) {
-        try{localStorage.removeItem('doc_'+id);}catch(e){}
-        try{localStorage.removeItem(id);}catch(e){}
-        return true;
+        });
       }
-    };
+    } catch (e) { console.warn('doc_drafts 파싱 오류:', e); }
+
+    /* ② draft_{id} 개별 키 병합 */
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf('draft_') === 0) {
+        try {
+          var item = JSON.parse(localStorage.getItem(key));
+          if (item && item.id && !usedIds[item.id]) {
+            usedIds[item.id] = true;
+            list.push(item);
+          }
+        } catch (e2) {}
+      }
+    }
+
+    /* ③ savedAt / updatedAt 둘 다 인식해서 정렬 */
+    list.sort(function (a, b) {
+      var ta = new Date(a.savedAt || a.updatedAt || 0).getTime();
+      var tb = new Date(b.savedAt || b.updatedAt || 0).getTime();
+      return tb - ta;
+    });
+
+    return list;
+  }
+
+  /* ══════════════════════════════════════════
+     완성 문서 읽기
+  ══════════════════════════════════════════ */
+  function readAllDocs() {
+    var list = [];
+    var skip = ['doc_settings','doc_logo','doc_org_detail','doc_cooperators','doc_drafts'];
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (key && key.indexOf('doc_') === 0 && skip.indexOf(key) === -1) {
+        try {
+          var item = JSON.parse(localStorage.getItem(key));
+          if (item) list.push(item);
+        } catch (e) {}
+      }
+    }
+    list.sort(function (a, b) {
+      var ta = new Date(a.completedAt || a.savedAt || a.updatedAt || 0).getTime();
+      var tb = new Date(b.completedAt || b.savedAt || b.updatedAt || 0).getTime();
+      return tb - ta;
+    });
+    return list;
   }
 
   /* ── 날짜 포맷 ── */
   function fmtDate(val) {
     if (!val) return '';
     try {
-      var d=new Date(val);
-      if(isNaN(d.getTime()))return val;
-      return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
-    } catch(e){return val;}
+      var d = new Date(val);
+      if (isNaN(d.getTime())) return String(val);
+      return String(d.getMonth()+1).padStart(2,'0') + '/'
+           + String(d.getDate()).padStart(2,'0')     + ' '
+           + String(d.getHours()).padStart(2,'0')    + ':'
+           + String(d.getMinutes()).padStart(2,'0');
+    } catch (e) { return String(val); }
   }
 
   /* ── 아이콘 맵 ── */
@@ -278,17 +292,21 @@
   function renderList(docs, containerId, type) {
     var container = document.getElementById(containerId);
     if (!container || !docs || docs.length === 0) return;
+
     var html = '<div class="doc-list">';
     docs.forEach(function (doc) {
       var icon    = ICONS[doc.templateId] || '📄';
-      var title   = escapeHtml(truncate(doc.title || '(제목 없음)', 32));
-      var dateStr = fmtDate(doc.savedAt || doc.completedAt || '');
-      var docId   = escapeHtml(doc.id);
+      var rawTitle = doc.title || doc.fields && doc.fields.title || '(제목 없음)';
+      var title   = escapeHtml(truncate(rawTitle, 32));
+      var dateVal = doc.savedAt || doc.updatedAt || doc.completedAt || '';
+      var dateStr = fmtDate(dateVal);
+      var docId   = escapeHtml(String(doc.id));
+
       html += '<div class="doc-list-item">'
-            + '<span class="doc-item-icon">' + icon + '</span>'
+            + '<span class="doc-item-icon">'  + icon  + '</span>'
             + '<div class="doc-item-info">'
-            +   '<div class="doc-item-title">' + title + '</div>'
-            +   '<div class="doc-item-meta">' + dateStr + '</div>'
+            +   '<div class="doc-item-title">' + title   + '</div>'
+            +   '<div class="doc-item-meta">'  + dateStr + '</div>'
             + '</div>'
             + '<div class="doc-item-actions">'
             +   '<button class="btn btn-sm btn-primary"   onclick="goEdit(\'' + docId + '\',\'' + type + '\')">✏️ 수정</button>'
@@ -310,7 +328,23 @@
   };
   window.delDoc = function (id, type) {
     if (!confirm('이 문서를 삭제하시겠습니까?')) return;
-    if (type === 'doc') Storage.deleteDoc(id); else Storage.deleteDraft(id);
+    if (type === 'doc') {
+      try { localStorage.removeItem('doc_' + id); } catch(e) {}
+      try { localStorage.removeItem(id); } catch(e) {}
+    } else {
+      /* doc_drafts 배열에서 제거 */
+      try {
+        var raw = localStorage.getItem('doc_drafts');
+        if (raw) {
+          var arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            arr = arr.filter(function (d) { return d && d.id !== id; });
+            localStorage.setItem('doc_drafts', JSON.stringify(arr));
+          }
+        }
+      } catch(e) {}
+      try { localStorage.removeItem('draft_' + id); } catch(e) {}
+    }
     showToast('🗑️ 삭제되었습니다.', 'info');
     setTimeout(function () { location.reload(); }, 600);
   };
@@ -319,7 +353,9 @@
   document.addEventListener('DOMContentLoaded', function () {
 
     /* 기관명 배지 */
-    var settings = Storage.getSettings();
+    var settingsRaw = localStorage.getItem('doc_settings');
+    var settings = {};
+    try { settings = settingsRaw ? JSON.parse(settingsRaw) : {}; } catch(e) {}
     var hero = document.getElementById('org-name-hero');
     if (hero) {
       if (settings.orgName) {
@@ -332,20 +368,19 @@
     }
 
     /* 임시저장 문서함 */
-    var drafts = Storage.getAllDrafts();
+    var drafts = readAllDrafts();
     var draftCount = document.getElementById('draft-count');
     if (draftCount) draftCount.textContent = drafts.length;
     if (drafts.length > 0) renderList(drafts, 'draft-list', 'draft');
 
     /* 완성 문서함 */
-    var docs = Storage.getAllDocs();
+    var docs = readAllDocs();
     var docCount = document.getElementById('doc-count');
     if (docCount) docCount.textContent = docs.length;
     if (docs.length > 0) renderList(docs, 'doc-list', 'doc');
 
-    /* 디버그 로그 */
-    console.log('drafts:', drafts.length, '/ docs:', docs.length);
-    console.log('doc_drafts raw:', localStorage.getItem('doc_drafts'));
+    /* 디버그 */
+    console.log('✅ 임시저장:', drafts.length, '/ 완성:', docs.length);
   });
 
 })();
