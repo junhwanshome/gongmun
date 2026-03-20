@@ -1,6 +1,6 @@
 /**
  * js/preview.js
- * 공문서 미리보기 - 정렬 + 금액 천단위 콤마 + rich HTML 본문 지원
+ * 공문서 미리보기 - 전체 수정사항 반영
  */
 (function () {
   'use strict';
@@ -8,9 +8,6 @@
   let currentDoc  = null;
   let currentType = 'draft';
 
-  /* ══════════════════════════════════════════════
-     초기화
-  ══════════════════════════════════════════════ */
   function initPreview() {
     const params = new URLSearchParams(location.search);
     const id     = params.get('id');
@@ -18,14 +15,12 @@
 
     if (!id) { showError('문서 ID가 없습니다.'); return; }
 
-    /* 완성 문서함 확인 */
     try {
       const docs = JSON.parse(localStorage.getItem('doc_completed') || '[]');
       currentDoc = docs.find(d => d.id === id) || null;
       if (currentDoc) currentType = 'completed';
     } catch (e) {}
 
-    /* 임시저장 목록 확인 */
     if (!currentDoc) {
       try {
         const drafts = JSON.parse(localStorage.getItem('doc_drafts') || '[]');
@@ -34,12 +29,9 @@
       } catch (e) {}
     }
 
-    /* 개별 draft 키 확인 */
     if (!currentDoc) {
       const raw = localStorage.getItem('draft_' + id);
-      if (raw) {
-        try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {}
-      }
+      if (raw) { try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {} }
     }
 
     if (!currentDoc) { showError('문서를 찾을 수 없습니다.'); return; }
@@ -48,9 +40,6 @@
     updateStatus();
   }
 
-  /* ══════════════════════════════════════════════
-     상태 배지
-  ══════════════════════════════════════════════ */
   function updateStatus() {
     const badge = document.getElementById('status-badge');
     if (!badge) return;
@@ -65,9 +54,6 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     문서 렌더링
-  ══════════════════════════════════════════════ */
   function renderPreview(doc) {
     const container = document.getElementById('doc-preview');
     if (!container) return;
@@ -83,7 +69,7 @@
     const via      = f.via       || '';
     const ref      = f.reference || f.ref || '';
     const docNum   = f.docNo     || f.docNumber || f.docNum || '';
-    const dateStr  = f.date      || '';
+    const dateStr  = f.date      || doc.date || '';
 
     let html = '';
     html += `<div class="doc-paper-inner">`;
@@ -118,27 +104,24 @@
       html += renderAttach(attachList);
     }
 
-    html += `</div>`; /* doc-main-area 닫기 */
+    html += `</div>`;
 
-    /* ⑥ 하단 기관정보 */
+    /* 하단 기관정보 블록 */
     html += `<div class="doc-org-footer">`;
+    const senderName = f.senderName || orgName;
     html += `<div class="doc-sender-area">
-               <span class="doc-sender-value">${esc(f.senderName || orgName)}</span>
+               <span class="doc-sender-value">${esc(senderName)}</span>
              </div>`;
     html += `<hr class="doc-sender-divider">`;
     html += renderApprovalBlock(doc, settings, orgDetail);
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
     html += renderFooterInfo(doc, settings, orgDetail);
     html += `</div>`;
-
-    html += `</div>`; /* doc-paper-inner 닫기 */
+    html += `</div>`;
 
     container.innerHTML = html;
   }
 
-  /* ══════════════════════════════════════════════
-     메타 행 헬퍼
-  ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
               <span class="doc-row-label">${labelHtml}</span>
@@ -148,138 +131,42 @@
   }
 
   /* ══════════════════════════════════════════════
-     HTML 본문 여부 판별
-  ══════════════════════════════════════════════ */
-  function isHtmlContent(str) {
-    return str && /<[a-z][\s\S]*>/i.test(str);
-  }
-
-  /* ══════════════════════════════════════════════
-     ★ HTML 본문 정리
-       - contenteditable 속성 제거
-       - selected 클래스 제거
-       - 표에 doc-table 클래스 추가
-       - 셀 text-align 인라인 스타일 유지
-       - 금액 천단위 콤마 적용
-  ══════════════════════════════════════════════ */
-  function sanitizeRichBody(html) {
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-
-    /* contenteditable 제거 */
-    tmp.querySelectorAll('[contenteditable]').forEach(el => {
-      el.removeAttribute('contenteditable');
-    });
-
-    /* selected 클래스 제거 */
-    tmp.querySelectorAll('.selected').forEach(el => {
-      el.classList.remove('selected');
-    });
-
-    /* 표 스타일 정리 및 클래스 추가 */
-    tmp.querySelectorAll('table').forEach(t => {
-      t.classList.add('doc-table');
-      t.style.borderCollapse = 'collapse';
-      t.style.width = '100%';
-    });
-
-    /* 빈 p 제거 */
-    tmp.querySelectorAll('p').forEach(p => {
-      if (p.innerHTML.trim() === '<br>' || p.innerHTML.trim() === '') {
-        p.remove();
-      }
-    });
-
-    /* 셀 테두리 스타일 보정 및 금액 변환 */
-    tmp.querySelectorAll('td, th').forEach(cell => {
-      if (!cell.style.border) {
-        cell.style.border = '1px solid #555';
-      }
-      cell.style.padding  = cell.style.padding  || '5px 8px';
-      cell.style.minWidth = cell.style.minWidth || '60px';
-      /* text-align 유지 (정렬 적용) */
-      /* 금액 천단위 콤마 */
-      cell.innerHTML = convertAmount(cell.innerHTML);
-    });
-
-    return tmp.innerHTML;
-  }
-
-  /* ══════════════════════════════════════════════
-     ★ 금액 천단위 콤마 변환
-       예) 1500000 → 1,500,000 / 50000원 → 50,000원
-       이미 콤마가 있거나 소수점 포함 숫자는 제외
-  ══════════════════════════════════════════════ */
-  function convertAmount(text) {
-    if (!text) return text;
-    return text.replace(/\b(\d{4,})\b/g, function (match) {
-      if (match.indexOf(',') !== -1) return match;
-      return parseInt(match, 10).toLocaleString('ko-KR');
-    });
-  }
-
-  /* ══════════════════════════════════════════════
-     ★ 본문 빌더
-       - HTML(rich) 본문 → sanitize 후 그대로 렌더링
-       - 일반 텍스트   → 들여쓰기 규칙 + 금액 변환 적용
-       - purpose: 번호 없이 단독 출력
+     본문 빌더
+     ★ purpose: 번호 없이 단독 출력
+     ★ body: 사용자 입력 그대로 출력
+     ★ 들여쓰기 자동 감지
+     ★ \u00A0 포함 앞뒤 공백 완전 제거
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
-    const bodyRaw = f.body || f.content || '';
-
-    /* ── HTML 본문 처리 ── */
-    if (isHtmlContent(bodyRaw)) {
-      let html = '';
-
-      /* purpose 먼저 (번호 없이) */
-      if (f.purpose && tmpl !== 'event' && tmpl !== 'sponsor') {
-        f.purpose.split('\n').forEach(line => {
-          const trimmed = line.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
-          if (trimmed) {
-            html += `<div class="doc-body-line">${esc(convertAmount(trimmed))}</div>`;
-          }
-        });
-        html += `<div class="doc-body-line">&nbsp;</div>`;
-      }
-
-      /* rich 본문 */
-      html += `<div class="doc-body-rich">${sanitizeRichBody(bodyRaw)}</div>`;
-
-      /* 끝. */
-      if (appendEnd) {
-        html += `<div class="doc-body-line">&nbsp;&nbsp;끝.</div>`;
-      }
-
-      return html;
-    }
-
-    /* ── 일반 텍스트 본문 처리 ── */
     let rawLines = [];
 
     if (tmpl === 'event') {
       rawLines.push('1. 귀 기관의 무궁한 발전을 기원합니다.');
       rawLines.push('2. 아래와 같이 행사를 안내드립니다.');
-      rawLines.push('');
-      if (f.eventDate)   rawLines.push('일  시: ' + f.eventDate);
-      if (f.eventPlace)  rawLines.push('장  소: ' + f.eventPlace);
-      if (f.eventTarget) rawLines.push('대  상: ' + f.eventTarget);
-      if (bodyRaw)       bodyRaw.split('\n').forEach(l => rawLines.push('내  용: ' + l));
+      if (f.eventDate)   rawLines.push('일  시: ' + (f.eventDate   || ''));
+      if (f.eventPlace)  rawLines.push('장  소: ' + (f.eventPlace  || ''));
+      if (f.eventTarget) rawLines.push('대  상: ' + (f.eventTarget || ''));
+      if (f.body)        rawLines.push('내  용: ' + (f.body        || ''));
       if (f.purpose)     rawLines.push('3. ' + f.purpose);
-
     } else if (tmpl === 'sponsor') {
       rawLines.push('1. 귀하의 따뜻한 후원에 진심으로 감사드립니다.');
       if (f.sponsorName) rawLines.push('2. 후원자: '   + f.sponsorName);
       if (f.grantDate)   rawLines.push('3. 후원일자: ' + f.grantDate);
       if (f.grantAmount) rawLines.push('4. 후원금액: ' + f.grantAmount);
-      if (bodyRaw)       bodyRaw.split('\n').forEach(l => rawLines.push(l));
-
+      if (f.body) {
+        f.body.split('\n').forEach(line => rawLines.push(line));
+      }
     } else {
-      /* purpose: 번호 없이 */
+      /* internal / government / cooperation
+         purpose: 번호 없이 단독 출력, 빈 줄로 body와 구분
+         body: 사용자가 직접 번호 입력 → 그대로 출력 */
       if (f.purpose) {
-        f.purpose.split('\n').forEach(l => rawLines.push(l));
+        f.purpose.split('\n').forEach(line => rawLines.push(line));
         rawLines.push('');
       }
-      if (bodyRaw) bodyRaw.split('\n').forEach(l => rawLines.push(l));
+      if (f.body) {
+        f.body.split('\n').forEach(line => rawLines.push(line));
+      }
     }
 
     const raw = rawLines.join('\n');
@@ -291,14 +178,13 @@
         : empty;
     }
 
-    /* ── 들여쓰기 규칙 ── */
     const INDENT_RULES = [
-      { re: /^(\d+\.)\s*/,       em: 0  },
-      { re: /^([가-힣]\.)\s*/,   em: 2  },
-      { re: /^(\d+\))\s*/,       em: 4  },
-      { re: /^([가-힣]\))\s*/,   em: 6  },
-      { re: /^\((\d+)\)\s*/,     em: 8  },
-      { re: /^\(([가-힣])\)\s*/, em: 10 },
+      { re: /^(\d+\.)\s*/,       em: 0 },
+      { re: /^([가-힣]\.)\s*/,   em: 2 },
+      { re: /^(\d+\))\s*/,       em: 4 },
+      { re: /^([가-힣]\))\s*/,   em: 6 },
+      { re: /^(\(\d+\))\s*/,     em: 8 },
+      { re: /^(\([가-힣]\))\s*/, em: 10 },
       { re: /^([①-⑳])\s*/,     em: 12 },
       { re: /^([㉮-㉻])\s*/,    em: 14 },
     ];
@@ -307,7 +193,8 @@
     let html = '';
 
     lines.forEach((line, idx) => {
-      const isLast  = idx === lines.length - 1;
+      const isLast = idx === lines.length - 1;
+
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -326,20 +213,19 @@
         if (m) {
           indentEm = rule.em;
           symbol   = m[0].replace(/[\s\u00A0]+$/, '');
-          content  = trimmed.slice(m[0].length).replace(/^[\s\u00A0]+/, '');
+          content  = trimmed.slice(m[0].length)
+                            .replace(/^[\s\u00A0]+/, '');
           break;
         }
       }
 
-      const displayContent = esc(
-        convertAmount(convertTerms(applyColonSpace(convertDate(content))))
-      );
-      const displaySymbol = symbol ? `${esc(symbol)}&nbsp;` : '';
-      const endMark       = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
+      const displayContent = convertTerms(applyColonSpace(convertDate(content)));
+      const displaySymbol  = symbol ? `${esc(symbol)}&nbsp;` : '';
+      const endMark        = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
       html += `<div class="doc-body-line" style="padding-left:${indentEm * 0.5}em;">`
             + displaySymbol
-            + displayContent
+            + esc(displayContent)
             + endMark
             + `</div>`;
     });
@@ -347,9 +233,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     날짜 변환
-  ══════════════════════════════════════════════ */
   function convertDate(text) {
     return text.replace(
       /(\d{4})\.(\d{1,2})\.(\d{1,2})(\.)?(\([월화수목금토일]\))?/g,
@@ -358,16 +241,10 @@
     );
   }
 
-  /* ══════════════════════════════════════════════
-     콜론 뒤 공백 보정
-  ══════════════════════════════════════════════ */
   function applyColonSpace(text) {
     return text.replace(/:(?!\s)(?!\d{2})/g, ': ');
   }
 
-  /* ══════════════════════════════════════════════
-     행정용어 순화
-  ══════════════════════════════════════════════ */
   function convertTerms(text) {
     const map = {
       '홈페이지': '누리집',
@@ -384,11 +261,8 @@
     return text;
   }
 
-  /* ══════════════════════════════════════════════
-     붙임 파싱
-  ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
-    if (!raw || !raw.trim()) return [];
+    if (!raw.trim()) return [];
     return raw.split('\n')
       .map(l => {
         const trimmed = l
@@ -401,9 +275,6 @@
       .filter(Boolean);
   }
 
-  /* ══════════════════════════════════════════════
-     붙임 렌더링
-  ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
     html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;</span>`;
@@ -413,7 +284,8 @@
       html += `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`;
     } else {
       list.forEach((item, i) => {
-        const endMark = (i === list.length - 1) ? '&nbsp;&nbsp;끝.' : '';
+        const isLast  = i === list.length - 1;
+        const endMark = isLast ? '&nbsp;&nbsp;끝.' : '';
         html += `<span class="doc-attach-line">${i + 1}.&nbsp;${esc(item)}${endMark}</span>`;
       });
     }
@@ -422,9 +294,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     결재·협조자 블록
-  ══════════════════════════════════════════════ */
   function renderApprovalBlock(doc, settings, orgDetail) {
     const approvers   = settings.approvers   || orgDetail.approvers   || [];
     const cooperators = settings.cooperators || orgDetail.cooperators || '';
@@ -454,9 +323,6 @@
     return html;
   }
 
-  /* ══════════════════════════════════════════════
-     시행·접수 행
-  ══════════════════════════════════════════════ */
   function renderExecRow(doc, settings, orgDetail, docNum, dateStr) {
     const orgCode = settings.orgCode  || orgDetail.orgCode
                  || orgDetail.orgName || settings.orgName || '○○';
@@ -476,9 +342,6 @@
             </div>`;
   }
 
-  /* ══════════════════════════════════════════════
-     주소·연락처 푸터
-  ══════════════════════════════════════════════ */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
     const addr     = orgDetail.address  || settings.address  || '';
@@ -505,12 +368,8 @@
             </div>`;
   }
 
-  /* ══════════════════════════════════════════════
-     유틸리티
-  ══════════════════════════════════════════════ */
   function safeJSON(key) {
-    try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-    catch (e) { return {}; }
+    try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; }
   }
 
   function esc(str) {
@@ -527,24 +386,18 @@
     if (c) c.innerHTML = `<p style="color:red;padding:40px;">${esc(msg)}</p>`;
   }
 
-  /* ══════════════════════════════════════════════
-     이벤트 바인딩
-  ══════════════════════════════════════════════ */
   function bindEvents() {
     const $ = id => document.getElementById(id);
 
-    /* 뒤로 */
     const btnBack = $('btn-back');
     if (btnBack) btnBack.addEventListener('click', () => history.back());
 
-    /* 편집 */
     const btnEdit = $('btn-edit');
     if (btnEdit) btnEdit.addEventListener('click', () => {
       if (!currentDoc) return;
-      location.href = `editor.html?id=${encodeURIComponent(currentDoc.id)}&type=${currentType}`;
+      location.href = `editor.html?id=${currentDoc.id}&type=${currentType}`;
     });
 
-    /* 복사 */
     const btnCopy = $('btn-copy');
     if (btnCopy) btnCopy.addEventListener('click', () => {
       const el = $('doc-preview');
@@ -554,27 +407,20 @@
         .catch(() => alert('복사에 실패했습니다.'));
     });
 
-    /* 인쇄 */
     const btnPrint = $('btn-print');
     if (btnPrint) btnPrint.addEventListener('click', () => window.print());
 
-    /* 완성저장 */
     const btnComplete = $('btn-complete');
     if (btnComplete) btnComplete.addEventListener('click', saveAsComplete);
 
-    /* 삭제 */
     const btnDelete = $('btn-delete');
     if (btnDelete) btnDelete.addEventListener('click', doDelete);
 
-    /* 키보드 단축키 */
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 'p') { e.preventDefault(); window.print(); }
     });
   }
 
-  /* ══════════════════════════════════════════════
-     완성 저장
-  ══════════════════════════════════════════════ */
   function saveAsComplete() {
     if (!currentDoc) return;
     try {
@@ -591,17 +437,13 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     삭제
-  ══════════════════════════════════════════════ */
   function doDelete() {
     if (!currentDoc) return;
     if (!confirm('이 문서를 삭제하시겠습니까?')) return;
     try {
       ['doc_drafts', 'doc_completed'].forEach(key => {
         const list = JSON.parse(localStorage.getItem(key) || '[]');
-        localStorage.setItem(key,
-          JSON.stringify(list.filter(d => d.id !== currentDoc.id)));
+        localStorage.setItem(key, JSON.stringify(list.filter(d => d.id !== currentDoc.id)));
       });
       localStorage.removeItem('draft_' + currentDoc.id);
       location.href = 'index.html';
@@ -610,9 +452,6 @@
     }
   }
 
-  /* ══════════════════════════════════════════════
-     진입점
-  ══════════════════════════════════════════════ */
   document.addEventListener('DOMContentLoaded', () => {
     initPreview();
     bindEvents();
