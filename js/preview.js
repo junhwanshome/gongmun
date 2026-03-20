@@ -86,8 +86,11 @@
              </div>`;
 
     /* ② 수신·경유·참조
-       ★ 레이블과 콜론을 하나의 span으로 묶어
-          "수    신:" 형태로 출력, 뒤에 한 칸만 */
+       ★ 레이블 / 콜론 / 값 완전 분리
+          레이블: width auto (글자 딱 맞게)
+          콜론:   고정 span
+          값:     한 칸 띄우고 시작
+    */
     html += `<div class="doc-meta-area">`;
     html += metaRow('수&nbsp;&nbsp;&nbsp;&nbsp;신', esc(receiver));
     if (via) html += metaRow('경&nbsp;&nbsp;&nbsp;&nbsp;유', esc(via));
@@ -96,7 +99,8 @@
 
     /* ③ 제목 */
     html += `<div class="doc-title-area">
-               <span class="doc-meta-label-colon">제&nbsp;&nbsp;&nbsp;&nbsp;목&nbsp;:</span>
+               <span class="doc-row-label">제&nbsp;&nbsp;&nbsp;&nbsp;목</span>
+               <span class="doc-row-colon">:</span>
                <span class="doc-title-text">${esc(title)}</span>
              </div>`;
     html += `<hr class="doc-title-divider">`;
@@ -133,20 +137,28 @@
 
   /* ══════════════════════════════════════════════
      메타 행 헬퍼
-     ★ 레이블과 콜론을 하나의 span으로 묶음
-        "수    신:" + 한 칸 + 값
+     ★ 레이블(width:5em) / 콜론(고정) / 값(한 칸) 완전 분리
   ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
-              <span class="doc-meta-label-colon">${labelHtml}&nbsp;:</span>
-              <span class="doc-meta-value">&nbsp;${valueHtml}</span>
+              <span class="doc-row-label">${labelHtml}</span>
+              <span class="doc-row-colon">:</span>
+              <span class="doc-row-value">${valueHtml}</span>
             </div>`;
   }
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     ★ \u00A0 포함 모든 공백 완전 제거
-     ★ 기호 분리 후 padding-left 로만 들여쓰기
+     ★ 들여쓰기 1em 단위로 재조정
+        1단계(1.)  → 0em
+        2단계(가.) → 1em
+        3단계(1))  → 2em
+        4단계(가)) → 3em
+        5단계((1)) → 4em
+        6단계((가))→ 5em
+        7단계(①)  → 6em
+        8단계(㉮)  → 7em
+     ★ \u00A0 포함 모든 앞뒤 공백 완전 제거
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const raw = f.body || f.content || '';
@@ -157,15 +169,16 @@
         : empty;
     }
 
+    /* ★ 들여쓰기 1em 단위 */
     const INDENT_RULES = [
-      { re: /^(\d+\.)\s*/,       em: 0  },
-      { re: /^([가-힣]\.)\s*/,   em: 2  },
-      { re: /^(\d+\))\s*/,       em: 4  },
-      { re: /^([가-힣]\))\s*/,   em: 6  },
-      { re: /^(\(\d+\))\s*/,     em: 8  },
-      { re: /^(\([가-힣]\))\s*/, em: 10 },
-      { re: /^([①-⑳])\s*/,     em: 12 },
-      { re: /^([㉮-㉻])\s*/,    em: 14 },
+      { re: /^(\d+\.)\s*/,       em: 0 },
+      { re: /^([가-힣]\.)\s*/,   em: 1 },
+      { re: /^(\d+\))\s*/,       em: 2 },
+      { re: /^([가-힣]\))\s*/,   em: 3 },
+      { re: /^(\(\d+\))\s*/,     em: 4 },
+      { re: /^(\([가-힣]\))\s*/, em: 5 },
+      { re: /^([①-⑳])\s*/,     em: 6 },
+      { re: /^([㉮-㉻])\s*/,    em: 7 },
     ];
 
     const lines = raw.split('\n');
@@ -174,7 +187,7 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* ★ \u00A0(non-breaking space) 포함 모든 앞뒤 공백 제거 */
+      /* ★ \u00A0 포함 모든 앞뒤 공백 완전 제거 */
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -184,7 +197,6 @@
         return;
       }
 
-      /* 기호 감지 및 분리 */
       let indentEm = 0;
       let symbol   = '';
       let content  = trimmed;
@@ -254,7 +266,6 @@
 
   /* ══════════════════════════════════════════════
      붙임 파싱
-     ★ \u00A0 포함 모든 공백 제거
   ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
     if (!raw.trim()) return [];
@@ -265,10 +276,11 @@
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
+     ★ "붙    임" 뒤 한 칸만
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
-    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;&nbsp;</span>`;
+    html += `<span class="doc-attach-label">붙&nbsp;&nbsp;&nbsp;&nbsp;임&nbsp;</span>`;
     html += `<span class="doc-attach-content">`;
 
     if (list.length === 1) {
