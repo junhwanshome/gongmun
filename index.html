@@ -12,7 +12,6 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; color: #1a1a1a; }
 
-    /* ── 헤더 ── */
     .header { background:#fff; border-bottom:1px solid #e0e0e0; position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,.06); }
     .header-inner { max-width:1200px; margin:0 auto; padding:0 20px; height:56px; display:flex; align-items:center; justify-content:space-between; }
     .logo { font-size:1.1rem; font-weight:700; color:#2c3e50; text-decoration:none; }
@@ -22,29 +21,24 @@
     .nav-link:hover { background:#ecf0f1; color:#2c3e50; }
     .nav-link.active { background:#3498db; color:#fff; }
 
-    /* ── 메인 ── */
     .main-content { padding:24px 0 60px; }
     .container { max-width:1200px; margin:0 auto; padding:0 20px; }
 
-    /* ── 히어로 ── */
     .hero-section { text-align:center; padding:40px 0 28px; }
     .hero-title { font-size:2rem; font-weight:700; color:#2c3e50; margin-bottom:10px; }
     .hero-desc  { font-size:1rem; color:#666; margin-bottom:16px; }
     .org-name-badge { display:inline-block; background:#eaf4fb; color:#2980b9; padding:6px 18px; border-radius:20px; font-size:.95rem; font-weight:500; }
 
-    /* ── 섹션 ── */
     .section { margin-bottom:40px; }
     .section-title { font-size:1.1rem; font-weight:700; color:#2c3e50; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
 
-    /* ── 템플릿 그리드 ── */
     .template-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:16px; }
-    .template-card { display:flex; flex-direction:column; align-items:center; gap:8px; padding:24px 16px; background:#fff; border:2px solid #e0e0e0; border-radius:12px; text-decoration:none; color:#2c3e50; transition:all .2s; cursor:pointer; }
+    .template-card { display:flex; flex-direction:column; align-items:center; gap:8px; padding:24px 16px; background:#fff; border:2px solid #e0e0e0; border-radius:12px; text-decoration:none; color:#2c3e50; transition:all .2s; }
     .template-card:hover { border-color:#3498db; background:#eaf4fb; transform:translateY(-2px); box-shadow:0 4px 16px rgba(52,152,219,.15); }
     .template-icon { font-size:2rem; }
     .template-card strong { font-size:.95rem; }
     .template-card small  { font-size:.8rem; color:#888; }
 
-    /* ── 문서 목록 ── */
     .doc-list { display:flex; flex-direction:column; gap:8px; }
     .doc-list-item { display:flex; align-items:center; gap:12px; background:#fff; border:1px solid #e0e0e0; border-radius:8px; padding:12px 16px; transition:.15s; }
     .doc-list-item:hover { border-color:#3498db; background:#f8fbff; }
@@ -54,24 +48,20 @@
     .doc-item-meta  { font-size:.78rem; color:#999; margin-top:2px; }
     .doc-item-actions { display:flex; gap:6px; flex-shrink:0; }
 
-    /* ── 빈 상태 ── */
     .empty-state { text-align:center; padding:40px; color:#aaa; background:#fff; border-radius:10px; border:2px dashed #e0e0e0; }
     .empty-state .empty-icon { font-size:2.5rem; margin-bottom:10px; }
     .empty-state p { font-size:.9rem; margin-bottom:14px; }
 
-    /* ── 팁 그리드 ── */
     .tip-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
     .tip-card { background:#fff; border:1px solid #e0e0e0; border-radius:10px; padding:16px; }
     .tip-card h4 { font-size:.95rem; margin-bottom:8px; color:#2c3e50; }
     .tip-card p  { font-size:.85rem; color:#555; line-height:1.6; }
     .tip-card code { background:#f4f4f4; padding:2px 6px; border-radius:4px; font-size:.82rem; }
 
-    /* ── 배지 ── */
     .badge { display:inline-block; padding:2px 9px; border-radius:12px; font-size:.76rem; font-weight:600; }
     .badge-success { background:#e8f8f0; color:#27ae60; }
     .badge-warning { background:#fef9e7; color:#f39c12; }
 
-    /* ── 버튼 ── */
     .btn { display:inline-flex; align-items:center; gap:5px; padding:8px 18px; border:none; border-radius:7px; font-size:.88rem; font-weight:500; cursor:pointer; transition:background .15s,transform .1s; text-decoration:none; white-space:nowrap; font-family:inherit; line-height:1; }
     .btn:active { transform:scale(.97); }
     .btn-primary   { background:#3498db; color:#fff; }
@@ -84,10 +74,8 @@
     .btn-danger:hover    { background:#c0392b; }
     .btn-sm { padding:5px 11px; font-size:.82rem; }
 
-    /* ── 푸터 ── */
     .footer { background:#fff; border-top:1px solid #e0e0e0; padding:20px; text-align:center; font-size:.82rem; color:#999; margin-top:40px; }
 
-    /* ── 반응형 ── */
     @media (max-width:768px) {
       .hero-title { font-size:1.5rem; }
       .template-grid { grid-template-columns:repeat(2,1fr); }
@@ -96,7 +84,6 @@
       .doc-item-actions { width:100%; justify-content:flex-end; margin-top:4px; }
     }
     @media (max-width:480px) {
-      .template-grid { grid-template-columns:repeat(2,1fr); }
       .header-inner { padding:0 12px; }
       .nav-link { padding:5px 8px; font-size:.82rem; }
     }
@@ -104,7 +91,6 @@
 </head>
 <body>
 
-<!-- 헤더 -->
 <header class="header">
   <div class="header-inner">
     <a href="index.html" class="logo">🏛️ 공문서 작성 도우미</a>
@@ -119,14 +105,12 @@
 <main class="main-content">
   <div class="container">
 
-    <!-- 히어로 -->
     <section class="hero-section">
       <h1 class="hero-title">📄 공문서 작성 도우미</h1>
       <p class="hero-desc">사회복지기관을 위한 공문서 작성 가이드 &amp; 규칙 검사 서비스</p>
       <div id="org-name-hero" class="org-name-badge" style="display:none;"></div>
     </section>
 
-    <!-- 새 문서 작성 -->
     <section class="section">
       <h2 class="section-title">✍️ 새 문서 작성</h2>
       <div class="template-grid">
@@ -138,12 +122,8 @@
       </div>
     </section>
 
-    <!-- 임시저장 문서함 -->
     <section class="section">
-      <h2 class="section-title">
-        📝 임시저장 문서함
-        <span class="badge badge-warning" id="draft-count">0</span>
-      </h2>
+      <h2 class="section-title">📝 임시저장 문서함 <span class="badge badge-warning" id="draft-count">0</span></h2>
       <div id="draft-list">
         <div class="empty-state">
           <div class="empty-icon">📂</div>
@@ -153,12 +133,8 @@
       </div>
     </section>
 
-    <!-- 완성 문서함 -->
     <section class="section">
-      <h2 class="section-title">
-        ✅ 완성 문서함
-        <span class="badge badge-success" id="doc-count">0</span>
-      </h2>
+      <h2 class="section-title">✅ 완성 문서함 <span class="badge badge-success" id="doc-count">0</span></h2>
       <div id="doc-list">
         <div class="empty-state">
           <div class="empty-icon">📁</div>
@@ -167,7 +143,6 @@
       </div>
     </section>
 
-    <!-- 핵심 규칙 팁 -->
     <section class="section">
       <h2 class="section-title">💡 공문서 작성 핵심 규칙</h2>
       <div class="tip-grid">
@@ -184,107 +159,104 @@
 </main>
 
 <footer class="footer">
-  <div class="container">
-    <p>공문서 작성 도우미 | 사회복지기관 맞춤형 | 공문서 규정 기반</p>
-  </div>
+  <p>공문서 작성 도우미 | 사회복지기관 맞춤형 | 공문서 규정 기반</p>
 </footer>
 
-<!-- 스크립트 -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
+
 <script src="data/rules.js"></script>
 <script src="data/templates.js"></script>
 <script src="js/common.js"></script>
 
-<!-- 안전장치 + 문서함 렌더링 -->
 <script>
 (function () {
 
-  /* ── 유틸 폴백 ── */
+  /* ── common.js 로드 실패 대비 폴백 ── */
   if (typeof escapeHtml === 'undefined') {
-    window.escapeHtml = function (str) {
-      if (!str) return '';
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    window.escapeHtml = function (s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     };
   }
   if (typeof truncate === 'undefined') {
-    window.truncate = function (str, len) {
-      len = len || 30;
-      if (!str) return '';
-      return str.length > len ? str.substr(0, len) + '…' : str;
-    };
+    window.truncate = function (s, n) { n=n||30; if(!s) return ''; return s.length>n?s.substr(0,n)+'…':s; };
   }
   if (typeof showToast === 'undefined') {
-    window.showToast = function (message, type) {
-      type = type || 'info';
-      var container = document.getElementById('toast-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'toast-container';
-        container.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;';
-        document.body.appendChild(container);
-      }
-      var toast = document.createElement('div');
-      toast.textContent = message;
-      var bg = { success:'#27ae60', error:'#e74c3c', warning:'#f39c12', info:'#3498db' };
-      toast.style.cssText = 'padding:10px 18px;border-radius:8px;font-size:.88rem;font-weight:500;color:#fff;background:'+(bg[type]||bg.info)+';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
-      container.appendChild(toast);
-      setTimeout(function () { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+    window.showToast = function (msg, type) {
+      var c=document.getElementById('toast-container'); if(!c) return;
+      var t=document.createElement('div'); t.textContent=msg;
+      var bg={success:'#27ae60',error:'#e74c3c',warning:'#f39c12',info:'#3498db'};
+      t.style.cssText='padding:10px 18px;border-radius:8px;font-size:.88rem;font-weight:500;color:#fff;background:'+(bg[type||'info']||bg.info)+';box-shadow:0 4px 16px rgba(0,0,0,.15);min-width:200px;max-width:340px;font-family:inherit;';
+      c.appendChild(t); setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},3000);
     };
   }
 
-  /* ── Storage 폴백 ── */
+  /* ── Storage 폴백: doc_drafts 배열 방식 완전 지원 ── */
   if (typeof Storage === 'undefined' || typeof Storage.getSettings !== 'function') {
     window.Storage = {
       getSettings: function () {
-        try {
-          var s = localStorage.getItem('doc_settings');
-          return s ? JSON.parse(s) : { orgName:'', approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}], receivers:[] };
-        } catch(e) { return { orgName:'', approvalLevels:[], receivers:[] }; }
+        try { var s=localStorage.getItem('doc_settings'); return s?JSON.parse(s):{orgName:'',approvalLevels:[{title:'담당',name:''},{title:'과장',name:''},{title:'관장',name:''}],receivers:[]}; }
+        catch(e){return {orgName:'',approvalLevels:[],receivers:[]};}
       },
-      saveSettings: function (s) {
-        try { localStorage.setItem('doc_settings', JSON.stringify(s)); return true; } catch(e) { return false; }
+      _getDraftsArray: function () {
+        try {
+          var raw=localStorage.getItem('doc_drafts');
+          if (raw) {
+            var p=JSON.parse(raw);
+            if (Array.isArray(p)) return p;
+            if (typeof p==='object'&&p!==null) return Object.values(p);
+          }
+        } catch(e){}
+        return [];
       },
       getAllDrafts: function () {
-        try {
-          var list = [];
-          for (var i = 0; i < localStorage.length; i++) {
-            var key = localStorage.key(i);
-            if (key && key.indexOf('draft_') === 0) {
-              try { var item = JSON.parse(localStorage.getItem(key)); if (item) list.push(item); } catch(e2) {}
-            }
+        var list=this._getDraftsArray();
+        var ids=list.map(function(d){return d.id;});
+        for (var i=0;i<localStorage.length;i++){
+          var k=localStorage.key(i);
+          if(k&&k.indexOf('draft_')===0){
+            try{var item=JSON.parse(localStorage.getItem(k));if(item&&ids.indexOf(item.id)===-1){list.push(item);ids.push(item.id);}}catch(e2){}
           }
-          return list.sort(function (a, b) { return new Date(b.savedAt) - new Date(a.savedAt); });
-        } catch(e) { return []; }
+        }
+        return list.sort(function(a,b){return new Date(b.savedAt||0)-new Date(a.savedAt||0);});
       },
       getDraft: function (id) {
-        try { return JSON.parse(localStorage.getItem('draft_'+id) || localStorage.getItem(id) || 'null'); } catch(e) { return null; }
+        var list=this._getDraftsArray();
+        for(var i=0;i<list.length;i++){if(list[i].id===id)return list[i];}
+        try{var r=localStorage.getItem('draft_'+id)||localStorage.getItem(id);return r?JSON.parse(r):null;}catch(e){return null;}
       },
       saveDraft: function (d) {
-        try { localStorage.setItem('draft_'+d.id, JSON.stringify(d)); return true; } catch(e) { return false; }
+        var list=this._getDraftsArray(),idx=-1;
+        for(var i=0;i<list.length;i++){if(list[i].id===d.id){idx=i;break;}}
+        if(idx>=0)list[idx]=d;else list.unshift(d);
+        try{localStorage.setItem('doc_drafts',JSON.stringify(list));return true;}catch(e){return false;}
       },
       deleteDraft: function (id) {
-        try { localStorage.removeItem('draft_'+id); localStorage.removeItem(id); return true; } catch(e) { return false; }
+        var list=this._getDraftsArray().filter(function(d){return d.id!==id;});
+        try{localStorage.setItem('doc_drafts',JSON.stringify(list));}catch(e){}
+        try{localStorage.removeItem('draft_'+id);}catch(e){}
+        return true;
       },
       getAllDocs: function () {
-        try {
-          var list = [];
-          var skip = ['doc_settings','doc_logo','doc_org_detail','doc_cooperators'];
-          for (var i = 0; i < localStorage.length; i++) {
-            var key = localStorage.key(i);
-            if (key && key.indexOf('doc_') === 0 && skip.indexOf(key) === -1) {
-              try { var item = JSON.parse(localStorage.getItem(key)); if (item) list.push(item); } catch(e2) {}
-            }
+        var list=[],skip=['doc_settings','doc_logo','doc_org_detail','doc_cooperators','doc_drafts'];
+        for(var i=0;i<localStorage.length;i++){
+          var k=localStorage.key(i);
+          if(k&&k.indexOf('doc_')===0&&skip.indexOf(k)===-1){
+            try{var item=JSON.parse(localStorage.getItem(k));if(item)list.push(item);}catch(e){}
           }
-          return list.sort(function (a, b) { return new Date(b.completedAt||b.savedAt) - new Date(a.completedAt||a.savedAt); });
-        } catch(e) { return []; }
+        }
+        return list.sort(function(a,b){return new Date(b.completedAt||b.savedAt||0)-new Date(a.completedAt||a.savedAt||0);});
       },
       getDoc: function (id) {
-        try { return JSON.parse(localStorage.getItem('doc_'+id) || localStorage.getItem(id) || 'null'); } catch(e) { return null; }
+        try{var r=localStorage.getItem('doc_'+id)||localStorage.getItem(id);return r?JSON.parse(r):null;}catch(e){return null;}
       },
       saveDoc: function (d) {
-        try { var k = d.id.indexOf('doc_')===0 ? d.id : 'doc_'+d.id; localStorage.setItem(k, JSON.stringify(d)); return true; } catch(e) { return false; }
+        try{var k=d.id&&d.id.indexOf('doc_')===0?d.id:'doc_'+d.id;localStorage.setItem(k,JSON.stringify(d));return true;}catch(e){return false;}
       },
       deleteDoc: function (id) {
-        try { localStorage.removeItem('doc_'+id); localStorage.removeItem(id); return true; } catch(e) { return false; }
+        try{localStorage.removeItem('doc_'+id);}catch(e){}
+        try{localStorage.removeItem(id);}catch(e){}
+        return true;
       }
     };
   }
@@ -293,36 +265,25 @@
   function fmtDate(val) {
     if (!val) return '';
     try {
-      var d = new Date(val);
-      if (isNaN(d.getTime())) return val;
-      var mo = String(d.getMonth()+1).padStart(2,'0');
-      var dd = String(d.getDate()).padStart(2,'0');
-      var hh = String(d.getHours()).padStart(2,'0');
-      var mm = String(d.getMinutes()).padStart(2,'0');
-      return mo+'/'+dd+' '+hh+':'+mm;
-    } catch(e) { return val; }
+      var d=new Date(val);
+      if(isNaN(d.getTime()))return val;
+      return String(d.getMonth()+1).padStart(2,'0')+'/'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    } catch(e){return val;}
   }
 
-  /* ── 템플릿 아이콘 ── */
-  var ICONS = {
-    internal:'📋', government:'🏛️',
-    cooperation:'🤝', sponsor:'💝', event:'📢'
-  };
+  /* ── 아이콘 맵 ── */
+  var ICONS = { internal:'📋', government:'🏛️', cooperation:'🤝', sponsor:'💝', event:'📢' };
 
   /* ── 문서 목록 렌더링 ── */
   function renderList(docs, containerId, type) {
     var container = document.getElementById(containerId);
-    if (!container) return;
-    if (!docs || docs.length === 0) return; /* 기본 empty-state 유지 */
-
+    if (!container || !docs || docs.length === 0) return;
     var html = '<div class="doc-list">';
     docs.forEach(function (doc) {
       var icon    = ICONS[doc.templateId] || '📄';
-      var title   = escapeHtml(truncate(doc.title || '(제목 없음)', 30));
-      var dateVal = doc.savedAt || doc.completedAt || '';
-      var dateStr = fmtDate(dateVal);
+      var title   = escapeHtml(truncate(doc.title || '(제목 없음)', 32));
+      var dateStr = fmtDate(doc.savedAt || doc.completedAt || '');
       var docId   = escapeHtml(doc.id);
-
       html += '<div class="doc-list-item">'
             + '<span class="doc-item-icon">' + icon + '</span>'
             + '<div class="doc-item-info">'
@@ -330,9 +291,9 @@
             +   '<div class="doc-item-meta">' + dateStr + '</div>'
             + '</div>'
             + '<div class="doc-item-actions">'
-            +   '<button class="btn btn-sm btn-primary"  onclick="goEdit(\''  + docId + '\',\'' + type + '\')">✏️ 수정</button>'
-            +   '<button class="btn btn-sm btn-secondary" onclick="goView(\''  + docId + '\',\'' + type + '\')">👁️ 보기</button>'
-            +   '<button class="btn btn-sm btn-danger"   onclick="delDoc(\''  + docId + '\',\'' + type + '\')">🗑️ 삭제</button>'
+            +   '<button class="btn btn-sm btn-primary"   onclick="goEdit(\'' + docId + '\',\'' + type + '\')">✏️ 수정</button>'
+            +   '<button class="btn btn-sm btn-secondary" onclick="goView(\'' + docId + '\',\'' + type + '\')">👁️ 보기</button>'
+            +   '<button class="btn btn-sm btn-danger"    onclick="delDoc(\'' + docId + '\',\'' + type + '\')">🗑️ 삭제</button>'
             + '</div>'
             + '</div>';
     });
@@ -349,9 +310,8 @@
   };
   window.delDoc = function (id, type) {
     if (!confirm('이 문서를 삭제하시겠습니까?')) return;
-    if (type === 'doc') Storage.deleteDoc(id);
-    else                Storage.deleteDraft(id);
-    showToast('🗑️ 문서가 삭제되었습니다.', 'info');
+    if (type === 'doc') Storage.deleteDoc(id); else Storage.deleteDraft(id);
+    showToast('🗑️ 삭제되었습니다.', 'info');
     setTimeout(function () { location.reload(); }, 600);
   };
 
@@ -375,25 +335,17 @@
     var drafts = Storage.getAllDrafts();
     var draftCount = document.getElementById('draft-count');
     if (draftCount) draftCount.textContent = drafts.length;
-    if (drafts.length > 0) {
-      renderList(drafts, 'draft-list', 'draft');
-    }
+    if (drafts.length > 0) renderList(drafts, 'draft-list', 'draft');
 
     /* 완성 문서함 */
     var docs = Storage.getAllDocs();
     var docCount = document.getElementById('doc-count');
     if (docCount) docCount.textContent = docs.length;
-    if (docs.length > 0) {
-      renderList(docs, 'doc-list', 'doc');
-    }
+    if (docs.length > 0) renderList(docs, 'doc-list', 'doc');
 
-    /* 디버그: 콘솔에 저장된 키 목록 출력 */
-    console.log('=== localStorage 전체 키 ===');
-    for (var i = 0; i < localStorage.length; i++) {
-      console.log(localStorage.key(i));
-    }
-    console.log('임시저장 문서 수:', drafts.length);
-    console.log('완성 문서 수:', docs.length);
+    /* 디버그 로그 */
+    console.log('drafts:', drafts.length, '/ docs:', docs.length);
+    console.log('doc_drafts raw:', localStorage.getItem('doc_drafts'));
   });
 
 })();
