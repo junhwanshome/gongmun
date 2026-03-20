@@ -85,12 +85,7 @@
                <div class="doc-org-name">${esc(orgName)}</div>
              </div>`;
 
-    /* ② 수신·경유·참조
-       ★ 레이블 / 콜론 / 값 완전 분리
-          레이블: width auto (글자 딱 맞게)
-          콜론:   고정 span
-          값:     한 칸 띄우고 시작
-    */
+    /* ② 수신·경유·참조 */
     html += `<div class="doc-meta-area">`;
     html += metaRow('수&nbsp;&nbsp;&nbsp;&nbsp;신', esc(receiver));
     if (via) html += metaRow('경&nbsp;&nbsp;&nbsp;&nbsp;유', esc(via));
@@ -137,7 +132,6 @@
 
   /* ══════════════════════════════════════════════
      메타 행 헬퍼
-     ★ 레이블(width:5em) / 콜론(고정) / 값(한 칸) 완전 분리
   ══════════════════════════════════════════════ */
   function metaRow(labelHtml, valueHtml) {
     return `<div class="doc-meta-row">
@@ -149,16 +143,6 @@
 
   /* ══════════════════════════════════════════════
      본문 빌더
-     ★ 들여쓰기 1em 단위로 재조정
-        1단계(1.)  → 0em
-        2단계(가.) → 1em
-        3단계(1))  → 2em
-        4단계(가)) → 3em
-        5단계((1)) → 4em
-        6단계((가))→ 5em
-        7단계(①)  → 6em
-        8단계(㉮)  → 7em
-     ★ \u00A0 포함 모든 앞뒤 공백 완전 제거
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const raw = f.body || f.content || '';
@@ -169,7 +153,6 @@
         : empty;
     }
 
-    /* ★ 들여쓰기 1em 단위 */
     const INDENT_RULES = [
       { re: /^(\d+\.)\s*/,       em: 0 },
       { re: /^([가-힣]\.)\s*/,   em: 1 },
@@ -187,7 +170,6 @@
     lines.forEach((line, idx) => {
       const isLast = idx === lines.length - 1;
 
-      /* ★ \u00A0 포함 모든 앞뒤 공백 완전 제거 */
       const trimmed = line
         .replace(/^[\s\u00A0]+/, '')
         .replace(/[\s\u00A0]+$/, '');
@@ -266,17 +248,24 @@
 
   /* ══════════════════════════════════════════════
      붙임 파싱
+     ★ 마지막 문자가 "."이 아니면 자동으로 "." 추가
   ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
     if (!raw.trim()) return [];
     return raw.split('\n')
-      .map(l => l.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, ''))
+      .map(l => {
+        const trimmed = l
+          .replace(/^[\s\u00A0]+/, '')
+          .replace(/[\s\u00A0]+$/, '');
+        if (!trimmed) return '';
+        /* ★ 마지막이 "."이면 그대로, 아니면 "." 추가 */
+        return trimmed.endsWith('.') ? trimmed : trimmed + '.';
+      })
       .filter(Boolean);
   }
 
   /* ══════════════════════════════════════════════
      붙임 렌더링
-     ★ "붙    임" 뒤 한 칸만
   ══════════════════════════════════════════════ */
   function renderAttach(list) {
     let html = `<div class="doc-attach-area">`;
