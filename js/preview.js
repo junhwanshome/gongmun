@@ -1,6 +1,6 @@
 /**
  * js/preview.js
- * 공문서 미리보기 - 정렬 + 금액 천단위 콤마 지원
+ * 공문서 미리보기 - 정렬 + 금액 천단위 콤마 + rich HTML 본문 지원
  */
 (function () {
   'use strict';
@@ -18,12 +18,14 @@
 
     if (!id) { showError('문서 ID가 없습니다.'); return; }
 
+    /* 완성 문서함 확인 */
     try {
       const docs = JSON.parse(localStorage.getItem('doc_completed') || '[]');
       currentDoc = docs.find(d => d.id === id) || null;
       if (currentDoc) currentType = 'completed';
     } catch (e) {}
 
+    /* 임시저장 목록 확인 */
     if (!currentDoc) {
       try {
         const drafts = JSON.parse(localStorage.getItem('doc_drafts') || '[]');
@@ -32,9 +34,12 @@
       } catch (e) {}
     }
 
+    /* 개별 draft 키 확인 */
     if (!currentDoc) {
       const raw = localStorage.getItem('draft_' + id);
-      if (raw) { try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {} }
+      if (raw) {
+        try { currentDoc = JSON.parse(raw); currentType = 'draft'; } catch (e) {}
+      }
     }
 
     if (!currentDoc) { showError('문서를 찾을 수 없습니다.'); return; }
@@ -78,7 +83,7 @@
     const via      = f.via       || '';
     const ref      = f.reference || f.ref || '';
     const docNum   = f.docNo     || f.docNumber || f.docNum || '';
-    const dateStr  = f.date      || doc.date || '';
+    const dateStr  = f.date      || '';
 
     let html = '';
     html += `<div class="doc-paper-inner">`;
@@ -113,20 +118,20 @@
       html += renderAttach(attachList);
     }
 
-    html += `</div>`;
+    html += `</div>`; /* doc-main-area 닫기 */
 
-    /* 하단 기관정보 블록 */
+    /* ⑥ 하단 기관정보 */
     html += `<div class="doc-org-footer">`;
-    const senderName = f.senderName || orgName;
     html += `<div class="doc-sender-area">
-               <span class="doc-sender-value">${esc(senderName)}</span>
+               <span class="doc-sender-value">${esc(f.senderName || orgName)}</span>
              </div>`;
     html += `<hr class="doc-sender-divider">`;
     html += renderApprovalBlock(doc, settings, orgDetail);
     html += renderExecRow(doc, settings, orgDetail, docNum, dateStr);
     html += renderFooterInfo(doc, settings, orgDetail);
     html += `</div>`;
-    html += `</div>`;
+
+    html += `</div>`; /* doc-paper-inner 닫기 */
 
     container.innerHTML = html;
   }
@@ -150,12 +155,12 @@
   }
 
   /* ══════════════════════════════════════════════
-     HTML 본문 정리
-     ★ contenteditable 제거
-     ★ selected 클래스 제거
-     ★ 표에 doc-table 클래스 추가
-     ★ 셀 text-align 인라인 스타일 유지
-     ★ 금액 천단위 콤마 적용
+     ★ HTML 본문 정리
+       - contenteditable 속성 제거
+       - selected 클래스 제거
+       - 표에 doc-table 클래스 추가
+       - 셀 text-align 인라인 스타일 유지
+       - 금액 천단위 콤마 적용
   ══════════════════════════════════════════════ */
   function sanitizeRichBody(html) {
     const tmp = document.createElement('div');
@@ -171,9 +176,11 @@
       el.classList.remove('selected');
     });
 
-    /* 표에 doc-table 클래스 추가 */
+    /* 표 스타일 정리 및 클래스 추가 */
     tmp.querySelectorAll('table').forEach(t => {
       t.classList.add('doc-table');
+      t.style.borderCollapse = 'collapse';
+      t.style.width = '100%';
     });
 
     /* 빈 p 제거 */
@@ -183,8 +190,15 @@
       }
     });
 
-    /* ★ 셀 안의 텍스트에 금액 천단위 콤마 적용 */
+    /* 셀 테두리 스타일 보정 및 금액 변환 */
     tmp.querySelectorAll('td, th').forEach(cell => {
+      if (!cell.style.border) {
+        cell.style.border = '1px solid #555';
+      }
+      cell.style.padding  = cell.style.padding  || '5px 8px';
+      cell.style.minWidth = cell.style.minWidth || '60px';
+      /* text-align 유지 (정렬 적용) */
+      /* 금액 천단위 콤마 */
       cell.innerHTML = convertAmount(cell.innerHTML);
     });
 
@@ -193,25 +207,22 @@
 
   /* ══════════════════════════════════════════════
      ★ 금액 천단위 콤마 변환
-     - 숫자 4자리 이상이고 앞뒤가 단어 문자가 아닌 경우 적용
-     - 이미 콤마가 있거나 소수점이 있는 숫자는 제외
-     예) 1500000 → 1,500,000
-         50000원 → 50,000원
+       예) 1500000 → 1,500,000 / 50000원 → 50,000원
+       이미 콤마가 있거나 소수점 포함 숫자는 제외
   ══════════════════════════════════════════════ */
   function convertAmount(text) {
     if (!text) return text;
-    return text.replace(/\b(\d{4,})\b/g, function (match, num) {
-      /* 이미 콤마가 포함된 경우 건너뜀 */
+    return text.replace(/\b(\d{4,})\b/g, function (match) {
       if (match.indexOf(',') !== -1) return match;
-      return parseInt(num, 10).toLocaleString('ko-KR');
+      return parseInt(match, 10).toLocaleString('ko-KR');
     });
   }
 
   /* ══════════════════════════════════════════════
-     본문 빌더
-     ★ HTML(rich) 본문 → sanitize 후 그대로 렌더링
-     ★ 일반 텍스트 → 기존 들여쓰기 + 금액 변환 적용
-     ★ purpose: 번호 없이 단독 출력
+     ★ 본문 빌더
+       - HTML(rich) 본문 → sanitize 후 그대로 렌더링
+       - 일반 텍스트   → 들여쓰기 규칙 + 금액 변환 적용
+       - purpose: 번호 없이 단독 출력
   ══════════════════════════════════════════════ */
   function buildBody(f, tmpl, appendEnd) {
     const bodyRaw = f.body || f.content || '';
@@ -220,11 +231,10 @@
     if (isHtmlContent(bodyRaw)) {
       let html = '';
 
+      /* purpose 먼저 (번호 없이) */
       if (f.purpose && tmpl !== 'event' && tmpl !== 'sponsor') {
         f.purpose.split('\n').forEach(line => {
-          const trimmed = line
-            .replace(/^[\s\u00A0]+/, '')
-            .replace(/[\s\u00A0]+$/, '');
+          const trimmed = line.replace(/^[\s\u00A0]+/, '').replace(/[\s\u00A0]+$/, '');
           if (trimmed) {
             html += `<div class="doc-body-line">${esc(convertAmount(trimmed))}</div>`;
           }
@@ -232,8 +242,10 @@
         html += `<div class="doc-body-line">&nbsp;</div>`;
       }
 
+      /* rich 본문 */
       html += `<div class="doc-body-rich">${sanitizeRichBody(bodyRaw)}</div>`;
 
+      /* 끝. */
       if (appendEnd) {
         html += `<div class="doc-body-line">&nbsp;&nbsp;끝.</div>`;
       }
@@ -247,23 +259,27 @@
     if (tmpl === 'event') {
       rawLines.push('1. 귀 기관의 무궁한 발전을 기원합니다.');
       rawLines.push('2. 아래와 같이 행사를 안내드립니다.');
-      if (f.eventDate)   rawLines.push('일  시: ' + (f.eventDate   || ''));
-      if (f.eventPlace)  rawLines.push('장  소: ' + (f.eventPlace  || ''));
-      if (f.eventTarget) rawLines.push('대  상: ' + (f.eventTarget || ''));
-      if (bodyRaw)       rawLines.push('내  용: ' + bodyRaw);
+      rawLines.push('');
+      if (f.eventDate)   rawLines.push('일  시: ' + f.eventDate);
+      if (f.eventPlace)  rawLines.push('장  소: ' + f.eventPlace);
+      if (f.eventTarget) rawLines.push('대  상: ' + f.eventTarget);
+      if (bodyRaw)       bodyRaw.split('\n').forEach(l => rawLines.push('내  용: ' + l));
       if (f.purpose)     rawLines.push('3. ' + f.purpose);
+
     } else if (tmpl === 'sponsor') {
       rawLines.push('1. 귀하의 따뜻한 후원에 진심으로 감사드립니다.');
       if (f.sponsorName) rawLines.push('2. 후원자: '   + f.sponsorName);
       if (f.grantDate)   rawLines.push('3. 후원일자: ' + f.grantDate);
       if (f.grantAmount) rawLines.push('4. 후원금액: ' + f.grantAmount);
-      if (bodyRaw) bodyRaw.split('\n').forEach(line => rawLines.push(line));
+      if (bodyRaw)       bodyRaw.split('\n').forEach(l => rawLines.push(l));
+
     } else {
+      /* purpose: 번호 없이 */
       if (f.purpose) {
-        f.purpose.split('\n').forEach(line => rawLines.push(line));
+        f.purpose.split('\n').forEach(l => rawLines.push(l));
         rawLines.push('');
       }
-      if (bodyRaw) bodyRaw.split('\n').forEach(line => rawLines.push(line));
+      if (bodyRaw) bodyRaw.split('\n').forEach(l => rawLines.push(l));
     }
 
     const raw = rawLines.join('\n');
@@ -275,14 +291,14 @@
         : empty;
     }
 
-    /* 들여쓰기 규칙 */
+    /* ── 들여쓰기 규칙 ── */
     const INDENT_RULES = [
-      { re: /^(\d+\.)\s*/,       em: 0 },
-      { re: /^([가-힣]\.)\s*/,   em: 2 },
-      { re: /^(\d+\))\s*/,       em: 4 },
-      { re: /^([가-힣]\))\s*/,   em: 6 },
-      { re: /^(\(\d+\))\s*/,     em: 8 },
-      { re: /^(\([가-힣]\))\s*/, em: 10 },
+      { re: /^(\d+\.)\s*/,       em: 0  },
+      { re: /^([가-힣]\.)\s*/,   em: 2  },
+      { re: /^(\d+\))\s*/,       em: 4  },
+      { re: /^([가-힣]\))\s*/,   em: 6  },
+      { re: /^\((\d+)\)\s*/,     em: 8  },
+      { re: /^\(([가-힣])\)\s*/, em: 10 },
       { re: /^([①-⑳])\s*/,     em: 12 },
       { re: /^([㉮-㉻])\s*/,    em: 14 },
     ];
@@ -315,16 +331,15 @@
         }
       }
 
-      /* ★ 텍스트 본문에도 금액 천단위 적용 */
-      const displayContent = convertAmount(
-        convertTerms(applyColonSpace(convertDate(content)))
+      const displayContent = esc(
+        convertAmount(convertTerms(applyColonSpace(convertDate(content))))
       );
       const displaySymbol = symbol ? `${esc(symbol)}&nbsp;` : '';
       const endMark       = (appendEnd && isLast) ? '&nbsp;&nbsp;끝.' : '';
 
       html += `<div class="doc-body-line" style="padding-left:${indentEm * 0.5}em;">`
             + displaySymbol
-            + esc(displayContent)
+            + displayContent
             + endMark
             + `</div>`;
     });
@@ -344,7 +359,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     콜론 뒤 공백
+     콜론 뒤 공백 보정
   ══════════════════════════════════════════════ */
   function applyColonSpace(text) {
     return text.replace(/:(?!\s)(?!\d{2})/g, ': ');
@@ -355,9 +370,15 @@
   ══════════════════════════════════════════════ */
   function convertTerms(text) {
     const map = {
-      '홈페이지': '누리집', '다운로드': '내려받기', '업로드': '올리기',
-      '매뉴얼': '설명서', 'MOU': '업무협약', '당해': '그',
-      '금일': '오늘', '익일': '다음 날', '향후': '앞으로',
+      '홈페이지': '누리집',
+      '다운로드': '내려받기',
+      '업로드':   '올리기',
+      '매뉴얼':   '설명서',
+      'MOU':      '업무협약',
+      '당해':     '그',
+      '금일':     '오늘',
+      '익일':     '다음 날',
+      '향후':     '앞으로',
     };
     Object.entries(map).forEach(([k, v]) => { text = text.replaceAll(k, v); });
     return text;
@@ -367,7 +388,7 @@
      붙임 파싱
   ══════════════════════════════════════════════ */
   function parseAttachments(raw) {
-    if (!raw.trim()) return [];
+    if (!raw || !raw.trim()) return [];
     return raw.split('\n')
       .map(l => {
         const trimmed = l
@@ -392,8 +413,7 @@
       html += `<span class="doc-attach-line">${esc(list[0])}&nbsp;&nbsp;끝.</span>`;
     } else {
       list.forEach((item, i) => {
-        const isLast  = i === list.length - 1;
-        const endMark = isLast ? '&nbsp;&nbsp;끝.' : '';
+        const endMark = (i === list.length - 1) ? '&nbsp;&nbsp;끝.' : '';
         html += `<span class="doc-attach-line">${i + 1}.&nbsp;${esc(item)}${endMark}</span>`;
       });
     }
@@ -457,7 +477,7 @@
   }
 
   /* ══════════════════════════════════════════════
-     주소·연락처
+     주소·연락처 푸터
   ══════════════════════════════════════════════ */
   function renderFooterInfo(doc, settings, orgDetail) {
     const zip      = orgDetail.zip      || settings.zip      || '';
@@ -489,7 +509,8 @@
      유틸리티
   ══════════════════════════════════════════════ */
   function safeJSON(key) {
-    try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch (e) { return {}; }
+    try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+    catch (e) { return {}; }
   }
 
   function esc(str) {
@@ -512,15 +533,18 @@
   function bindEvents() {
     const $ = id => document.getElementById(id);
 
+    /* 뒤로 */
     const btnBack = $('btn-back');
     if (btnBack) btnBack.addEventListener('click', () => history.back());
 
+    /* 편집 */
     const btnEdit = $('btn-edit');
     if (btnEdit) btnEdit.addEventListener('click', () => {
       if (!currentDoc) return;
-      location.href = `editor.html?id=${currentDoc.id}&type=${currentType}`;
+      location.href = `editor.html?id=${encodeURIComponent(currentDoc.id)}&type=${currentType}`;
     });
 
+    /* 복사 */
     const btnCopy = $('btn-copy');
     if (btnCopy) btnCopy.addEventListener('click', () => {
       const el = $('doc-preview');
@@ -530,15 +554,19 @@
         .catch(() => alert('복사에 실패했습니다.'));
     });
 
+    /* 인쇄 */
     const btnPrint = $('btn-print');
     if (btnPrint) btnPrint.addEventListener('click', () => window.print());
 
+    /* 완성저장 */
     const btnComplete = $('btn-complete');
     if (btnComplete) btnComplete.addEventListener('click', saveAsComplete);
 
+    /* 삭제 */
     const btnDelete = $('btn-delete');
     if (btnDelete) btnDelete.addEventListener('click', doDelete);
 
+    /* 키보드 단축키 */
     document.addEventListener('keydown', e => {
       if (e.ctrlKey && e.key === 'p') { e.preventDefault(); window.print(); }
     });
@@ -572,7 +600,8 @@
     try {
       ['doc_drafts', 'doc_completed'].forEach(key => {
         const list = JSON.parse(localStorage.getItem(key) || '[]');
-        localStorage.setItem(key, JSON.stringify(list.filter(d => d.id !== currentDoc.id)));
+        localStorage.setItem(key,
+          JSON.stringify(list.filter(d => d.id !== currentDoc.id)));
       });
       localStorage.removeItem('draft_' + currentDoc.id);
       location.href = 'index.html';
