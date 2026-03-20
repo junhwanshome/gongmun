@@ -3,257 +3,249 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>문서 미리보기</title>
+  <title>문서 미리보기 - 공문서 작성 도우미</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; color: #111; }
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f4f6f9; color: #2c3e50; font-size: 14px; }
 
     /* ── 툴바 ── */
     .preview-toolbar {
       position: sticky; top: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; padding: 10px 24px;
-      background: #fff; border-bottom: 1px solid #ddd;
-      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+      background: #fff; border-bottom: 1px solid #e0e0e0;
+      padding: 8px 24px; display: flex; align-items: center;
+      justify-content: space-between; flex-wrap: wrap; gap: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
     }
-    .toolbar-left  { display: flex; align-items: center; gap: 8px; }
-    .toolbar-right { display: flex; align-items: center; gap: 8px; }
-    .toolbar-title { font-size: 15px; font-weight: 700; color: #222; }
-    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-    .badge-draft     { background: #fff3cd; color: #856404; }
-    .badge-completed { background: #d1e7dd; color: #0f5132; }
+    .toolbar-left  { display: flex; align-items: center; gap: 10px; }
+    .toolbar-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 700; }
+    .badge-completed { background: #e8f8f0; color: #27ae60; }
+    .badge-draft     { background: #fef9e7; color: #f39c12; }
 
-    /* ── 버튼 ── */
-    .btn {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 7px 16px; border: none; border-radius: 6px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-      transition: background .15s, opacity .15s;
+    /* ── 버튼 공통 ── */
+    .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border: none; border-radius: 7px; font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: background .15s; font-family: inherit; white-space: nowrap; }
+    .btn:active { opacity: .85; }
+    .btn-primary         { background: #3498db; color: #fff; }
+    .btn-primary:hover   { background: #2980b9; }
+    .btn-secondary       { background: #ecf0f1; color: #2c3e50; border: 1px solid #ddd; }
+    .btn-secondary:hover { background: #dde4e6; }
+    .btn-success         { background: #27ae60; color: #fff; }
+    .btn-success:hover   { background: #219a52; }
+    .btn-danger          { background: #e74c3c; color: #fff; }
+    .btn-danger:hover    { background: #c0392b; }
+    .btn-sm { padding: 5px 11px; font-size: 0.8rem; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── 미리보기 래퍼 ── */
+    .preview-wrapper {
+      max-width: 860px; margin: 28px auto 60px;
+      padding: 0 20px;
     }
-    .btn:disabled { opacity: .45; cursor: not-allowed; }
-    .btn-back, .btn-edit, .btn-copy { background: #e9ecef; color: #333; }
-    .btn-back:hover, .btn-edit:hover, .btn-copy:hover { background: #dee2e6; }
-    .btn-print         { background: #0d6efd; color: #fff; }
-    .btn-print:hover   { background: #0b5ed7; }
-    .btn-complete      { background: #198754; color: #fff; }
-    .btn-complete:hover { background: #157347; }
-    .btn-delete        { background: #dc3545; color: #fff; }
-    .btn-delete:hover  { background: #bb2d3b; }
-
-    /* ── 페이지 래퍼 ── */
-    .preview-wrapper { max-width: 860px; margin: 36px auto; padding: 0 16px 60px; }
 
     /* ── A4 용지 ── */
     .doc-paper {
       background: #fff;
-      padding: 30mm 25mm 20mm 25mm;
-      box-shadow: 0 4px 24px rgba(0,0,0,.12);
+      border: 1px solid #dde2e8;
       border-radius: 4px;
-      min-height: 297mm;
-      display: flex; flex-direction: column;
+      box-shadow: 0 4px 24px rgba(0,0,0,.10);
+      padding: 48px 56px;
+      min-height: 1100px;
+      position: relative;
     }
-    #doc-preview { display: flex; flex-direction: column; flex: 1; min-height: 100%; }
 
-    /* ── 문서 내부 flex 구조 ── */
-    .doc-paper-inner { display: flex; flex-direction: column; flex: 1; min-height: 100%; }
-    .doc-main-area   { flex: 1; }
-    .doc-org-footer  { margin-top: auto; padding-top: 10px; }
+    /* ── 문서 내부 구조 ── */
+    .doc-paper-inner   { display: flex; flex-direction: column; min-height: 980px; }
+    .doc-main-area     { flex: 1; }
+    .doc-header-area   { text-align: center; margin-bottom: 28px; }
+    .doc-org-name      { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.08em; color: #1a252f; }
 
-    /* ── 기관명 ── */
-    .doc-header-area { text-align: center; padding-bottom: 24px; }
-    .doc-org-name    { font-size: 22pt; font-weight: 700; letter-spacing: 0.12em; color: #111; }
+    .doc-meta-area     { margin-bottom: 12px; }
+    .doc-meta-row      { display: flex; align-items: baseline; margin-bottom: 4px; font-size: 0.92rem; }
+    .doc-row-label     { flex-shrink: 0; width: 6em; font-weight: 600; letter-spacing: 0.05em; }
+    .doc-row-colon     { flex-shrink: 0; margin-right: 4px; }
+    .doc-row-value     { flex: 1; }
 
-    /* ── 메타 행 ── */
-    .doc-meta-area { margin-bottom: 8px; }
-    .doc-meta-row  {
-      display: flex; align-items: baseline;
-      font-size: 11pt; line-height: 1.7; margin-bottom: 3px;
-    }
-    .doc-row-label {
-      display: inline-block; font-weight: 600;
-      white-space: nowrap; flex-shrink: 0; font-size: 11pt;
-    }
-    .doc-row-colon { margin-right: 4px; flex-shrink: 0; font-size: 11pt; }
-    .doc-row-value { flex: 1; font-size: 11pt; }
+    .doc-title-area    { display: flex; align-items: baseline; margin: 16px 0 6px; font-size: 0.95rem; }
+    .doc-title-text    { flex: 1; font-weight: 700; }
+    .doc-title-divider { border: none; border-top: 1.5px solid #2c3e50; margin: 6px 0 20px; }
 
-    /* ── 제목 ── */
-    .doc-title-area {
-      display: flex; align-items: baseline;
-      font-size: 11pt; font-weight: 700; padding-bottom: 8px;
-    }
-    .doc-title-text    { flex: 1; }
-    .doc-title-divider { border: none; border-top: 1.5px solid #111; margin: 0 0 20px 0; }
+    .doc-body-area     { font-size: 0.92rem; line-height: 2; margin-bottom: 16px; }
+    .doc-body-line     { min-height: 1.8em; }
+    .doc-body-empty    { color: #aaa; }
 
-    /* ── 본문 ── */
-    .doc-body-area  { font-size: 11pt; margin-bottom: 16px; }
-    .doc-body-line  {
-      display: block; line-height: 1.8;
-      word-break: keep-all; white-space: normal;
-    }
-    .doc-body-empty { color: #aaa; }
-
-    /* ── rich 본문 (HTML 표 포함) ── */
-    .doc-body-rich { font-size: 11pt; line-height: 1.8; margin-bottom: 8px; }
-
-    /* ── 표 스타일 ── */
-    .doc-body-rich table,
-    .doc-table {
+    /* ══════════════════════════════════════════
+       ★ 미리보기 표 스타일 (editor.html 과 동일)
+    ══════════════════════════════════════════ */
+    .doc-body-area table,
+    .doc-body-rich table {
       border-collapse: collapse;
       width: 100%;
       margin: 10px 0;
-      font-size: 10.5pt;
-      page-break-inside: avoid;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
     }
-    .doc-body-rich table td,
-    .doc-body-rich table th,
-    .doc-table td,
-    .doc-table th {
-      border: 1px solid #333;
-      padding: 5px 8px;
-      vertical-align: middle;
-      word-break: keep-all;
-      min-width: 40px;
-    }
-    .doc-body-rich table th,
-    .doc-table th {
-      background: #f0f4f8;
+    /* 헤더 셀 */
+    .doc-body-area table th,
+    .doc-body-rich table th {
+      background: #eaf2fb;
+      border: 1.5px solid #2c3e50;
+      padding: 8px 12px;
+      min-width: 60px;
       font-weight: 700;
       text-align: center;
+      vertical-align: middle;
+      word-break: keep-all;
+      color: #1a252f;
+      letter-spacing: 0.02em;
     }
-    .doc-body-rich table td,
-    .doc-table td {
-      text-align: left;
+    /* 데이터 셀 */
+    .doc-body-area table td,
+    .doc-body-rich table td {
+      background: #fff;
+      border: 1px solid #aab7c4;
+      padding: 7px 12px;
+      min-width: 60px;
+      vertical-align: middle;
+      word-break: keep-all;
+      color: #2c3e50;
     }
+    /* 짝수 행 줄무늬 */
+    .doc-body-area table tr:nth-child(even) td,
+    .doc-body-rich table tr:nth-child(even) td { background: #f8fbff; }
+
+    /* rich 본문 래퍼 */
+    .doc-body-rich { font-size: 0.92rem; line-height: 2; }
 
     /* ── 붙임 ── */
     .doc-attach-area {
       display: flex; align-items: flex-start;
-      font-size: 11pt; margin-bottom: 10px;
+      font-size: 0.92rem; margin-top: 12px; line-height: 1.9;
     }
-    .doc-attach-label   { font-weight: 600; white-space: nowrap; flex-shrink: 0; }
-    .doc-attach-content { display: flex; flex-direction: column; flex: 1; line-height: 1.8; }
+    .doc-attach-label   { flex-shrink: 0; font-weight: 600; letter-spacing: 0.05em; }
+    .doc-attach-content { display: flex; flex-direction: column; }
     .doc-attach-line    { display: block; }
 
-    /* ── 발신명 ── */
-    .doc-sender-area    { text-align: center; font-size: 13pt; font-weight: 700; padding-bottom: 12px; }
-    .doc-sender-divider { border: none; border-top: 1.5px solid #111; margin: 0 0 8px 0; }
+    /* ── 하단 기관정보 ── */
+    .doc-org-footer    { margin-top: 32px; }
+    .doc-sender-area   { text-align: center; margin-bottom: 6px; font-size: 0.92rem; }
+    .doc-sender-value  { font-weight: 700; font-size: 1rem; letter-spacing: 0.06em; }
+    .doc-sender-divider { border: none; border-top: 1.5px solid #2c3e50; margin: 6px 0 12px; }
 
-    /* ── 결재란 ── */
-    .doc-approval-wrap { margin-bottom: 0; }
-    .doc-approval-row  {
-      display: flex; justify-content: flex-start;
-      align-items: center; gap: 24px; margin-bottom: 0;
-    }
-    .doc-approval-cell  {
-      display: flex; flex-direction: row;
-      align-items: center; gap: 4px; font-size: 10pt;
-    }
-    .doc-approval-title { font-weight: 600; white-space: nowrap; }
-    .doc-approval-space { display: inline-block; width: 48px; height: 1.2em; }
-
-    /* ── 협조자 ── */
-    .doc-cooperator-row {
-      display: flex; align-items: baseline;
-      font-size: 10pt; line-height: 1.5; margin-top: 0; margin-bottom: 3px;
-    }
-    .doc-coop-label       { display: inline-block; width: 5em; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+    /* ── 결재 블록 ── */
+    .doc-approval-wrap    { border: 1px solid #bbb; margin-bottom: 10px; }
+    .doc-approval-row     { display: flex; }
+    .doc-approval-cell    { flex: 1; border-right: 1px solid #bbb; padding: 6px 10px; min-height: 56px; display: flex; flex-direction: column; }
+    .doc-approval-cell:last-child { border-right: none; }
+    .doc-approval-title   { font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 4px; }
+    .doc-approval-space   { flex: 1; }
+    .doc-cooperator-row   { display: flex; align-items: center; border-top: 1px solid #bbb; padding: 5px 10px; font-size: 0.82rem; }
+    .doc-coop-label       { font-weight: 600; margin-right: 12px; white-space: nowrap; }
     .doc-cooperator-value { flex: 1; }
 
     /* ── 시행·접수 ── */
     .doc-exec-row {
-      display: flex; align-items: baseline;
-      font-size: 10pt; line-height: 1.5; margin-bottom: 6px; gap: 6px;
+      display: flex; align-items: center; font-size: 0.82rem;
+      border: 1px solid #bbb; border-top: none;
+      padding: 5px 10px; gap: 6px;
     }
-    .doc-exec-label      { font-weight: 600; white-space: nowrap; }
-    .doc-exec-value      { flex: 1; }
-    .doc-exec-spacer     { flex: 1; }
-    .doc-exec-recv       { white-space: nowrap; }
-    .doc-exec-date-space { display: inline-block; width: 7em; height: 1em; }
+    .doc-exec-label    { font-weight: 600; white-space: nowrap; }
+    .doc-exec-value    { flex: 1; }
+    .doc-exec-spacer   { flex: 2; }
+    .doc-exec-recv     { white-space: nowrap; }
+    .doc-exec-date-space { display: inline-block; min-width: 80px; }
 
     /* ── 주소·연락처 ── */
-    .doc-footer-wrap    { margin-top: 4px; }
-    .doc-footer-addr    { font-size: 9pt; color: #333; margin-bottom: 2px; }
-    .doc-footer-contact { font-size: 9pt; color: #333; }
+    .doc-footer-wrap {
+      border: 1px solid #bbb; border-top: none;
+      padding: 6px 10px; font-size: 0.78rem;
+      color: #555; line-height: 1.7;
+    }
+    .doc-footer-addr    { margin-bottom: 2px; }
+    .doc-footer-contact { }
 
-    /* ── 인쇄 ── */
+    /* ── 인쇄 스타일 ── */
     @media print {
-      body { background: #fff; }
-      .preview-toolbar { display: none; }
+      body { background: #fff; font-size: 10pt; }
+      .preview-toolbar { display: none !important; }
       .preview-wrapper { margin: 0; padding: 0; max-width: 100%; }
       .doc-paper {
-        box-shadow: none; border-radius: 0;
-        padding: 20mm 20mm 15mm 20mm;
-        min-height: 257mm;
-        display: flex; flex-direction: column;
+        border: none; box-shadow: none; border-radius: 0;
+        padding: 20mm 25mm; min-height: auto;
       }
-      #doc-preview         { display: flex; flex-direction: column; flex: 1; }
-      .doc-paper-inner     { display: flex; flex-direction: column; flex: 1; }
-      .doc-main-area       { flex: 1; }
-      .doc-org-footer      { margin-top: auto; padding-top: 10px; page-break-inside: avoid; }
-
-      /* 인쇄 시 표 테두리 */
-      .doc-body-rich table,
-      .doc-table { border-collapse: collapse !important; }
-      .doc-body-rich table td,
-      .doc-body-rich table th,
-      .doc-table td,
-      .doc-table th {
-        border: 1px solid #000 !important;
+      /* ★ 인쇄 시 표 테두리 강제 출력 */
+      .doc-body-area table,
+      .doc-body-rich table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        box-shadow: none !important;
+      }
+      .doc-body-area table th,
+      .doc-body-rich table th {
+        background: #eaf2fb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border: 1.5pt solid #2c3e50 !important;
+        padding: 6pt 8pt !important;
+      }
+      .doc-body-area table td,
+      .doc-body-rich table td {
+        border: 1pt solid #aab7c4 !important;
+        padding: 5pt 8pt !important;
+        background: #fff !important;
+      }
+      .doc-body-area table tr:nth-child(even) td,
+      .doc-body-rich table tr:nth-child(even) td {
+        background: #f8fbff !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .doc-body-rich table th,
-      .doc-table th {
-        background: #f0f4f8 !important;
-      }
-
-      /* 인쇄 시 정렬 스타일 유지 */
-      [style*="text-align"] {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      /* 표가 페이지 넘어갈 때 잘리지 않도록 */
+      table { page-break-inside: avoid; }
+      tr    { page-break-inside: avoid; }
     }
 
     /* ── 모바일 ── */
     @media (max-width: 600px) {
-      .preview-toolbar { padding: 8px 12px; flex-wrap: wrap; }
-      .doc-paper       { padding: 20px 14px; }
-      .btn             { padding: 6px 12px; font-size: 12px; }
-      .doc-org-name    { font-size: 16pt; }
+      .doc-paper { padding: 24px 18px; }
+      .preview-toolbar { padding: 8px 12px; }
+      .preview-wrapper { padding: 0 8px; }
     }
   </style>
 </head>
 <body>
-  <div class="preview-toolbar">
-    <div class="toolbar-left">
-      <button class="btn btn-back" id="btn-back">← 뒤로</button>
-      <span class="toolbar-title">문서 미리보기</span>
-      <span class="badge badge-draft" id="status-badge">임시저장</span>
-    </div>
-    <div class="toolbar-right">
-      <button class="btn btn-edit"     id="btn-edit">✏️ 편집</button>
-      <button class="btn btn-copy"     id="btn-copy">📋 복사</button>
-      <button class="btn btn-print"    id="btn-print">🖨️ 인쇄</button>
-      <button class="btn btn-complete" id="btn-complete">✅ 완성저장</button>
-      <button class="btn btn-delete"   id="btn-delete">🗑️ 삭제</button>
+
+<!-- ── 툴바 ── -->
+<div class="preview-toolbar">
+  <div class="toolbar-left">
+    <button id="btn-back" class="btn btn-secondary btn-sm">← 뒤로</button>
+    <span id="status-badge" class="badge badge-draft">임시저장</span>
+  </div>
+  <div class="toolbar-right">
+    <button id="btn-edit"     class="btn btn-secondary btn-sm">✏️ 편집</button>
+    <button id="btn-copy"     class="btn btn-secondary btn-sm">📋 복사</button>
+    <button id="btn-print"    class="btn btn-secondary btn-sm">🖨️ 인쇄</button>
+    <button id="btn-complete" class="btn btn-success   btn-sm">✅ 완성저장</button>
+    <button id="btn-delete"   class="btn btn-danger    btn-sm">🗑️ 삭제</button>
+  </div>
+</div>
+
+<!-- ── 미리보기 ── -->
+<div class="preview-wrapper">
+  <div class="doc-paper">
+    <div id="doc-preview">
+      <p style="color:#aaa;text-align:center;padding:60px 0;">문서를 불러오는 중…</p>
     </div>
   </div>
+</div>
 
-  <div class="preview-wrapper">
-    <div class="doc-paper">
-      <div id="doc-preview">
-        <p style="color:#aaa; text-align:center; padding:60px 0;">문서를 불러오는 중...</p>
-      </div>
-    </div>
-  </div>
-
-  <script src="data/rules.js"></script>
-  <script src="data/templates.js"></script>
-  <script src="js/common.js"></script>
-  <script src="js/preview.js"></script>
+<!-- ── 스크립트 ── -->
+<script src="data/rules.js"></script>
+<script src="data/templates.js"></script>
+<script src="js/common.js"></script>
+<script src="js/preview.js"></script>
 </body>
 </html>
