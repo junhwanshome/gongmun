@@ -45,8 +45,8 @@
     .format-toolbar { display: none; align-items: center; gap: 4px; padding: 6px 16px; background: #f0f4f8; border-bottom: 1px solid #e4e8ee; flex-wrap: wrap; }
     .format-toolbar.visible { display: flex; }
     .fmt-btn { padding: 3px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 0.78rem; cursor: pointer; font-family: inherit; transition: .15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
-    .fmt-btn:hover  { background: #eaf4fb; border-color: #3498db; color: #3498db; }
-    .fmt-btn:active { background: #dbeaf7; }
+    .fmt-btn:hover        { background: #eaf4fb; border-color: #3498db; color: #3498db; }
+    .fmt-btn:active       { background: #dbeaf7; }
     .fmt-btn.active-align { background: #dbeaf7; border-color: #3498db; color: #3498db; }
     .fmt-separator { width: 1px; height: 20px; background: #ddd; margin: 0 2px; }
 
@@ -56,22 +56,98 @@
 
     /* ── contenteditable 본문 영역 ── */
     .body-editor-wrap { position: relative; flex: 1; min-width: 0; }
-    .body-editor { width: 100%; min-height: 200px; max-height: 420px; overflow-y: auto; padding: 8px 10px; border: 1px solid #dde2e8; border-radius: 7px; font-size: 0.88rem; font-family: 'Noto Sans KR', sans-serif; color: #2c3e50; background: #fff; line-height: 1.8; outline: none; transition: border-color .15s, box-shadow .15s; word-break: keep-all; }
+    .body-editor {
+      width: 100%; min-height: 200px; max-height: 420px; overflow-y: auto;
+      padding: 8px 10px; border: 1px solid #dde2e8; border-radius: 7px;
+      font-size: 0.88rem; font-family: 'Noto Sans KR', sans-serif;
+      color: #2c3e50; background: #fff; line-height: 1.8; outline: none;
+      transition: border-color .15s, box-shadow .15s; word-break: keep-all;
+    }
     .body-editor:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,.12); }
     .body-editor:empty::before { content: attr(data-placeholder); color: #aaa; pointer-events: none; }
 
-    /* ── contenteditable 내 표 ── */
-    .body-editor table,
-    #doc-preview table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 0.88rem; }
-    .body-editor table td,
-    .body-editor table th,
-    #doc-preview table td,
-    #doc-preview table th { border: 1px solid #555; padding: 5px 8px; min-width: 60px; vertical-align: middle; word-break: keep-all; }
-    .body-editor table th,
-    #doc-preview table th { background: #f0f4f8; font-weight: 600; text-align: center; }
-    .body-editor table td { background: #fff; }
+    /* ══════════════════════════════════════════
+       ★ 편집기 내 표 스타일 (개선)
+    ══════════════════════════════════════════ */
+    .body-editor table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 10px 0;
+      font-size: 0.88rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    /* 헤더 셀 */
+    .body-editor table th {
+      background: #eaf2fb;
+      border: 1.5px solid #2c3e50;
+      padding: 8px 12px;
+      min-width: 60px;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: middle;
+      word-break: keep-all;
+      color: #1a252f;
+      letter-spacing: 0.02em;
+    }
+    /* 데이터 셀 */
+    .body-editor table td {
+      background: #fff;
+      border: 1px solid #aab7c4;
+      padding: 7px 12px;
+      min-width: 60px;
+      vertical-align: middle;
+      word-break: keep-all;
+      color: #2c3e50;
+    }
+    /* 짝수 행 배경 */
+    .body-editor table tr:nth-child(even) td { background: #f8fbff; }
+    /* 호버 */
+    .body-editor table tr:hover td { background: #eef6ff; }
+    /* 선택된 셀 */
     .body-editor table td.selected,
-    .body-editor table th.selected { background: #dbeaf7 !important; outline: 2px solid #3498db; }
+    .body-editor table th.selected {
+      background: #d6eaf8 !important;
+      outline: 2px solid #2980b9;
+      outline-offset: -2px;
+    }
+    /* 포커스된 셀 */
+    .body-editor table td:focus,
+    .body-editor table th:focus {
+      outline: 2px solid #3498db;
+      outline-offset: -2px;
+      background: #ebf5fb !important;
+    }
+
+    /* ══════════════════════════════════════════
+       ★ 미리보기(preview.html) 표 스타일
+    ══════════════════════════════════════════ */
+    #doc-preview table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 8px 0;
+      font-size: 0.88rem;
+    }
+    #doc-preview table th {
+      background: #eaf2fb;
+      border: 1.5px solid #2c3e50;
+      padding: 7px 10px;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: middle;
+      word-break: keep-all;
+      color: #1a252f;
+    }
+    #doc-preview table td {
+      background: #fff;
+      border: 1px solid #7f8c8d;
+      padding: 7px 10px;
+      min-width: 60px;
+      vertical-align: middle;
+      word-break: keep-all;
+    }
+    #doc-preview table tr:nth-child(even) td { background: #f8fbff; }
 
     /* ── 표 팝업 ── */
     .table-popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 20px 24px; z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,.18); min-width: 260px; display: none; }
@@ -100,16 +176,16 @@
     .check-panel-body  { overflow-y: auto; flex: 1; padding: 12px; }
     .check-empty       { text-align: center; padding: 24px 12px; color: #aaa; }
     .check-empty-icon  { font-size: 2rem; margin-bottom: 8px; }
-    .check-item        { border-radius: 6px; padding: 9px 10px; font-size: 0.8rem; margin-bottom: 6px; }
-    .check-item-error  { background: #fdf2f2; border-left: 3px solid #e74c3c; }
-    .check-item-warning{ background: #fffbf0; border-left: 3px solid #f39c12; }
-    .check-item-info   { background: #f0f7ff; border-left: 3px solid #3498db; }
-    .check-item-header { display: flex; gap: 6px; align-items: flex-start; font-weight: 600; margin-bottom: 3px; }
-    .check-desc        { color: #666; font-size: 0.77rem; margin-top: 3px; }
-    .check-fix         { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.78rem; flex-wrap: wrap; }
-    .check-original    { background: #fde8e8; padding: 1px 6px; border-radius: 3px; }
-    .check-arrow       { color: #aaa; font-weight: 700; }
-    .check-suggestion  { background: #e8f5e9; padding: 1px 6px; border-radius: 3px; }
+    .check-item         { border-radius: 6px; padding: 9px 10px; font-size: 0.8rem; margin-bottom: 6px; }
+    .check-item-error   { background: #fdf2f2; border-left: 3px solid #e74c3c; }
+    .check-item-warning { background: #fffbf0; border-left: 3px solid #f39c12; }
+    .check-item-info    { background: #f0f7ff; border-left: 3px solid #3498db; }
+    .check-item-header  { display: flex; gap: 6px; align-items: flex-start; font-weight: 600; margin-bottom: 3px; }
+    .check-desc         { color: #666; font-size: 0.77rem; margin-top: 3px; }
+    .check-fix          { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 0.78rem; flex-wrap: wrap; }
+    .check-original     { background: #fde8e8; padding: 1px 6px; border-radius: 3px; }
+    .check-arrow        { color: #aaa; font-weight: 700; }
+    .check-suggestion   { background: #e8f5e9; padding: 1px 6px; border-radius: 3px; }
 
     /* ── 버튼 공통 ── */
     .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 14px; border: none; border-radius: 7px; font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: background .15s; font-family: inherit; text-decoration: none; white-space: nowrap; line-height: 1; }
@@ -141,7 +217,7 @@
     .modal-body   { overflow-y: auto; flex: 1; font-size: 0.88rem; line-height: 1.7; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #eee; }
     .spell-guide-steps { display: flex; flex-direction: column; gap: 14px; }
-    .spell-step        { display: flex; align-items: flex-start; gap: 12px; font-size: 0.88rem; }
+    .spell-step   { display: flex; align-items: flex-start; gap: 12px; font-size: 0.88rem; }
     .step-num { background: #3498db; color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
     .purify-table    { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
     .purify-table th { background: #f0f4f8; border: 1px solid #ddd; padding: 7px 10px; font-weight: 600; text-align: left; }
@@ -216,20 +292,20 @@
       <button class="fmt-btn" id="fmt-italic"    title="기울기 (Ctrl+I)"><i>I</i></button>
       <button class="fmt-btn" id="fmt-underline" title="밑줄 (Ctrl+U)"><u>U</u></button>
       <div class="fmt-separator"></div>
-      <!-- ★ 정렬 버튼 3개 -->
+      <!-- 정렬 버튼 -->
       <button class="fmt-btn" id="fmt-align-left"   title="왼쪽 정렬">◀ 좌</button>
       <button class="fmt-btn" id="fmt-align-center" title="가운데 정렬">■ 중앙</button>
       <button class="fmt-btn" id="fmt-align-right"  title="오른쪽 정렬">우 ▶</button>
       <div class="fmt-separator"></div>
       <!-- 표 조작 -->
-      <button class="fmt-btn" id="fmt-table"     title="표 삽입">⊞ 표 삽입</button>
-      <button class="fmt-btn" id="fmt-add-row"   title="행 추가">↓ 행 추가</button>
-      <button class="fmt-btn" id="fmt-add-col"   title="열 추가">→ 열 추가</button>
-      <button class="fmt-btn" id="fmt-del-row"   title="행 삭제">✕ 행 삭제</button>
-      <button class="fmt-btn" id="fmt-del-col"   title="열 삭제">✕ 열 삭제</button>
+      <button class="fmt-btn" id="fmt-table"    title="표 삽입">⊞ 표 삽입</button>
+      <button class="fmt-btn" id="fmt-add-row"  title="행 추가">↓ 행 추가</button>
+      <button class="fmt-btn" id="fmt-add-col"  title="열 추가">→ 열 추가</button>
+      <button class="fmt-btn" id="fmt-del-row"  title="행 삭제">✕ 행 삭제</button>
+      <button class="fmt-btn" id="fmt-del-col"  title="열 삭제">✕ 열 삭제</button>
       <div class="fmt-separator"></div>
-      <button class="fmt-btn" id="fmt-merge"     title="셀 병합 (Shift+클릭으로 셀 선택 후)">⊡ 병합</button>
-      <button class="fmt-btn" id="fmt-unmerge"   title="셀 분리">⊟ 분리</button>
+      <button class="fmt-btn" id="fmt-merge"    title="셀 병합 (Shift+클릭으로 셀 선택 후)">⊡ 병합</button>
+      <button class="fmt-btn" id="fmt-unmerge"  title="셀 분리">⊟ 분리</button>
     </div>
 
     <!-- 동적 폼 필드 -->
@@ -402,7 +478,7 @@ if (typeof showToast === 'undefined') {
     if (!c) return;
     var t = document.createElement('div');
     t.textContent = msg;
-    var bg = { success: '#27ae60', error: '#e74c3c', warning: '#f39c12', info: '#3498db' };
+    var bg = { success:'#27ae60', error:'#e74c3c', warning:'#f39c12', info:'#3498db' };
     t.style.cssText = 'padding:10px 16px;border-radius:8px;font-size:0.85rem;font-weight:500;'
       + 'color:#fff;background:' + (bg[type] || bg.info) + ';box-shadow:0 4px 16px rgba(0,0,0,.15);'
       + 'min-width:180px;max-width:320px;font-family:inherit;';
@@ -456,17 +532,74 @@ document.addEventListener('DOMContentLoaded', function () {
   var style = document.createElement('style');
   style.textContent = `
     #form-fields { padding: 4px 0; }
-    #form-fields .form-group { display: flex; align-items: flex-start; gap: 8px; padding: 6px 16px; border-bottom: 1px solid #f5f5f5; }
+    #form-fields .form-group {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 6px 16px; border-bottom: 1px solid #f5f5f5;
+    }
     #form-fields .form-group:last-child { border-bottom: none; }
-    #form-fields .form-label { flex-shrink: 0; width: 5.5em; padding-top: 8px; font-size: 0.83rem; font-weight: 600; color: #444; text-align: right; white-space: nowrap; }
+    #form-fields .form-label {
+      flex-shrink: 0; width: 5.5em; padding-top: 8px;
+      font-size: 0.83rem; font-weight: 600; color: #444;
+      text-align: right; white-space: nowrap;
+    }
     #form-fields .form-label.required::after { content: ' *'; color: #e74c3c; }
-    #form-fields .form-control { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid #dde2e8; border-radius: 7px; font-size: 0.88rem; font-family: inherit; color: #2c3e50; background: #fff; transition: border-color .15s, box-shadow .15s; box-sizing: border-box; width: 100%; }
-    #form-fields .form-control:focus { outline: none; border-color: #3498db; box-shadow: 0 0 0 3px rgba(52,152,219,.12); }
+    #form-fields .form-control {
+      flex: 1; min-width: 0; padding: 7px 10px;
+      border: 1px solid #dde2e8; border-radius: 7px;
+      font-size: 0.88rem; font-family: inherit; color: #2c3e50;
+      background: #fff; transition: border-color .15s, box-shadow .15s;
+      box-sizing: border-box; width: 100%;
+    }
+    #form-fields .form-control:focus {
+      outline: none; border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52,152,219,.12);
+    }
     #form-fields .form-textarea { resize: vertical; min-height: 76px; line-height: 1.65; }
     #form-fields .body-editor-wrap { flex: 1; min-width: 0; }
-    #form-fields .body-editor { width:100%; min-height:200px; max-height:420px; overflow-y:auto; padding:8px 10px; border:1px solid #dde2e8; border-radius:7px; font-size:0.88rem; font-family:'Noto Sans KR',sans-serif; color:#2c3e50; background:#fff; line-height:1.8; outline:none; transition:border-color .15s,box-shadow .15s; word-break:keep-all; box-sizing:border-box; }
-    #form-fields .body-editor:focus { border-color:#3498db; box-shadow:0 0 0 3px rgba(52,152,219,.12); }
-    #form-fields .body-editor:empty::before { content:attr(data-placeholder); color:#aaa; pointer-events:none; }
+    #form-fields .body-editor {
+      width: 100%; min-height: 200px; max-height: 420px; overflow-y: auto;
+      padding: 8px 10px; border: 1px solid #dde2e8; border-radius: 7px;
+      font-size: 0.88rem; font-family: 'Noto Sans KR', sans-serif;
+      color: #2c3e50; background: #fff; line-height: 1.8; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+      word-break: keep-all; box-sizing: border-box;
+    }
+    #form-fields .body-editor:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52,152,219,.12);
+    }
+    #form-fields .body-editor:empty::before {
+      content: attr(data-placeholder); color: #aaa; pointer-events: none;
+    }
+    /* ★ 동적으로 삽입되는 표에도 스타일 상속 */
+    #form-fields .body-editor table {
+      border-collapse: collapse; width: 100%;
+      margin: 10px 0; font-size: 0.88rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+    #form-fields .body-editor table th {
+      background: #eaf2fb; border: 1.5px solid #2c3e50;
+      padding: 8px 12px; min-width: 60px; font-weight: 700;
+      text-align: center; vertical-align: middle;
+      word-break: keep-all; color: #1a252f;
+    }
+    #form-fields .body-editor table td {
+      background: #fff; border: 1px solid #aab7c4;
+      padding: 7px 12px; min-width: 60px;
+      vertical-align: middle; word-break: keep-all; color: #2c3e50;
+    }
+    #form-fields .body-editor table tr:nth-child(even) td { background: #f8fbff; }
+    #form-fields .body-editor table tr:hover td { background: #eef6ff; }
+    #form-fields .body-editor table td.selected,
+    #form-fields .body-editor table th.selected {
+      background: #d6eaf8 !important;
+      outline: 2px solid #2980b9; outline-offset: -2px;
+    }
+    #form-fields .body-editor table td:focus,
+    #form-fields .body-editor table th:focus {
+      outline: 2px solid #3498db; outline-offset: -2px;
+      background: #ebf5fb !important;
+    }
   `;
   document.head.appendChild(style);
 
@@ -515,8 +648,8 @@ document.addEventListener('DOMContentLoaded', function () {
   /* 미리보기 */
   var previewBtn = document.getElementById('preview-btn');
   if (previewBtn) previewBtn.onclick = function () {
-    if      (typeof goPreview    === 'function') goPreview();
-    else if (typeof goToPreview  === 'function') goToPreview();
+    if      (typeof goPreview   === 'function') goPreview();
+    else if (typeof goToPreview === 'function') goToPreview();
     else showToast('editor.js 로드를 확인해주세요.', 'error');
   };
 
