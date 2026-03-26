@@ -88,7 +88,7 @@ textarea.has-error{border-color:#ef4444!important;}
 .body-highlight-layer .hl-error{border-bottom:2px solid #ef4444;background:rgba(239,68,68,.08);border-radius:2px;color:transparent;}
 .body-highlight-layer .hl-warn{border-bottom:2px solid #f59e0b;background:rgba(245,158,11,.08);border-radius:2px;color:transparent;}
 .body-highlight-layer .hl-info{border-bottom:2px solid #3b82f6;background:rgba(59,130,246,.06);border-radius:2px;color:transparent;}
-#doc-body{position:relative;z-index:2;background:transparent!important;resize:vertical;min-height:160px;}
+#doc-body{position:relative;z-index:2;background:transparent!important;resize:vertical;min-height:360px;}
 .tbl-insert-indicator{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--radius);background:#f0fdf4;border:1px solid #86efac;font-size:11px;color:#166534;line-height:1.5;transition:var(--transition);}
 .tbl-insert-indicator .indicator-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0;animation:pulse 1.5s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
@@ -526,7 +526,7 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
     <label class="field-label">서식 태그: <code style="font-size:10px;">[좌]</code><code style="font-size:10px;">[중앙]</code><code style="font-size:10px;">[우]</code><code style="font-size:10px;">[bold]</code><code style="font-size:10px;">[u]</code><code style="font-size:10px;">[TABLE:이름]</code></label>
     <div class="body-editor-wrap">
       <div class="body-highlight-layer" id="body-highlight-layer" aria-hidden="true"></div>
-      <textarea id="doc-body" rows="9" placeholder="본문 내용 입력..." spellcheck="false"></textarea>
+      <textarea id="doc-body" rows="18" placeholder="본문 내용 입력..." spellcheck="false"></textarea>
     </div>
     <div id="body-validation"></div>
     <div class="body-hint">💡 항목: <code>1. </code><code>가. </code><code>1) </code><code>가) </code> &nbsp;날짜: <code>2024. 3. 19.</code> &nbsp;금액: <code>금113,560원</code></div>
