@@ -88,16 +88,15 @@ textarea.has-error{border-color:#ef4444!important;}
 .body-highlight-layer .hl-error{border-bottom:2px solid #ef4444;background:rgba(239,68,68,.08);border-radius:2px;color:transparent;}
 .body-highlight-layer .hl-warn{border-bottom:2px solid #f59e0b;background:rgba(245,158,11,.08);border-radius:2px;color:transparent;}
 .body-highlight-layer .hl-info{border-bottom:2px solid #3b82f6;background:rgba(59,130,246,.06);border-radius:2px;color:transparent;}
-#doc-body{position:relative;z-index:2;background:transparent!important;resize:vertical;min-height:360px;}
+
+/* ★ 본문 입력란 두 배 확대 */
+#doc-body{position:relative;z-index:2;background:transparent!important;resize:vertical;min-height:320px;}
+
 .tbl-insert-indicator{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--radius);background:#f0fdf4;border:1px solid #86efac;font-size:11px;color:#166534;line-height:1.5;transition:var(--transition);}
 .tbl-insert-indicator .indicator-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0;animation:pulse 1.5s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
 .tbl-insert-indicator.no-focus{background:#fff7ed;border-color:#fdba74;color:#92400e;}
 .tbl-insert-indicator.no-focus .indicator-dot{background:#f97316;animation:none;}
-
-/* ══════════════════════════════════
-   ★ 파일 저장/불러오기 + 프리셋 통합 스타일
-══════════════════════════════════ */
 .file-mgr-wrap{display:flex;flex-direction:column;gap:8px;}
 .file-mgr-browser-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;background:#dcfce7;color:#166534;border:1px solid #86efac;}
 .file-mgr-browser-badge.fallback{background:#fef9c3;color:#92400e;border-color:#fcd34d;}
@@ -127,10 +126,6 @@ textarea.has-error{border-color:#ef4444!important;}
 .save-filename-row{display:flex;gap:4px;align-items:center;}
 .save-filename-row input{flex:1;font-size:11px;}
 .save-filename-row .ext{font-size:11px;color:var(--muted);white-space:nowrap;padding:5px 4px;}
-
-/* ══════════════════════════════════
-   ★ 프리셋 전용 스타일
-══════════════════════════════════ */
 .preset-folder-row{display:flex;align-items:center;gap:6px;padding:6px 9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius);font-size:11px;}
 .preset-folder-path{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--primary);font-weight:600;}
 .preset-folder-path.empty{color:var(--muted);font-weight:400;}
@@ -148,8 +143,6 @@ textarea.has-error{border-color:#ef4444!important;}
 .preset-item-v2 .preset-name{flex:1;font-weight:600;color:var(--text-sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .preset-item-v2 .preset-date{font-size:10px;color:var(--muted);white-space:nowrap;}
 .preset-empty{font-size:11px;color:var(--muted);padding:8px 4px;text-align:center;}
-
-/* 맞춤법 패널 등 기존 스타일 */
 .spell-panel{width:var(--spell-panel-width);min-width:260px;max-width:500px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:relative;transition:width .25s ease,min-width .25s ease;overflow:hidden;}
 .spell-panel.collapsed{width:36px;min-width:36px;}
 .spell-panel-resize-handle{position:absolute;top:0;left:-5px;width:10px;height:100%;cursor:col-resize;z-index:100;display:flex;align-items:center;justify-content:center;transition:background .15s;}
@@ -370,14 +363,12 @@ textarea.has-error{border-color:#ef4444!important;}
 @keyframes modalIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
 .modal h3{font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px;}
 .modal p{font-size:12px;color:var(--muted);}
-.modal textarea{width:100%;height:200px;font-size:11px;font-family:monospace;border:1px solid var(--border);border-radius:var(--radius);padding:8px;resize:none;}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;}
 .shortcut-table{width:100%;border-collapse:collapse;font-size:12px;}
 .shortcut-table th{text-align:left;padding:5px 8px;background:var(--surface2);border-bottom:2px solid var(--border);font-size:11px;color:var(--muted);}
 .shortcut-table td{padding:5px 8px;border-bottom:1px solid var(--border);}
 .shortcut-table tr:last-child td{border-bottom:none;}
 kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:3px;font-family:monospace;font-size:11px;}
-
 @page{size:A4 portrait;margin:0;}
 @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -406,7 +397,6 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
     <label><input type="radio" name="doc-type" value="internal" onchange="onDocTypeChange()">내부결재</label>
   </div>
 
-  <!-- ★ 문서 저장/불러오기 섹션 -->
   <div class="section-header open" id="sh-filemgr" onclick="toggleSection(this,'filemgr')">💾 문서 저장 / 불러오기 <span class="arrow">▾</span></div>
   <div class="section-body" id="sb-filemgr">
     <div class="file-mgr-wrap">
@@ -451,11 +441,8 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
     </div>
   </div>
 
-  <!-- ★ 프리셋 관리 섹션 (폴더 저장 방식으로 전면 개편) -->
   <div class="section-header open" id="sh-preset" onclick="toggleSection(this,'preset')">📋 프리셋 관리 <span class="arrow">▾</span></div>
   <div class="section-body" id="sb-preset">
-
-    <!-- 저장 방식 표시 + 폴더 선택 -->
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span style="font-size:11px;color:var(--muted);">저장 위치:</span>
       <span class="preset-folder-badge local" id="preset-storage-badge">📦 브라우저 내부</span>
@@ -466,36 +453,22 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
         <button class="btn btn-outline" style="padding:3px 8px;font-size:11px;" onclick="selectPresetFolder()">📁 선택</button>
       </div>
     </div>
-
-    <!-- 프리셋 이름 입력 + 저장 -->
     <label class="field-label">프리셋 이름</label>
     <div class="preset-save-row">
       <input type="text" id="preset-name-input" placeholder="예: 행안부 기본 양식">
       <button class="btn btn-primary" onclick="savePreset()">💾 저장</button>
     </div>
-
-    <!-- 동기화 / 가져오기 버튼 -->
     <div class="preset-action-bar">
-      <button class="preset-sync-btn" id="preset-sync-btn" onclick="syncPresetsFromFile()" style="display:none;">
-        🔄 파일에서 동기화
-      </button>
+      <button class="preset-sync-btn" id="preset-sync-btn" onclick="syncPresetsFromFile()" style="display:none;">🔄 파일에서 동기화</button>
       <button class="btn btn-outline" style="flex:1;font-size:11px;" onclick="exportPresetsToFile()">📤 내보내기</button>
-      <label class="btn btn-outline" style="flex:1;font-size:11px;cursor:pointer;">
-        📥 가져오기<input type="file" accept=".json" style="display:none" onchange="importPresetsFromFile(event)">
-      </label>
+      <label class="btn btn-outline" style="flex:1;font-size:11px;cursor:pointer;">📥 가져오기<input type="file" accept=".json" style="display:none" onchange="importPresetsFromFile(event)"></label>
     </div>
-
-    <!-- 프리셋 목록 -->
     <div class="preset-list-wrap" id="preset-list"></div>
-
-    <!-- localStorage 용량 표시 (폴더 미선택 시에만 의미 있음) -->
     <div class="storage-bar-wrap" id="storage-bar-wrap">
       <span id="storage-label">저장공간</span>
       <div class="storage-bar"><div class="storage-bar-fill" id="storage-bar-fill" style="width:0%"></div></div>
       <span id="storage-pct">0%</span>
     </div>
-
-    <!-- 프리셋 파일 상태 메시지 -->
     <div class="file-mgr-status" id="preset-status"></div>
   </div>
 
@@ -526,6 +499,7 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
     <label class="field-label">서식 태그: <code style="font-size:10px;">[좌]</code><code style="font-size:10px;">[중앙]</code><code style="font-size:10px;">[우]</code><code style="font-size:10px;">[bold]</code><code style="font-size:10px;">[u]</code><code style="font-size:10px;">[TABLE:이름]</code></label>
     <div class="body-editor-wrap">
       <div class="body-highlight-layer" id="body-highlight-layer" aria-hidden="true"></div>
+      <!-- ★ rows 18로 두 배 확대 -->
       <textarea id="doc-body" rows="18" placeholder="본문 내용 입력..." spellcheck="false"></textarea>
     </div>
     <div id="body-validation"></div>
@@ -780,14 +754,6 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
         <tr><td><kbd>Esc</kbd></td><td>모달 닫기</td></tr>
       </tbody>
     </table>
-    <div style="margin-top:8px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:11px;color:#1e40af;line-height:1.8;">
-      <b>📁 프리셋 저장 구조</b><br>
-      폴더 지정 시: 선택한 폴더의 <b>gdoc_presets.json</b>에 저장<br>
-      폴더 미지정 시: 브라우저 localStorage에 임시 저장<br>
-      <br>
-      <b>📄 .gdoc 문서 파일</b><br>
-      입력 필드·표·로고·문서유형을 모두 포함한 완전한 문서 파일
-    </div>
     <div class="modal-footer">
       <button class="btn btn-primary" onclick="closeModal('help-modal-bg')">확인</button>
     </div>
@@ -798,27 +764,19 @@ kbd{display:inline-block;padding:1px 5px;background:#f1f5f9;border:1px solid #cb
 (function(){
 'use strict';
 
-/* ══════════════════════════════════════════════════════
-   상수 / 변수
-══════════════════════════════════════════════════════ */
-var LS_KEY_PRESETS='gdoc_presets_v2', LS_KEY_AUTO='gdoc_auto_v2', LS_KEY_TABLE='gdoc_table_v2',
-    LS_KEY_LOGO='gdoc_logo_v2', LS_KEY_DOCTYPE='gdoc_doctype_v2', LS_KEY_ZOOM='gdoc_zoom_v2',
-    LS_KEY_SIDEBAR_W='gdoc_sidebar_width_v1', LS_KEY_SPELL_W='gdoc_spell_width_v1',
-    LS_KEY_SPELL_OPEN='gdoc_spell_open_v1', LS_KEY_SECTIONS='gdoc_sections_v1',
+var LS_KEY_PRESETS='gdoc_presets_v2',LS_KEY_AUTO='gdoc_auto_v2',LS_KEY_TABLE='gdoc_table_v2',
+    LS_KEY_LOGO='gdoc_logo_v2',LS_KEY_DOCTYPE='gdoc_doctype_v2',LS_KEY_ZOOM='gdoc_zoom_v2',
+    LS_KEY_SIDEBAR_W='gdoc_sidebar_width_v1',LS_KEY_SPELL_W='gdoc_spell_width_v1',
+    LS_KEY_SPELL_OPEN='gdoc_spell_open_v1',LS_KEY_SECTIONS='gdoc_sections_v1',
     LS_QUOTA_APPROX=5*1024*1024;
-var GDOC_VERSION='2.0', GDOC_EXT='.gdoc';
-var PRESET_FILENAME='gdoc_presets.json'; // ★ 프리셋 파일명 고정
-
+var GDOC_VERSION='2.0',GDOC_EXT='.gdoc',PRESET_FILENAME='gdoc_presets.json';
 var GEMINI_MODEL='gemini-2.5-flash';
 var GEMINI_ENDPOINT='https://generativelanguage.googleapis.com/v1beta/models/'+GEMINI_MODEL+':generateContent';
-var _geminiApiKey='', _spellAbortCtrl=null, _naverHistory=[], _ruleResults=[], _ruleHistory=[],
-    _activeRuleCat='all', _geminiResults=[], _geminiHistory=[];
-var _bodySelStart=0, _bodySelEnd=0, _bodyHasFocus=false;
-
-// ★ 파일 시스템 핸들
-var _dirHandle=null;          // 문서 저장 폴더 핸들
-var _presetDirHandle=null;    // 프리셋 저장 폴더 핸들
-var _fsApiSupported=false;
+var _geminiApiKey='',_spellAbortCtrl=null,_naverHistory=[],_ruleResults=[],_ruleHistory=[],
+    _activeRuleCat='all',_geminiResults=[],_geminiHistory=[];
+var _bodySelStart=0,_bodySelEnd=0,_bodyHasFocus=false;
+var _dirHandle=null,_presetDirHandle=null,_fsApiSupported=false;
+var _presetCache=[];
 
 var INPUT_IDS=[
   'org-name','doc-recv','doc-via','doc-title','doc-body','doc-attach',
@@ -840,9 +798,17 @@ var DEFAULTS={
 };
 
 /* ══════════════════════════════════════════════════════
-   유틸리티
+   ★ 유틸리티
 ══════════════════════════════════════════════════════ */
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ★ 공백 2개 이상을 &nbsp;로 변환하는 함수 */
+function escWithSpace(s){
+  return esc(s).replace(/ {2,}/g,function(m){
+    return '&nbsp;'.repeat(m.length);
+  });
+}
+
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function gv(id){var el=document.getElementById(id);return el?el.value:'';}
 function sv(id,v){var el=document.getElementById(id);if(el)el.value=(v==null)?'':v;}
@@ -851,269 +817,107 @@ function lsSet(k,v){try{localStorage.setItem(k,v);updateStorageBar();return true
 function lsRemove(k){try{localStorage.removeItem(k);updateStorageBar();}catch(e){}}
 function getTodayStr(){var d=new Date();return d.getFullYear()+'. '+(d.getMonth()+1)+'. '+d.getDate()+'.';}
 var _toastTimer=null;
-function showToast(msg,type){
-  var t=document.getElementById('toast');if(!t)return;
-  t.textContent=msg;t.className='toast show'+(type?' '+type:'');
-  clearTimeout(_toastTimer);_toastTimer=setTimeout(function(){t.classList.remove('show');},2800);
-}
+function showToast(msg,type){var t=document.getElementById('toast');if(!t)return;t.textContent=msg;t.className='toast show'+(type?' '+type:'');clearTimeout(_toastTimer);_toastTimer=setTimeout(function(){t.classList.remove('show');},2800);}
 var _statusTimers={};
-function showStatus(elId,msg,type){
-  var el=document.getElementById(elId);if(!el)return;
-  el.textContent=msg;el.className='file-mgr-status show '+(type||'');
-  clearTimeout(_statusTimers[elId]);
-  _statusTimers[elId]=setTimeout(function(){el.classList.remove('show');},5000);
-}
+function showStatus(elId,msg,type){var el=document.getElementById(elId);if(!el)return;el.textContent=msg;el.className='file-mgr-status show '+(type||'');clearTimeout(_statusTimers[elId]);_statusTimers[elId]=setTimeout(function(){el.classList.remove('show');},5000);}
 function updateStorageBar(){
   try{
     var total=0;for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);total+=k.length+(localStorage.getItem(k)||'').length;}
     var bytes=total*2,pct=Math.min(100,Math.round(bytes/LS_QUOTA_APPROX*100));
     var fill=document.getElementById('storage-bar-fill'),pctEl=document.getElementById('storage-pct'),lbl=document.getElementById('storage-label');
     if(fill){fill.style.width=pct+'%';fill.className='storage-bar-fill'+(pct>=90?' danger':pct>=70?' warn':'');}
-    if(pctEl)pctEl.textContent=pct+'%';
-    if(lbl)lbl.textContent='저장공간 '+Math.round(bytes/1024)+'KB';
+    if(pctEl)pctEl.textContent=pct+'%';if(lbl)lbl.textContent='저장공간 '+Math.round(bytes/1024)+'KB';
   }catch(e){}
 }
 
 /* ══════════════════════════════════════════════════════
-   ★★★ 프리셋 — 폴더 기반 저장 (방법 1)
-   gdoc_presets.json 하나에 모든 프리셋 저장
+   프리셋 관리
 ══════════════════════════════════════════════════════ */
-
-/**
- * 프리셋 폴더 선택 (Chrome/Edge)
- */
-window.selectPresetFolder = async function(){
-  if(!_fsApiSupported){ showToast('이 브라우저는 폴더 선택을 지원하지 않습니다','warn'); return; }
+window.selectPresetFolder=async function(){
+  if(!_fsApiSupported){showToast('이 브라우저는 폴더 선택을 지원하지 않습니다','warn');return;}
   try{
-    _presetDirHandle = await window.showDirectoryPicker({ mode:'readwrite' });
+    _presetDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
     updatePresetFolderUI();
-    // 폴더에 기존 파일이 있으면 자동 로드
     await loadPresetsFromFile();
-    showToast('📁 프리셋 폴더 선택됨: '+_presetDirHandle.name, 'success');
-  } catch(e){
-    if(e.name!=='AbortError') showToast('폴더 선택 취소','warn');
-  }
+    showToast('📁 프리셋 폴더: '+_presetDirHandle.name,'success');
+  }catch(e){if(e.name!=='AbortError')showToast('폴더 선택 취소','warn');}
 };
-
-/**
- * 프리셋 폴더 UI 갱신
- */
 function updatePresetFolderUI(){
-  var badge=document.getElementById('preset-storage-badge');
-  var label=document.getElementById('preset-folder-label');
-  var syncBtn=document.getElementById('preset-sync-btn');
-
+  var badge=document.getElementById('preset-storage-badge'),label=document.getElementById('preset-folder-label'),syncBtn=document.getElementById('preset-sync-btn');
   if(_presetDirHandle){
-    // 파일 기반 모드
-    if(badge){ badge.textContent='📁 '+_presetDirHandle.name+'/'+PRESET_FILENAME; badge.className='preset-folder-badge file'; }
-    if(label){ label.textContent='📁 '+_presetDirHandle.name; label.className='preset-folder-path'; }
-    if(syncBtn) syncBtn.style.display='flex';
-    // localStorage 용량바 숨기기 (파일 기반이므로 불필요)
-    var bar=document.getElementById('storage-bar-wrap');
-    if(bar) bar.style.display='none';
-  } else {
-    // localStorage 모드
-    if(badge){ badge.textContent='📦 브라우저 내부 (localStorage)'; badge.className='preset-folder-badge local'; }
-    if(label){ label.textContent='폴더를 선택하세요'; label.className='preset-folder-path empty'; }
-    if(syncBtn) syncBtn.style.display='none';
-    var bar=document.getElementById('storage-bar-wrap');
-    if(bar) bar.style.display='flex';
+    if(badge){badge.textContent='📁 '+_presetDirHandle.name+'/'+PRESET_FILENAME;badge.className='preset-folder-badge file';}
+    if(label){label.textContent='📁 '+_presetDirHandle.name;label.className='preset-folder-path';}
+    if(syncBtn)syncBtn.style.display='flex';
+    var bar=document.getElementById('storage-bar-wrap');if(bar)bar.style.display='none';
+  }else{
+    if(badge){badge.textContent='📦 브라우저 내부 (localStorage)';badge.className='preset-folder-badge local';}
+    if(label){label.textContent='폴더를 선택하세요';label.className='preset-folder-path empty';}
+    if(syncBtn)syncBtn.style.display='none';
+    var bar=document.getElementById('storage-bar-wrap');if(bar)bar.style.display='flex';
   }
 }
-
-/**
- * ★ 프리셋 목록 읽기
- * - 폴더 지정됨: gdoc_presets.json 읽기
- * - 미지정: localStorage
- */
-function getPresets(){
-  // 파일 기반은 비동기이므로 _presetCache 사용
-  return _presetCache;
-}
-
-// 프리셋 메모리 캐시 (동기 접근용)
-var _presetCache=[];
-
-/**
- * gdoc_presets.json에서 프리셋 로드
- */
 async function loadPresetsFromFile(){
-  if(!_presetDirHandle) return;
+  if(!_presetDirHandle)return;
   try{
     var fh=await _presetDirHandle.getFileHandle(PRESET_FILENAME);
-    var file=await fh.getFile();
-    var text=await file.text();
-    var list=JSON.parse(text);
-    if(Array.isArray(list)){
-      _presetCache=list;
-      renderPresetList();
-      showStatus('preset-status','✅ 프리셋 로드: '+list.length+'개','success');
-    }
-  } catch(e){
-    // 파일 없으면 빈 배열 (최초 사용)
-    if(e.name==='NotFoundError'){ _presetCache=[]; renderPresetList(); }
-    else showStatus('preset-status','파일 읽기 실패: '+e.message,'error');
-  }
+    var file=await fh.getFile(),text=await file.text(),list=JSON.parse(text);
+    if(Array.isArray(list)){_presetCache=list;renderPresetList();showStatus('preset-status','✅ 프리셋 로드: '+list.length+'개','success');}
+  }catch(e){if(e.name==='NotFoundError'){_presetCache=[];renderPresetList();}else showStatus('preset-status','파일 읽기 실패: '+e.message,'error');}
 }
-
-/**
- * gdoc_presets.json에 프리셋 저장
- */
 async function savePresetsToFile(list){
-  if(!_presetDirHandle) return false;
+  if(!_presetDirHandle)return false;
   try{
-    var fh=await _presetDirHandle.getFileHandle(PRESET_FILENAME, { create:true });
-    var wr=await fh.createWritable();
-    await wr.write(JSON.stringify(list, null, 2));
-    await wr.close();
-    return true;
-  } catch(e){
-    showStatus('preset-status','파일 저장 실패: '+e.message,'error');
-    return false;
-  }
+    var fh=await _presetDirHandle.getFileHandle(PRESET_FILENAME,{create:true});
+    var wr=await fh.createWritable();await wr.write(JSON.stringify(list,null,2));await wr.close();return true;
+  }catch(e){showStatus('preset-status','파일 저장 실패: '+e.message,'error');return false;}
 }
-
-/**
- * ★ 프리셋 저장 (이름 입력 → 파일 또는 localStorage)
- */
-window.savePreset = async function(){
+window.savePreset=async function(){
   var name=gv('preset-name-input').trim();
-  if(!name){ name=prompt('프리셋 이름을 입력하세요','프리셋 '+(_presetCache.length+1)); }
-  if(!name) return;
-
-  var data={};
-  INPUT_IDS.forEach(function(id){ data[id]=gv(id); });
+  if(!name){name=prompt('프리셋 이름을 입력하세요','프리셋 '+(_presetCache.length+1));}
+  if(!name)return;
+  var data={};INPUT_IDS.forEach(function(id){data[id]=gv(id);});
   var now=new Date().toLocaleString('ko');
-
-  // 같은 이름 있으면 덮어쓰기 확인
-  var existing=_presetCache.findIndex(function(p){ return p.name===name; });
-  if(existing>=0){
-    if(!confirm('"'+name+'" 프리셋이 이미 있습니다. 덮어쓰시겠습니까?')) return;
-    _presetCache[existing]={ name:name, data:data, savedAt:now };
-  } else {
-    _presetCache.push({ name:name, data:data, savedAt:now });
-  }
-
-  // ── 저장 ─────────────────────────────────────
-  if(_presetDirHandle){
-    // 파일 기반
-    var ok=await savePresetsToFile(_presetCache);
-    if(ok){
-      renderPresetList();
-      sv('preset-name-input','');
-      showStatus('preset-status','✅ 프리셋 저장됨: '+name,'success');
-      showToast('💾 프리셋 저장: '+name,'success');
-    }
-  } else {
-    // localStorage 폴백
-    lsSet(LS_KEY_PRESETS, JSON.stringify(_presetCache));
-    renderPresetList();
-    sv('preset-name-input','');
-    showToast('💾 프리셋 저장: '+name+' (브라우저 내부)','success');
-  }
+  var existing=_presetCache.findIndex(function(p){return p.name===name;});
+  if(existing>=0){if(!confirm('"'+name+'" 프리셋이 이미 있습니다. 덮어쓰시겠습니까?'))return;_presetCache[existing]={name:name,data:data,savedAt:now};}
+  else _presetCache.push({name:name,data:data,savedAt:now});
+  if(_presetDirHandle){var ok=await savePresetsToFile(_presetCache);if(ok){renderPresetList();sv('preset-name-input','');showStatus('preset-status','✅ 저장: '+name,'success');showToast('💾 프리셋 저장: '+name,'success');}}
+  else{lsSet(LS_KEY_PRESETS,JSON.stringify(_presetCache));renderPresetList();sv('preset-name-input','');showToast('💾 프리셋 저장: '+name,'success');}
 };
-
-/**
- * 프리셋 적용
- */
-window.loadPreset = function(i){
-  var p=_presetCache[i]; if(!p) return;
-  INPUT_IDS.forEach(function(id){ if(p.data[id]!==undefined) sv(id,p.data[id]); });
-  renderDoc(); triggerAutoSave();
-  showToast('✅ 적용: '+p.name,'success');
-};
-
-/**
- * 프리셋 삭제
- */
-window.deletePreset = async function(i){
-  if(!confirm('"'+_presetCache[i].name+'" 프리셋을 삭제하시겠습니까?')) return;
+window.loadPreset=function(i){var p=_presetCache[i];if(!p)return;INPUT_IDS.forEach(function(id){if(p.data[id]!==undefined)sv(id,p.data[id]);});renderDoc();triggerAutoSave();showToast('✅ 적용: '+p.name,'success');};
+window.deletePreset=async function(i){
+  if(!confirm('"'+_presetCache[i].name+'" 삭제?'))return;
   _presetCache.splice(i,1);
-
-  if(_presetDirHandle){
-    var ok=await savePresetsToFile(_presetCache);
-    if(ok){ renderPresetList(); showToast('🗑 프리셋 삭제됨','warn'); }
-  } else {
-    lsSet(LS_KEY_PRESETS, JSON.stringify(_presetCache));
-    renderPresetList(); showToast('🗑 프리셋 삭제됨','warn');
-  }
+  if(_presetDirHandle){var ok=await savePresetsToFile(_presetCache);if(ok){renderPresetList();showToast('🗑 삭제됨','warn');}}
+  else{lsSet(LS_KEY_PRESETS,JSON.stringify(_presetCache));renderPresetList();showToast('🗑 삭제됨','warn');}
 };
-
-/**
- * 파일에서 동기화 (수동 새로고침)
- */
-window.syncPresetsFromFile = async function(){
-  if(!_presetDirHandle){ showToast('폴더를 먼저 선택하세요','warn'); return; }
-  await loadPresetsFromFile();
-  showToast('🔄 프리셋 동기화 완료','success');
+window.syncPresetsFromFile=async function(){if(!_presetDirHandle){showToast('폴더를 먼저 선택하세요','warn');return;}await loadPresetsFromFile();showToast('🔄 동기화 완료','success');};
+window.exportPresetsToFile=function(){
+  if(!_presetCache.length){showToast('저장된 프리셋이 없습니다','warn');return;}
+  var json=JSON.stringify(_presetCache,null,2),blob=new Blob([json],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=PRESET_FILENAME;a.style.display='none';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+  showToast('📤 내보내기 완료','success');
 };
-
-/**
- * 프리셋 내보내기 (다운로드)
- */
-window.exportPresetsToFile = function(){
-  if(!_presetCache.length){ showToast('저장된 프리셋이 없습니다','warn'); return; }
-  var json=JSON.stringify(_presetCache, null, 2);
-  var blob=new Blob([json],{type:'application/json;charset=utf-8'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');
-  a.href=url; a.download=PRESET_FILENAME; a.style.display='none';
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); },1000);
-  showToast('📤 프리셋 내보내기 완료','success');
-};
-
-/**
- * 프리셋 가져오기 (파일 선택)
- */
-window.importPresetsFromFile = async function(e){
-  var file=e.target.files[0]; if(!file) return;
+window.importPresetsFromFile=async function(e){
+  var file=e.target.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=async function(ev){
     try{
-      var list=JSON.parse(ev.target.result);
-      if(!Array.isArray(list)) throw new Error('올바른 형식이 아닙니다');
-
-      var mode=_presetCache.length>0
-        ? confirm('기존 프리셋에 추가하시겠습니까?\n(취소 시 전체 교체)')
-        : false;
-
-      if(mode){
-        // 추가 (중복 이름은 덮어쓰기)
-        list.forEach(function(p){
-          var idx=_presetCache.findIndex(function(c){ return c.name===p.name; });
-          if(idx>=0) _presetCache[idx]=p; else _presetCache.push(p);
-        });
-      } else {
-        _presetCache=list;
-      }
-
-      if(_presetDirHandle){
-        await savePresetsToFile(_presetCache);
-      } else {
-        lsSet(LS_KEY_PRESETS, JSON.stringify(_presetCache));
-      }
-      renderPresetList();
-      showStatus('preset-status','✅ 가져오기 완료: '+list.length+'개','success');
-      showToast('📥 프리셋 가져오기 완료 ('+list.length+'개)','success');
-    } catch(err){ showToast('파일 오류: '+err.message,'error'); }
+      var list=JSON.parse(ev.target.result);if(!Array.isArray(list))throw new Error('올바른 형식이 아닙니다');
+      var mode=_presetCache.length>0?confirm('기존 프리셋에 추가?\n(취소 시 전체 교체)'):false;
+      if(mode){list.forEach(function(p){var idx=_presetCache.findIndex(function(c){return c.name===p.name;});if(idx>=0)_presetCache[idx]=p;else _presetCache.push(p);});}
+      else _presetCache=list;
+      if(_presetDirHandle)await savePresetsToFile(_presetCache);else lsSet(LS_KEY_PRESETS,JSON.stringify(_presetCache));
+      renderPresetList();showToast('📥 가져오기 완료 ('+list.length+'개)','success');
+    }catch(err){showToast('파일 오류: '+err.message,'error');}
   };
-  reader.readAsText(file,'utf-8');
-  e.target.value='';
+  reader.readAsText(file,'utf-8');e.target.value='';
 };
-
-/**
- * 프리셋 목록 렌더링
- */
 function renderPresetList(){
-  var wrap=document.getElementById('preset-list'); if(!wrap) return;
-  if(!_presetCache.length){
-    wrap.innerHTML='<div class="preset-empty">저장된 프리셋이 없습니다.</div>';
-    return;
-  }
+  var wrap=document.getElementById('preset-list');if(!wrap)return;
+  if(!_presetCache.length){wrap.innerHTML='<div class="preset-empty">저장된 프리셋이 없습니다.</div>';return;}
   wrap.innerHTML=_presetCache.map(function(p,i){
-    return '<div class="preset-item-v2">'
-      +'<span class="preset-name" title="'+esc(p.savedAt||'')+'">'+esc(p.name)+'</span>'
+    return '<div class="preset-item-v2"><span class="preset-name" title="'+esc(p.savedAt||'')+'">'+esc(p.name)+'</span>'
       +'<span class="preset-date">'+esc((p.savedAt||'').split(' ')[0]||'')+'</span>'
       +'<div class="btn-row" style="flex-shrink:0;">'
       +'<button class="btn btn-primary" style="padding:2px 8px;font-size:10px;" data-action="load-preset" data-idx="'+i+'">적용</button>'
@@ -1123,173 +927,128 @@ function renderPresetList(){
 }
 
 /* ══════════════════════════════════════════════════════
-   문서 저장/불러오기 (.gdoc)
+   문서 저장/불러오기
 ══════════════════════════════════════════════════════ */
 function buildGdocData(){
-  var fields={};
-  INPUT_IDS.forEach(function(id){ fields[id]=gv(id); });
-  var incLogo=document.getElementById('opt-include-logo');
-  var incTbl=document.getElementById('opt-include-tables');
-  return {
-    version:GDOC_VERSION, savedAt:new Date().toISOString(), docType:getDocType(),
-    fields:fields,
-    tables:(incTbl&&incTbl.checked)?JSON.parse(JSON.stringify(tblStore)):{},
-    logo:(incLogo&&incLogo.checked)?logoDataUrl:'',
-    meta:{ zoomLevel:parseInt(lsGet(LS_KEY_ZOOM))||100 }
-  };
+  var fields={};INPUT_IDS.forEach(function(id){fields[id]=gv(id);});
+  var il=document.getElementById('opt-include-logo'),it=document.getElementById('opt-include-tables');
+  return{version:GDOC_VERSION,savedAt:new Date().toISOString(),docType:getDocType(),fields:fields,tables:(it&&it.checked)?JSON.parse(JSON.stringify(tblStore)):{},logo:(il&&il.checked)?logoDataUrl:'',meta:{zoomLevel:parseInt(lsGet(LS_KEY_ZOOM))||100}};
 }
 function restoreGdocData(data){
-  if(!data||!data.version){ showToast('올바른 .gdoc 파일이 아닙니다','error'); return false; }
-  if(data.docType){ var r=document.querySelector('input[name="doc-type"][value="'+data.docType+'"]'); if(r){ r.checked=true; onDocTypeChange(); } }
-  if(data.fields) INPUT_IDS.forEach(function(id){ if(data.fields[id]!==undefined) sv(id,data.fields[id]); });
-  if(data.tables&&Object.keys(data.tables).length){ Object.assign(tblStore,data.tables); saveTblStore(); renderTblList(); }
-  if(data.logo){ logoDataUrl=safeLogoSrc(data.logo)||''; if(logoDataUrl){ lsSet(LS_KEY_LOGO,logoDataUrl); renderLogoPreview(); } }
-  if(data.meta&&data.meta.zoomLevel){ var zr=document.getElementById('zoom-range'); if(zr)zr.value=data.meta.zoomLevel; applyZoom(data.meta.zoomLevel); }
-  triggerAutoSave(); renderDoc(); renderBodyValidation(); validateAttach();
-  return true;
+  if(!data||!data.version){showToast('올바른 .gdoc 파일이 아닙니다','error');return false;}
+  if(data.docType){var r=document.querySelector('input[name="doc-type"][value="'+data.docType+'"]');if(r){r.checked=true;onDocTypeChange();}}
+  if(data.fields)INPUT_IDS.forEach(function(id){if(data.fields[id]!==undefined)sv(id,data.fields[id]);});
+  if(data.tables&&Object.keys(data.tables).length){Object.assign(tblStore,data.tables);saveTblStore();renderTblList();}
+  if(data.logo){logoDataUrl=safeLogoSrc(data.logo)||'';if(logoDataUrl){lsSet(LS_KEY_LOGO,logoDataUrl);renderLogoPreview();}}
+  if(data.meta&&data.meta.zoomLevel){var zr=document.getElementById('zoom-range');if(zr)zr.value=data.meta.zoomLevel;applyZoom(data.meta.zoomLevel);}
+  triggerAutoSave();renderDoc();renderBodyValidation();validateAttach();return true;
 }
 function initFileSysAPI(){
   _fsApiSupported=!!(window.showSaveFilePicker&&window.showOpenFilePicker&&window.showDirectoryPicker);
-  var badge=document.getElementById('fsmapi-badge');
-  var fsZone=document.getElementById('fsapi-zone');
-  var fsListZone=document.getElementById('fsapi-filelist-zone');
-  var presetFolderZone=document.getElementById('preset-folder-zone');
-
+  var badge=document.getElementById('fsmapi-badge'),fsZone=document.getElementById('fsapi-zone'),fsListZone=document.getElementById('fsapi-filelist-zone'),presetFolderZone=document.getElementById('preset-folder-zone');
   if(_fsApiSupported){
-    if(badge){ badge.textContent='✅ Chrome/Edge — 폴더 저장 지원'; badge.className='file-mgr-browser-badge'; }
-    if(fsZone) fsZone.style.display='flex';
-    if(fsListZone) fsListZone.style.display='flex';
-    if(presetFolderZone) presetFolderZone.style.display='flex';
-  } else {
-    if(badge){ badge.textContent='⬇️ Firefox/Safari — 다운로드 방식'; badge.className='file-mgr-browser-badge fallback'; }
+    if(badge){badge.textContent='✅ Chrome/Edge — 폴더 저장 지원';badge.className='file-mgr-browser-badge';}
+    if(fsZone)fsZone.style.display='flex';if(fsListZone)fsListZone.style.display='flex';if(presetFolderZone)presetFolderZone.style.display='flex';
+  }else{
+    if(badge){badge.textContent='⬇️ Firefox/Safari — 다운로드 방식';badge.className='file-mgr-browser-badge fallback';}
   }
 }
 window.selectSaveFolder=async function(){
-  if(!_fsApiSupported){ showToast('이 브라우저는 폴더 선택을 지원하지 않습니다','warn'); return; }
+  if(!_fsApiSupported){showToast('이 브라우저는 폴더 선택을 지원하지 않습니다','warn');return;}
   try{
     _dirHandle=await window.showDirectoryPicker({mode:'readwrite'});
-    var label=document.getElementById('dir-path-label');
-    if(label){ label.textContent='📁 '+_dirHandle.name; label.className='file-mgr-dir-path'; }
-    showStatus('file-mgr-status','✅ 폴더 선택됨: '+_dirHandle.name,'success');
-    showToast('📁 문서 폴더: '+_dirHandle.name,'success');
+    var label=document.getElementById('dir-path-label');if(label){label.textContent='📁 '+_dirHandle.name;label.className='file-mgr-dir-path';}
+    showStatus('file-mgr-status','✅ 폴더 선택됨: '+_dirHandle.name,'success');showToast('📁 '+_dirHandle.name,'success');
     await refreshFileList();
-  } catch(e){ if(e.name!=='AbortError') showToast('폴더 선택 취소','warn'); }
+  }catch(e){if(e.name!=='AbortError')showToast('폴더 선택 취소','warn');}
 };
 window.fillFilenameAuto=function(){
-  var title=gv('doc-title').trim()||'공문서';
-  var org=gv('org-name').trim()||'';
-  var d=new Date();
-  var ds=d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2);
+  var title=gv('doc-title').trim()||'공문서',org=gv('org-name').trim()||'';
+  var d=new Date(),ds=d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2);
   var safe=(org?org+'_':'')+title.slice(0,20).replace(/[\/\\:*?"<>|\s「」]/g,'_');
   sv('save-filename',safe+'_'+ds);
 };
 window.saveDocFile=async function(){
-  var fn=gv('save-filename').trim();
-  if(!fn){ fillFilenameAuto(); fn=gv('save-filename').trim(); }
-  if(fn.toLowerCase().endsWith(GDOC_EXT)) fn=fn.slice(0,-GDOC_EXT.length);
-  var data=buildGdocData();
-  var json=JSON.stringify(data,null,2);
-  var fullName=fn+GDOC_EXT;
+  var fn=gv('save-filename').trim();if(!fn){fillFilenameAuto();fn=gv('save-filename').trim();}
+  if(fn.toLowerCase().endsWith(GDOC_EXT))fn=fn.slice(0,-GDOC_EXT.length);
+  var data=buildGdocData(),json=JSON.stringify(data,null,2),fullName=fn+GDOC_EXT;
   if(_fsApiSupported&&_dirHandle){
     try{
-      var fh=await _dirHandle.getFileHandle(fullName,{create:true});
-      var wr=await fh.createWritable(); await wr.write(json); await wr.close();
-      showStatus('file-mgr-status','✅ 저장: '+fullName+' ('+(json.length/1024).toFixed(1)+'KB)','success');
-      showToast('💾 저장: '+fullName,'success');
-      var ar=document.getElementById('opt-auto-refresh'); if(ar&&ar.checked) await refreshFileList();
-      return;
-    } catch(e){ if(e.name==='AbortError')return; showToast('폴더 저장 실패 → 다운로드로 저장','warn'); }
+      var fh=await _dirHandle.getFileHandle(fullName,{create:true}),wr=await fh.createWritable();await wr.write(json);await wr.close();
+      showStatus('file-mgr-status','✅ 저장: '+fullName,'success');showToast('💾 '+fullName,'success');
+      var ar=document.getElementById('opt-auto-refresh');if(ar&&ar.checked)await refreshFileList();return;
+    }catch(e){if(e.name==='AbortError')return;}
   }
   if(_fsApiSupported&&!_dirHandle){
     try{
       var fh2=await window.showSaveFilePicker({suggestedName:fullName,types:[{description:'공문서 파일',accept:{'application/json':['.gdoc']}}]});
-      var wr2=await fh2.createWritable(); await wr2.write(json); await wr2.close();
-      showStatus('file-mgr-status','✅ 저장: '+fh2.name,'success'); showToast('💾 저장: '+fh2.name,'success'); return;
-    } catch(e){ if(e.name==='AbortError')return; }
+      var wr2=await fh2.createWritable();await wr2.write(json);await wr2.close();
+      showStatus('file-mgr-status','✅ 저장: '+fh2.name,'success');showToast('💾 '+fh2.name,'success');return;
+    }catch(e){if(e.name==='AbortError')return;}
   }
   downloadJson(json,fullName);
 };
 function downloadJson(json,filename){
-  var blob=new Blob([json],{type:'application/json;charset=utf-8'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a'); a.href=url; a.download=filename; a.style.display='none';
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); },1000);
-  showStatus('file-mgr-status','✅ 다운로드: '+filename,'success');
-  showToast('⬇️ 다운로드: '+filename,'success');
+  var blob=new Blob([json],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;a.style.display='none';document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);document.body.removeChild(a);},1000);
+  showStatus('file-mgr-status','✅ 다운로드: '+filename,'success');showToast('⬇️ '+filename,'success');
 }
 window.loadDocFile=async function(){
   if(_fsApiSupported){
     try{
-      var [fh]=await window.showOpenFilePicker({types:[{description:'공문서 파일',accept:{'application/json':['.gdoc','.json']}}],multiple:false});
-      var file=await fh.getFile(); var text=await file.text(); var data=JSON.parse(text);
-      if(restoreGdocData(data)){ showStatus('file-mgr-status','✅ 불러오기: '+file.name,'success'); showToast('📂 '+file.name,'success'); sv('save-filename',file.name.replace(/\.gdoc$/i,'').replace(/\.json$/i,'')); }
+      var[fh]=await window.showOpenFilePicker({types:[{description:'공문서 파일',accept:{'application/json':['.gdoc','.json']}}],multiple:false});
+      var file=await fh.getFile(),text=await file.text(),data=JSON.parse(text);
+      if(restoreGdocData(data)){showStatus('file-mgr-status','✅ 불러오기: '+file.name,'success');showToast('📂 '+file.name,'success');sv('save-filename',file.name.replace(/\.gdoc$/i,''));}
       return;
-    } catch(e){ if(e.name==='AbortError')return; showToast('파일 열기 오류: '+e.message,'error'); return; }
+    }catch(e){if(e.name==='AbortError')return;showToast('파일 열기 오류: '+e.message,'error');return;}
   }
-  var input=document.createElement('input'); input.type='file'; input.accept='.gdoc,.json'; input.style.display='none';
-  document.body.appendChild(input);
+  var input=document.createElement('input');input.type='file';input.accept='.gdoc,.json';input.style.display='none';document.body.appendChild(input);
   input.addEventListener('change',function(){
-    var file=input.files[0]; if(!file){ document.body.removeChild(input); return; }
+    var file=input.files[0];if(!file){document.body.removeChild(input);return;}
     var reader=new FileReader();
-    reader.onload=function(ev){ try{ var data=JSON.parse(ev.target.result); if(restoreGdocData(data)){ showStatus('file-mgr-status','✅ 불러오기: '+file.name,'success'); showToast('📂 '+file.name,'success'); } } catch(e){ showToast('파일 오류: '+e.message,'error'); } document.body.removeChild(input); };
+    reader.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(restoreGdocData(data)){showStatus('file-mgr-status','✅ 불러오기: '+file.name,'success');showToast('📂 '+file.name,'success');}}catch(e){showToast('파일 오류: '+e.message,'error');}document.body.removeChild(input);};
     reader.readAsText(file,'utf-8');
   });
   input.click();
 };
 window.refreshFileList=async function(){
-  var wrap=document.getElementById('file-list-wrap'); if(!wrap||!_dirHandle) return;
+  var wrap=document.getElementById('file-list-wrap');if(!wrap||!_dirHandle)return;
   wrap.innerHTML='<div class="file-list-empty">로딩 중...</div>';
   try{
     var files=[];
-    for await(var [name,handle] of _dirHandle.entries()){
-      if(handle.kind==='file'&&(name.endsWith('.gdoc')||name.endsWith('.json'))){
-        var f=await handle.getFile(); files.push({name:name,lastModified:f.lastModified,size:f.size});
-      }
-    }
-    if(!files.length){ wrap.innerHTML='<div class="file-list-empty">📭 .gdoc 파일 없음</div>'; return; }
-    files.sort(function(a,b){ return b.lastModified-a.lastModified; });
-    var html=''; files.forEach(function(f){
-      var d=new Date(f.lastModified);
-      var ds=d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-      html+='<div class="file-list-item" data-action="open-file-item" data-name="'+esc(f.name)+'">'
-        +'<span class="file-icon">📄</span>'
-        +'<span class="file-name">'+esc(f.name)+'</span>'
-        +'<span class="file-date">'+ds+'<br>'+(f.size/1024).toFixed(1)+'KB</span>'
-        +'<button class="btn btn-danger" style="padding:2px 5px;font-size:10px;flex-shrink:0;" data-action="delete-file-item" data-name="'+esc(f.name)+'">🗑</button>'
-        +'</div>';
+    for await(var[name,handle]of _dirHandle.entries()){if(handle.kind==='file'&&(name.endsWith('.gdoc')||name.endsWith('.json'))){var f=await handle.getFile();files.push({name:name,lastModified:f.lastModified,size:f.size});}}
+    if(!files.length){wrap.innerHTML='<div class="file-list-empty">📭 .gdoc 파일 없음</div>';return;}
+    files.sort(function(a,b){return b.lastModified-a.lastModified;});
+    var html='';
+    files.forEach(function(f){
+      var d=new Date(f.lastModified),ds=d.getFullYear()+'.'+(d.getMonth()+1)+'.'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+      html+='<div class="file-list-item" data-action="open-file-item" data-name="'+esc(f.name)+'"><span class="file-icon">📄</span><span class="file-name">'+esc(f.name)+'</span><span class="file-date">'+ds+'<br>'+(f.size/1024).toFixed(1)+'KB</span><button class="btn btn-danger" style="padding:2px 5px;font-size:10px;flex-shrink:0;" data-action="delete-file-item" data-name="'+esc(f.name)+'">🗑</button></div>';
     });
     wrap.innerHTML=html;
-  } catch(e){ wrap.innerHTML='<div class="file-list-empty" style="color:var(--danger);">오류: '+esc(e.message)+'</div>'; }
+  }catch(e){wrap.innerHTML='<div class="file-list-empty" style="color:var(--danger);">오류: '+esc(e.message)+'</div>';}
 };
 async function openFileFromDir(name){
-  if(!_dirHandle) return;
-  try{ var fh=await _dirHandle.getFileHandle(name); var file=await fh.getFile(); var text=await file.text(); var data=JSON.parse(text); if(restoreGdocData(data)){ sv('save-filename',name.replace(/\.gdoc$/i,'')); showToast('📂 '+name,'success'); } } catch(e){ showToast('열기 실패: '+e.message,'error'); }
+  if(!_dirHandle)return;
+  try{var fh=await _dirHandle.getFileHandle(name),file=await fh.getFile(),text=await file.text(),data=JSON.parse(text);if(restoreGdocData(data)){sv('save-filename',name.replace(/\.gdoc$/i,''));showToast('📂 '+name,'success');}}catch(e){showToast('열기 실패: '+e.message,'error');}
 }
 async function deleteFileFromDir(name){
-  if(!_dirHandle) return; if(!confirm('"'+name+'" 삭제?')) return;
-  try{ await _dirHandle.removeEntry(name); showToast('🗑 삭제: '+name,'warn'); await refreshFileList(); } catch(e){ showToast('삭제 실패: '+e.message,'error'); }
+  if(!_dirHandle)return;if(!confirm('"'+name+'" 삭제?'))return;
+  try{await _dirHandle.removeEntry(name);showToast('🗑 삭제: '+name,'warn');await refreshFileList();}catch(e){showToast('삭제 실패: '+e.message,'error');}
 }
 
 /* ══════════════════════════════════════════════════════
-   섹션 토글 / 사이드바
+   섹션 / 패널
 ══════════════════════════════════════════════════════ */
-function loadSectionStates(){
-  var raw=lsGet(LS_KEY_SECTIONS);if(!raw)return;
-  try{ var states=JSON.parse(raw);Object.keys(states).forEach(function(key){ var hdr=document.getElementById('sh-'+key),body=document.getElementById('sb-'+key);if(!hdr||!body)return;body.classList.toggle('collapsed',!states[key]);hdr.classList.toggle('open',states[key]); }); }catch(e){}
-}
-function saveSectionState(key,open){ var raw=lsGet(LS_KEY_SECTIONS),states={};try{if(raw)states=JSON.parse(raw);}catch(e){} states[key]=open;lsSet(LS_KEY_SECTIONS,JSON.stringify(states)); }
-window.toggleSection=function(el,key){ var body=el.nextElementSibling;if(!body)return;var isOpen=!body.classList.contains('collapsed');body.classList.toggle('collapsed');el.classList.toggle('open',!isOpen);if(key)saveSectionState(key,!isOpen); };
-
-/* ══════════════════════════════════════════════════════
-   맞춤법 패널
-══════════════════════════════════════════════════════ */
+function loadSectionStates(){var raw=lsGet(LS_KEY_SECTIONS);if(!raw)return;try{var states=JSON.parse(raw);Object.keys(states).forEach(function(key){var hdr=document.getElementById('sh-'+key),body=document.getElementById('sb-'+key);if(!hdr||!body)return;body.classList.toggle('collapsed',!states[key]);hdr.classList.toggle('open',states[key]);});}catch(e){}}
+function saveSectionState(key,open){var raw=lsGet(LS_KEY_SECTIONS),states={};try{if(raw)states=JSON.parse(raw);}catch(e){}states[key]=open;lsSet(LS_KEY_SECTIONS,JSON.stringify(states));}
+window.toggleSection=function(el,key){var body=el.nextElementSibling;if(!body)return;var isOpen=!body.classList.contains('collapsed');body.classList.toggle('collapsed');el.classList.toggle('open',!isOpen);if(key)saveSectionState(key,!isOpen);};
 var _spellPanelOpen=false;
 function toggleSpellPanel(){_spellPanelOpen=!_spellPanelOpen;applySpellPanelState();lsSet(LS_KEY_SPELL_OPEN,_spellPanelOpen?'1':'0');}
-function applySpellPanelState(){ var panel=document.getElementById('spell-panel'),btn=document.getElementById('spell-panel-toggle-btn');if(!panel)return;panel.classList.toggle('collapsed',!_spellPanelOpen);if(btn)btn.textContent=_spellPanelOpen?'▶':'◀'; }
+function applySpellPanelState(){var panel=document.getElementById('spell-panel'),btn=document.getElementById('spell-panel-toggle-btn');if(!panel)return;panel.classList.toggle('collapsed',!_spellPanelOpen);if(btn)btn.textContent=_spellPanelOpen?'▶':'◀';}
 window.toggleSpellPanel=toggleSpellPanel;
-window.switchSpellTab=function(tab){ ['naver','docrule','gemini'].forEach(function(t){ var btn=document.getElementById('tab-btn-'+t),panel=document.getElementById('tab-'+t);if(btn)btn.classList.toggle('active',t===tab);if(panel)panel.classList.toggle('active',t===tab); });if(!_spellPanelOpen){_spellPanelOpen=true;applySpellPanelState();lsSet(LS_KEY_SPELL_OPEN,'1');} };
-function updateGlobalBadge(){ var ruleEW=_ruleResults.filter(function(r){return r.level==='error'||r.level==='warn';}).length,total=ruleEW+_geminiResults.length;var tb=document.getElementById('spell-badge-total');if(tb){tb.textContent=total;tb.style.display=total?'inline-flex':'none';tb.classList.toggle('has-error',total>0);}var ob=document.getElementById('spell-open-badge');if(ob){ob.textContent=total;ob.style.display=total?'inline-flex':'none';}var rb=document.getElementById('badge-docrule');if(rb){rb.textContent=ruleEW;rb.style.display=ruleEW?'inline-flex':'none';} }
+window.switchSpellTab=function(tab){['naver','docrule','gemini'].forEach(function(t){var btn=document.getElementById('tab-btn-'+t),panel=document.getElementById('tab-'+t);if(btn)btn.classList.toggle('active',t===tab);if(panel)panel.classList.toggle('active',t===tab);});if(!_spellPanelOpen){_spellPanelOpen=true;applySpellPanelState();lsSet(LS_KEY_SPELL_OPEN,'1');}};
+function updateGlobalBadge(){var ruleEW=_ruleResults.filter(function(r){return r.level==='error'||r.level==='warn';}).length,total=ruleEW+_geminiResults.length;var tb=document.getElementById('spell-badge-total');if(tb){tb.textContent=total;tb.style.display=total?'inline-flex':'none';tb.classList.toggle('has-error',total>0);}var ob=document.getElementById('spell-open-badge');if(ob){ob.textContent=total;ob.style.display=total?'inline-flex':'none';}var rb=document.getElementById('badge-docrule');if(rb){rb.textContent=ruleEW;rb.style.display=ruleEW?'inline-flex':'none';}}
 
 /* ══════════════════════════════════════════════════════
    숫자/날짜/금액 포맷
@@ -1312,15 +1071,11 @@ function applyNumberFormat(text){
 function parseCellAlign(val){var s=String(val||'').trim();if(/^\[중앙\]/.test(s))return{text:s.replace(/^\[중앙\]\s*/,''),align:'center'};if(/^\[좌\]/.test(s))return{text:s.replace(/^\[좌\]\s*/,''),align:'left'};if(/^\[우\]/.test(s))return{text:s.replace(/^\[우\]\s*/,''),align:'right'};return{text:s,align:''};}
 
 /* ══════════════════════════════════════════════════════
-   자동저장
+   자동저장 / 문서유형
 ══════════════════════════════════════════════════════ */
 var _autoTimer=null;
 function triggerAutoSave(){clearTimeout(_autoTimer);_autoTimer=setTimeout(function(){var d={};INPUT_IDS.forEach(function(id){d[id]=gv(id);});lsSet(LS_KEY_AUTO,JSON.stringify(d));},800);}
 function restoreAutoSave(){var raw=lsGet(LS_KEY_AUTO);if(!raw)return;try{var d=JSON.parse(raw);INPUT_IDS.forEach(function(id){if(d[id]!==undefined)sv(id,d[id]);});}catch(e){}}
-
-/* ══════════════════════════════════════════════════════
-   문서 유형
-══════════════════════════════════════════════════════ */
 function getDocType(){var r=document.querySelector('input[name="doc-type"]:checked');return r?r.value:'normal';}
 window.onDocTypeChange=function(){
   var type=getDocType(),sf=document.getElementById('sender-field'),recv=document.getElementById('doc-recv');
@@ -1353,17 +1108,17 @@ function updateInsertIndicator(){var ind=document.getElementById('tbl-insert-ind
 function detectItemLevel(line){var s=line.replace(/^\[(중앙|좌|우|bold|u)\]\s*/i,'');if(/^\d+\.\s*\S/.test(s))return 1;if(/^[가-하]\.\s*\S/.test(s))return 2;if(/^\d+\)\s*\S/.test(s))return 3;if(/^[가-하]\)\s*\S/.test(s))return 4;return 0;}
 function splitItemMarker(line){var s=line.replace(/^\[(중앙|좌|우|bold|u)\]\s*/i,''),m;m=s.match(/^(\d+)\.\s*([\s\S]*)$/);if(m)return{marker:m[1]+'. ',content:m[2]};m=s.match(/^([가-하])\.\s*([\s\S]*)$/);if(m)return{marker:m[1]+'. ',content:m[2]};m=s.match(/^(\d+)\)\s*([\s\S]*)$/);if(m)return{marker:m[1]+') ',content:m[2]};m=s.match(/^([가-하])\)\s*([\s\S]*)$/);if(m)return{marker:m[1]+') ',content:m[2]};return null;}
 var DOC_RULES=[
-  {id:'D001',cat:'날짜표기',level:'error',re:/(\d{4})\.(\d{1,2})\.(\d{1,2})\./,title:'날짜 띄어쓰기 오류',guide:'공문서 날짜는 마침표 뒤에 한 칸 띄어씁니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.'}},
-  {id:'D002',cat:'날짜표기',level:'warn',re:/(\d{4})\. (0\d)\. /,title:'날짜 앞자리 0 표기',guide:'월·일은 앞에 0을 붙이지 않습니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '}},
-  {id:'D004',cat:'날짜표기',level:'error',re:/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/,title:'한글 연월일 표기',guide:'날짜는 숫자와 마침표로 표기합니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.'}},
-  {id:'D005',cat:'날짜표기',level:'warn',re:/(\d{4})\/(\d{1,2})\/(\d{1,2})/,title:'날짜에 슬래시 사용',guide:'날짜 구분자는 마침표를 사용합니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.'}},
-  {id:'T001',cat:'시간표기',level:'error',re:/오전\s*(\d{1,2})\s*시\s*(\d{2})\s*분/,title:'오전 → 24시각제',guide:'시간은 24시각제로 표기합니다.',fix:function(m){var h=parseInt(m[1]);return(h<10?'0'+h:h)+':'+m[2]}},
-  {id:'T002',cat:'시간표기',level:'error',re:/오후\s*(\d{1,2})\s*시\s*(\d{2})\s*분/,title:'오후 → 24시각제',guide:'시간은 24시각제로 표기합니다.',fix:function(m){return(parseInt(m[1])+12)+':'+m[2]}},
-  {id:'P001',cat:'피동표현',level:'warn',re:/되어\s*지/,title:'이중 피동 "되어지-"',guide:'"되어지다"는 이중 피동입니다.',fix:function(){return'되'}},
-  {id:'P002',cat:'피동표현',level:'warn',re:/보여\s*지/,title:'이중 피동 "보여지-"',guide:'"보여지다"는 이중 피동입니다.',fix:function(){return'보이'}},
+  {id:'D001',cat:'날짜표기',level:'error',re:/(\d{4})\.(\d{1,2})\.(\d{1,2})\./,title:'날짜 띄어쓰기 오류',guide:'마침표 뒤 한 칸 띄어씁니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.';}},
+  {id:'D002',cat:'날짜표기',level:'warn',re:/(\d{4})\. (0\d)\. /,title:'날짜 앞자리 0 표기',guide:'월·일은 앞에 0을 붙이지 않습니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. ';}},
+  {id:'D004',cat:'날짜표기',level:'error',re:/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/,title:'한글 연월일 표기',guide:'날짜는 숫자와 마침표로 표기합니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.';}},
+  {id:'D005',cat:'날짜표기',level:'warn',re:/(\d{4})\/(\d{1,2})\/(\d{1,2})/,title:'날짜에 슬래시 사용',guide:'날짜 구분자는 마침표를 사용합니다.',fix:function(m){return m[1]+'. '+parseInt(m[2])+'. '+parseInt(m[3])+'.';}},
+  {id:'T001',cat:'시간표기',level:'error',re:/오전\s*(\d{1,2})\s*시\s*(\d{2})\s*분/,title:'오전 → 24시각제',guide:'시간은 24시각제로 표기합니다.',fix:function(m){var h=parseInt(m[1]);return(h<10?'0'+h:h)+':'+m[2];}},
+  {id:'T002',cat:'시간표기',level:'error',re:/오후\s*(\d{1,2})\s*시\s*(\d{2})\s*분/,title:'오후 → 24시각제',guide:'시간은 24시각제로 표기합니다.',fix:function(m){return(parseInt(m[1])+12)+':'+m[2];}},
+  {id:'P001',cat:'피동표현',level:'warn',re:/되어\s*지/,title:'이중 피동 "되어지-"',guide:'"되어지다"는 이중 피동입니다.',fix:function(){return'되';}},
+  {id:'P002',cat:'피동표현',level:'warn',re:/보여\s*지/,title:'이중 피동 "보여지-"',guide:'"보여지다"는 이중 피동입니다.',fix:function(){return'보이';}},
   {id:'B001',cat:'번역투',level:'warn',re:/에\s*있어\s*서/,title:'번역투 "~에 있어서"',guide:'"~에 있어서"는 번역투입니다.',fix:null},
-  {id:'C007',cat:'공문체',level:'warn',re:/보고\s*드\s*립니다/,title:'"보고 드립니다"→"보고합니다"',guide:'"보고합니다"로 수정하세요.',fix:function(){return'보고합니다'}},
-  {id:'SP001',cat:'띄어쓰기',level:'warn',re:/할수있/,title:'"할수있"→"할 수 있"',guide:'의존명사 "수"는 띄어 씁니다.',fix:function(){return'할 수 있'}},
+  {id:'C007',cat:'공문체',level:'warn',re:/보고\s*드\s*립니다/,title:'"보고 드립니다"→"보고합니다"',guide:'"보고합니다"로 수정하세요.',fix:function(){return'보고합니다';}},
+  {id:'SP001',cat:'띄어쓰기',level:'warn',re:/할수있/,title:'"할수있"→"할 수 있"',guide:'의존명사 "수"는 띄어 씁니다.',fix:function(){return'할 수 있';}},
 ];
 window.runDocRuleCheck=function(){
   var text=gv('doc-body');if(!text.trim()){showToast('본문을 입력하세요','warn');return;}
@@ -1375,7 +1130,7 @@ window.runDocRuleCheck=function(){
   });
   _ruleResults=results;renderRuleResults(results);updateRuleActionBar(results);updateGlobalBadge();
   if(!results.length)showToast('✅ 규정 검사 완료 — 오류 없음','success');
-  else showToast('📜 규정 검사: '+results.filter(function(r){return r.level==='error';}).length+'건 오류','warn');
+  else showToast('📜 규정 검사: 오류 '+results.filter(function(r){return r.level==='error';}).length+'건','warn');
 };
 document.addEventListener('click',function(e){var cb=e.target.closest('.rule-cat-btn');if(cb){_activeRuleCat=cb.dataset.cat||'all';document.querySelectorAll('.rule-cat-btn').forEach(function(b){b.classList.toggle('active',b.dataset.cat===_activeRuleCat);});renderRuleResults(_ruleResults);}});
 function renderRuleResults(results){
@@ -1391,7 +1146,7 @@ function renderRuleResults(results){
 }
 function updateRuleActionBar(results){var bar=document.getElementById('rule-action-bar'),title=document.getElementById('rule-action-title'),fab=document.getElementById('btn-fix-all-rule');if(!bar)return;if(!results.length){bar.style.display='none';return;}var fix=results.filter(function(r){return!!r.correct&&!r.fixed;});bar.style.display='flex';if(title)title.textContent='수정 가능: '+fix.length+'건';if(fab)fab.disabled=(!fix.length);updateRuleUndoBtn();}
 function updateRuleUndoBtn(){var btn=document.getElementById('btn-undo-rule');if(btn)btn.disabled=(!_ruleHistory.length);}
-window.fixOneRule=function(idx){var r=_ruleResults[idx];if(!r||!r.correct||r.fixed)return;_ruleHistory.push(gv('doc-body'));if(_ruleHistory.length>20)_ruleHistory.shift();var ta=document.getElementById('doc-body');if(!ta)return;var re=new RegExp(r.wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g');ta.value=ta.value.replace(re,r.correct);r.fixed=true;renderRuleResults(_ruleResults);updateRuleActionBar(_ruleResults);updateGlobalBadge();renderDoc();triggerAutoSave();showToast('✅ 수정: "'+r.wrong+'" → "'+r.correct+'"','success');updateRuleUndoBtn();};
+window.fixOneRule=function(idx){var r=_ruleResults[idx];if(!r||!r.correct||r.fixed)return;_ruleHistory.push(gv('doc-body'));if(_ruleHistory.length>20)_ruleHistory.shift();var ta=document.getElementById('doc-body');if(!ta)return;ta.value=ta.value.replace(new RegExp(r.wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),r.correct);r.fixed=true;renderRuleResults(_ruleResults);updateRuleActionBar(_ruleResults);updateGlobalBadge();renderDoc();triggerAutoSave();showToast('✅ 수정: "'+r.wrong+'" → "'+r.correct+'"','success');updateRuleUndoBtn();};
 window.fixAllRules=function(){var fix=_ruleResults.filter(function(r){return!!r.correct&&!r.fixed;});if(!fix.length)return;_ruleHistory.push(gv('doc-body'));if(_ruleHistory.length>20)_ruleHistory.shift();var ta=document.getElementById('doc-body');if(!ta)return;var text=ta.value,seen={};fix.forEach(function(r){if(!r.wrong||!r.correct||seen[r.wrong])return;seen[r.wrong]=true;text=text.replace(new RegExp(r.wrong.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),r.correct);r.fixed=true;});ta.value=text;renderRuleResults(_ruleResults);updateRuleActionBar(_ruleResults);updateGlobalBadge();renderDoc();triggerAutoSave();showToast('✅ 전체 수정 완료','success');updateRuleUndoBtn();};
 window.undoRuleFix=function(){if(!_ruleHistory.length)return;var ta=document.getElementById('doc-body');if(!ta)return;ta.value=_ruleHistory.pop();_ruleResults.forEach(function(r){r.fixed=false;});renderRuleResults(_ruleResults);updateRuleActionBar(_ruleResults);updateGlobalBadge();renderDoc();triggerAutoSave();showToast('↩ 취소','success');updateRuleUndoBtn();};
 
@@ -1406,7 +1161,7 @@ window.openNaverSpell=function(){
   if(navigator.clipboard)navigator.clipboard.writeText(text).then(function(){showCS(true);}).catch(function(){showCS(fallback());});
   else showCS(fallback());
   var popup=window.open('https://search.naver.com/search.naver?where=nexearch&sm=top_hty&fbm=0&ie=utf8&query=%EB%A7%9E%EC%B6%A4%EB%B2%95+%EA%B2%80%EC%82%AC%EA%B8%B0','naver_spell','width=820,height=700,scrollbars=yes');
-  if(!popup||popup.closed)showToast('팝업이 차단되었습니다','error');else showToast('✅ 복사 완료 — 네이버에서 Ctrl+V','success');
+  if(!popup||popup.closed)showToast('팝업이 차단되었습니다','error');else showToast('✅ 복사 완료 — Ctrl+V','success');
 };
 window.applyNaverResult=function(){var nv=gv('naver-paste-input').trim();if(!nv){showToast('교정 텍스트를 붙여넣으세요','warn');return;}var old=gv('doc-body');if(nv===old){showToast('변경 내용 없음','warn');return;}_naverHistory.push(old);if(_naverHistory.length>10)_naverHistory.shift();sv('doc-body',nv);sv('naver-paste-input','');renderDoc();triggerAutoSave();var btn=document.getElementById('naver-undo-btn');if(btn)btn.disabled=false;showToast('✅ 교정 적용 완료','success');};
 window.undoNaverResult=function(){if(!_naverHistory.length)return;sv('doc-body',_naverHistory.pop());renderDoc();triggerAutoSave();var btn=document.getElementById('naver-undo-btn');if(btn)btn.disabled=(!_naverHistory.length);showToast('↩ 되돌리기','success');};
@@ -1417,7 +1172,7 @@ window.undoNaverResult=function(){if(!_naverHistory.length)return;sv('doc-body',
 function setGeminiStatus(state,msg){var el=document.getElementById('gemini-status');if(!el)return;var map={none:{cls:'none',txt:'⚪ 미설정'},ok:{cls:'ok',txt:'🟢 연결됨'},err:{cls:'err',txt:'🔴 키 오류'},loading:{cls:'loading',txt:'🟡 확인 중…'}};var s=map[state]||map.none;el.className='gemini-status '+s.cls;el.textContent=msg||s.txt;}
 window.applyGeminiKey=function(){var inp=document.getElementById('gemini-api-key');if(!inp)return;var key=inp.value.trim();if(!key){showToast('API 키를 입력하세요','warn');return;}if(!key.startsWith('AIza')){showToast('올바른 Gemini API 키 형식이 아닙니다','error');setGeminiStatus('err');return;}setGeminiStatus('loading');fetch(GEMINI_ENDPOINT+'?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'안녕'}]}],generationConfig:{maxOutputTokens:5}})}).then(function(r){if(r.ok){_geminiApiKey=key;setGeminiStatus('ok');showToast('✅ Gemini 연결 성공','success');}else return r.json().then(function(j){throw new Error((j.error&&j.error.message)||'HTTP '+r.status);});}).catch(function(e){_geminiApiKey='';setGeminiStatus('err');showToast('키 오류: '+e.message,'error');});};
 window.clearGeminiKey=function(){_geminiApiKey='';var inp=document.getElementById('gemini-api-key');if(inp)inp.value='';setGeminiStatus('none');showToast('API 키 삭제됨','warn');_geminiResults=[];renderGeminiResults([],false);updateHighlightOverlay([]);updateGlobalBadge();var bar=document.getElementById('gemini-action-bar');if(bar)bar.style.display='none';};
-var GEMINI_PROMPT=['당신은 대한민국 공문서 전문 교열 담당자입니다.','아래 공문서 본문을 검토하여 맞춤법·어법·공문서 문체·날짜·시간·금액 표기법을 검사하세요.','반드시 아래 JSON 배열 형식으로만 응답하세요:','[{"lineNo":줄번호,"level":"error|warn|info","title":"오류제목","matched":"실제오류텍스트","correct":"올바른표현","guide":"설명"}]','오류 없으면 []을 반환하세요. 서식 태그([중앙],[bold],[TABLE:...])는 제외하세요.'].join('\n');
+var GEMINI_PROMPT=['당신은 대한민국 공문서 전문 교열 담당자입니다.','아래 공문서 본문을 검토하여 맞춤법·어법·공문서 문체·날짜·시간·금액 표기법을 검사하세요.','반드시 아래 JSON 배열 형식으로만 응답하세요:','[{"lineNo":줄번호,"level":"error|warn|info","title":"오류제목","matched":"실제오류텍스트","correct":"올바른표현","guide":"설명"}]','오류 없으면 []을 반환하세요.'].join('\n');
 function runGeminiAPI(text,signal){if(!_geminiApiKey||!text.trim())return Promise.resolve([]);return fetch(GEMINI_ENDPOINT+'?key='+encodeURIComponent(_geminiApiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:GEMINI_PROMPT+'\n\n---본문---\n'+text}]}],generationConfig:{temperature:0.1,maxOutputTokens:2048,responseMimeType:'application/json'}}),signal:signal}).then(function(r){if(!r.ok)return r.json().then(function(j){throw new Error((j.error&&j.error.message)||'API 오류');});return r.json();}).then(function(data){var raw='';try{raw=data.candidates[0].content.parts[0].text;raw=raw.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();var parsed=JSON.parse(raw);if(!Array.isArray(parsed))return[];return parsed.map(function(item){return{lineNo:parseInt(item.lineNo)||1,colNo:0,colEnd:0,matched:item.matched||'',rule:{id:'AI',title:item.title||'AI 검사',wrong:item.matched||'',correct:item.correct||'',guide:item.guide||'',level:item.level||'warn'},source:'ai'};});}catch(e){return[];}}).catch(function(e){if(e.name==='AbortError')throw e;return[];});}
 window.runGeminiSpellCheck=function(){
   var text=gv('doc-body');if(!text.trim()){showToast('본문을 입력하세요','warn');return;}
@@ -1477,11 +1232,7 @@ function doSaveTblEditor(){
   for(var r=0;r<rows;r++){data[r]=[];for(var c=0;c<cols;c++){var inp=document.querySelector('#tbl-grid input[data-r="'+r+'"][data-c="'+c+'"]');data[r][c]=inp?inp.value:'';}}
   tblStore[name]={hasHeader:hdr?hdr.checked:true,data:data,useComma:isCommaEnabled()};saveTblStore();renderTblList();renderDoc();showToast('✅ 표 저장: '+name,'success');
 }
-function doInsertTblCode(){
-  var name=_currentTblName;if(!name)return;
-  if(!tblStore[name]){showToast('표를 먼저 저장하세요','warn');return;}
-  insertAtBodyCursor('[TABLE:'+name+']');showToast('✅ 삽입: [TABLE:'+name+']','success');updateInsertIndicator();
-}
+function doInsertTblCode(){var name=_currentTblName;if(!name)return;if(!tblStore[name]){showToast('표를 먼저 저장하세요','warn');return;}insertAtBodyCursor('[TABLE:'+name+']');showToast('✅ 삽입: [TABLE:'+name+']','success');updateInsertIndicator();}
 window.editTbl=function(name){var t=tblStore[name];if(!t)return;sv('tbl-name',name);sv('tbl-rows',t.data.length);sv('tbl-cols',t.data[0]?t.data[0].length:1);var chk=document.getElementById('tbl-comma');if(chk)chk.checked=(t.useComma!==false);createTblEditor();};
 window.deleteTbl=function(name){if(!confirm('"'+name+'" 삭제?'))return;delete tblStore[name];saveTblStore();renderTblList();renderDoc();showToast('삭제: '+name,'warn');};
 function renderTblList(){
@@ -1497,7 +1248,7 @@ function buildTblHtml(name){
 }
 
 /* ══════════════════════════════════════════════════════
-   본문 / 붙임 빌드
+   ★ 본문 빌드 (escWithSpace 적용)
 ══════════════════════════════════════════════════════ */
 function buildBodyHtml(text,appendEnd){
   if(!text.trim())return'';
@@ -1521,11 +1272,17 @@ function buildBodyHtml(text,appendEnd){
     var endMark='';
     if(isLast&&appendEnd&&!lastIsTable){var t=rest.trimEnd(),lc=t.charAt(t.length-1);endMark=(lc==='.')?'&nbsp;&nbsp;끝.':'.&nbsp;&nbsp;끝.';}
     var level=detectItemLevel(rest),split=level>0?splitItemMarker(rest):null;
-    if(level>0&&split){h+='<div class="body-l'+level+alignClass+extraClass+'"><span class="item-marker">'+esc(split.marker)+'</span><span class="item-content">'+esc(split.content)+endMark+'</span></div>';}
-    else{h+='<div class="body-plain'+alignClass+extraClass+'">'+esc(rest)+endMark+'</div>';}
+    if(level>0&&split){
+      /* ★ escWithSpace 적용 — 항목번호 줄 */
+      h+='<div class="body-l'+level+alignClass+extraClass+'"><span class="item-marker">'+esc(split.marker)+'</span><span class="item-content">'+escWithSpace(split.content)+endMark+'</span></div>';
+    }else{
+      /* ★ escWithSpace 적용 — 일반 줄 */
+      h+='<div class="body-plain'+alignClass+extraClass+'">'+escWithSpace(rest)+endMark+'</div>';
+    }
   });
   return h+'</div>';
 }
+
 function ensureTrailingPeriod(line){var s=line.trimEnd();if(!s)return s;return s.charAt(s.length-1)==='.'?s:s+'.';}
 function buildAttachHtml(text){
   if(!text.trim())return'';
@@ -1545,7 +1302,7 @@ function validateAttach(){
 }
 
 /* ══════════════════════════════════════════════════════
-   결재/하단 빌드
+   결재/하단
 ══════════════════════════════════════════════════════ */
 function buildBottom(){
   var type=getDocType(),sender=gv('sender-name').trim(),members=gv('approval-members');
@@ -1675,8 +1432,8 @@ function initResize(handleId,targetId,saveKey,dir){
 ══════════════════════════════════════════════════════ */
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){closeModal('help-modal-bg');return;}
-  if(e.ctrlKey&&e.key==='s'&&!e.shiftKey){e.preventDefault();window.saveDocFile();return;}
-  if(e.ctrlKey&&e.key==='S'&&e.shiftKey){e.preventDefault();window.savePreset();return;}
+  if(e.ctrlKey&&!e.shiftKey&&e.key==='s'){e.preventDefault();window.saveDocFile();return;}
+  if(e.ctrlKey&&e.shiftKey&&e.key==='S'){e.preventDefault();window.savePreset();return;}
   if(e.ctrlKey&&e.key==='o'){e.preventDefault();window.loadDocFile();return;}
   if(e.ctrlKey&&e.key==='d'){e.preventDefault();window.incrementDocNo('enforce-no');return;}
   if(e.ctrlKey&&e.key==='t'){e.preventDefault();fillAllToday();return;}
@@ -1713,33 +1470,22 @@ document.addEventListener('click',function(e){
    DOMContentLoaded
 ══════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded',function(){
-  initFileSysAPI();
-  updatePresetFolderUI();
-
-  loadTblStore(); renderTblList(); loadLogo();
-  var savedType=lsGet(LS_KEY_DOCTYPE);
-  if(savedType){var r=document.querySelector('input[name="doc-type"][value="'+savedType+'"]');if(r)r.checked=true;}
-  INPUT_IDS.forEach(function(id){sv(id,DEFAULTS[id]||'');});
-  restoreAutoSave();
-
-  // ★ localStorage에서 프리셋 초기 로드 (폴더 미선택 상태)
-  var raw=lsGet(LS_KEY_PRESETS);
-  if(raw){try{_presetCache=JSON.parse(raw);}catch(e){_presetCache=[];}}
+  initFileSysAPI();updatePresetFolderUI();
+  loadTblStore();renderTblList();loadLogo();
+  var savedType=lsGet(LS_KEY_DOCTYPE);if(savedType){var r=document.querySelector('input[name="doc-type"][value="'+savedType+'"]');if(r)r.checked=true;}
+  INPUT_IDS.forEach(function(id){sv(id,DEFAULTS[id]||'');});restoreAutoSave();
+  var raw=lsGet(LS_KEY_PRESETS);if(raw){try{_presetCache=JSON.parse(raw);}catch(e){_presetCache=[];}}
   renderPresetList();
-
   var type=getDocType(),sf=document.getElementById('sender-field');if(sf)sf.style.display=(type==='internal')?'none':'';
   loadSectionStates();
   var savedZoom=parseInt(lsGet(LS_KEY_ZOOM))||100,zr=document.getElementById('zoom-range');if(zr)zr.value=savedZoom;applyZoom(savedZoom);
   _spellPanelOpen=(lsGet(LS_KEY_SPELL_OPEN)==='1');applySpellPanelState();
   var savedSpellW=parseInt(lsGet(LS_KEY_SPELL_W)),sp=document.getElementById('spell-panel');if(savedSpellW&&savedSpellW>=240&&savedSpellW<=620&&sp)sp.style.setProperty('--spell-panel-width',savedSpellW+'px');
   var savedSidebarW=parseInt(lsGet(LS_KEY_SIDEBAR_W)),sb=document.getElementById('sidebar');if(savedSidebarW&&savedSidebarW>=240&&savedSidebarW<=620&&sb)sb.style.width=savedSidebarW+'px';
-
   fillFilenameAuto();
-  renderDoc(); updateStorageBar(); renderBodyValidation(); validateAttach(); bindOverlayScroll(); updateGlobalBadge();
-
+  renderDoc();updateStorageBar();renderBodyValidation();validateAttach();bindOverlayScroll();updateGlobalBadge();
   var ta=document.getElementById('doc-body');
   if(ta&&window.ResizeObserver){new ResizeObserver(function(){var layer=document.getElementById('body-highlight-layer');if(layer){layer.style.width=ta.offsetWidth+'px';layer.style.height=ta.offsetHeight+'px';}}).observe(ta);}
-
   INPUT_IDS.forEach(function(id){
     var el=document.getElementById(id);if(!el)return;
     el.addEventListener('input',function(){
